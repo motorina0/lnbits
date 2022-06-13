@@ -96,8 +96,9 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
             status_code=HTTPStatus.NOT_FOUND, detail="Wallet does not exist."
         )
 
+    
     addresses = await get_addresses(wallet_id)
-
+    print('### wallet_id', wallet_id, addresses)
     if not addresses:
         await get_fresh_address(wallet_id)
         addresses = await get_addresses(wallet_id)

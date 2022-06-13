@@ -128,7 +128,8 @@ async def delete_watch_wallet(wallet_id: str) -> None:
     ########################ADDRESSES#######################
 
 
-async def get_derive_address(wallet_id: str, num: int):
+# not a CRUD operation
+async def derive_address(wallet_id: str, num: int):
     wallet = await get_watch_wallet(wallet_id)
     key = wallet.masterpub
     desc, network = parse_key(key)
@@ -141,7 +142,7 @@ async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
     if not wallet:
         return None
 
-    address = await get_derive_address(wallet_id, wallet.address_no + 1)
+    address = await derive_address(wallet_id, wallet.address_no + 1)
 
     await update_watch_wallet(wallet_id=wallet_id, address_no=wallet.address_no + 1)
     masterpub_id = urlsafe_short_hash()

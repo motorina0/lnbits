@@ -118,7 +118,7 @@
       <q-card-section>
         <div class="row items-center no-wrap q-mb-md">
           <div class="col">
-            <h5 class="text-subtitle1 q-my-none">Transactions</h5>
+            <h5 class="text-subtitle1 q-my-none">Transactions x</h5>
           </div>
           <div class="col-auto">
             <q-input
@@ -290,6 +290,8 @@
 <script type="text/javascript" src="https://mempool.space/mempool.js"></script>
 <style></style>
 <script>
+  const sleep = ms => new Promise(r => setTimeout(r, ms))
+
   Vue.component(VueQrcode.name, VueQrcode)
 
   Vue.filter('reverse', function (value) {
@@ -327,11 +329,12 @@
       return {
         filter: '',
         balance: null,
-        checker: null,
+        checker: null, // todo: remove?
         walletLinks: [],
-        AddressesLinks: [],
+        AddressesLinks: [], // todo: lower-case
         currentaddress: '',
         Addresses: {
+          // todo: lower-case
           show: false,
           data: null
         },
@@ -427,26 +430,43 @@
             LNbits.utils.notifyApiError(error)
           })
       },
-      getAddresses: function (walletID) {
-        var self = this
-        LNbits.api
-          .request(
+      refreshAddresses: async function () {
+        const wallets = await this.getWatchOnlyWallets()
+
+        this.Addresses.data = []
+        for (const {id} of wallets) {
+          const addrs = await this.getAddressesForWallet(id)
+          this.Addresses.data.push(...addrs)
+        }
+
+        this.AddressesLinks = this.Addresses.data.map(function (obj) {
+          return mapAddresses(obj)
+        })
+      },
+      getAddressesForWallet: async function (walletID) {
+        console.log('### getAddressesForWallet', walletID)
+        // var self = this
+        try {
+          const {data} = await LNbits.api.request(
             'GET',
             '/watchonly/api/v1/addresses/' + walletID,
             this.g.user.wallets[0].inkey
           )
-          .then(function (response) {
-            self.Addresses.data = response.data
-            self.currentaddress =
-              self.Addresses.data[self.Addresses.data.length - 1].address
-            self.AddressesLinks = response.data.map(function (obj) {
-              return mapAddresses(obj)
-            })
-            self.fetchUtxos()
-          })
-          .catch(function (error) {
-            LNbits.utils.notifyApiError(error)
-          })
+          console.log('### getAddressesForWallet: data', data)
+          return data
+        } catch (err) {
+          LNbits.utils.notifyApiError(err)
+        }
+
+        // .then(function (response) {
+        //   self.Addresses.data = response.data
+        //   self.currentaddress =
+        //     self.Addresses.data[self.Addresses.data.length - 1].address
+        //   self.AddressesLinks = response.data.map(function (obj) {
+        //     return mapAddresses(obj)
+        //   })
+        //   self.fetchUtxos()
+        // })
       },
       getFreshAddress: function (walletID) {
         var self = this
@@ -498,23 +518,30 @@
             LNbits.utils.notifyApiError(error)
           })
       },
-      fetchUtxos: async function () {
+      getAddressTxsUtxoDelayed: async function (address, retryCount = 0) {
         const {
-          bitcoin: {addresses}
+          bitcoin: {addresses: addressesAPI}
         } = mempoolJS()
-        const address = this.AddressesLinks.map(x => x.address)
+        try {
+          console.log('### IN scanAddressUTXOs', addr)
+          return await addressesAPI.getAddressTxsUtxo({
+            address
+          })
+        } catch (err) {
+          if (retryCount > 4) throw err
+          await sleep((retryCount + 1) * 500)
+          return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
+        }
+      },
+      scanAddressUTXOs: async function () {
+        const addresses = this.AddressesLinks.map(x => x.address)
+        console.log('### address', addresses)
         const fetchUtxo = async () => {
-          let txs = []
-          // const address = [
-          //   '3Er3w82WqPLL4ew23taUZcFQwbZq6PE9TK',
-          //   '16CwtWRwQYLojaVZZFCgnaM6SQuNefqwrc',
-          //   '1KZB6FqnnMWySk75uvFKuPzHct1tMXHSSR'
-          // ] //test addresses
-          for (add of address) {
-            let addressTxsUtxo = await addresses.getAddressTxsUtxo({
-              address: add
-            })
-            txs = [...txs, ...addressTxsUtxo]
+          const txs = []
+          for (addr of addresses) {            
+            const addressTxsUtxo = await this.getAddressTxsUtxoDelayed(addr)
+            console.log('### OUT scanAddressUTXOs', addr)
+            txs.push(...addressTxsUtxo)
           }
           return txs
         }
@@ -552,24 +579,25 @@
         this.utxos.data = utxos
         this.utxos.total = total
       },
-      getWalletLinks: function () {
-        var self = this
 
-        LNbits.api
-          .request(
-            'GET',
-            '/watchonly/api/v1/wallet',
-            this.g.user.wallets[0].inkey
-          )
-          .then(function (response) {
-            self.walletLinks = response.data.map(function (obj) {
-              self.getAddresses(obj.id)
-              return mapWalletLink(obj)
-            })
+      getWatchOnlyWallets: async function () {
+        const {data} = await LNbits.api.request(
+          'GET',
+          '/watchonly/api/v1/wallet',
+          this.g.user.wallets[0].inkey
+        )
+        return data
+      },
+      refreshWalletLinks: async function () {
+        try {
+          const wallets = await this.getWatchOnlyWallets()
+          this.walletLinks = data.map(obj => {
+            this.getAddressesForWallet(obj.id)
+            return mapWalletLink(obj)
           })
-          .catch(function (error) {
-            LNbits.utils.notifyApiError(error)
-          })
+        } catch (err) {
+          LNbits.utils.notifyApiError(err)
+        }
       },
 
       closeFormDialog: function () {
@@ -579,8 +607,7 @@
       },
       openQrCodeDialog: function (linkId) {
         var self = this
-        var getAddresses = this.getAddresses
-        this.getAddresses(linkId)
+        this.getAddressesForWallet(linkId)
         self.current = linkId
         self.Addresses.show = true
       },
@@ -635,12 +662,12 @@
           : (val / 100000000).toFixed(8)
       }
     },
-    created: function () {
+    created: async function () {
       if (this.g.user.wallets.length) {
-        var getMempool = this.getMempool
-        getMempool()
-        var getWalletLinks = this.getWalletLinks
-        getWalletLinks()
+        this.getMempool()
+        await this.refreshAddresses()
+        await this.scanAddressUTXOs()
+        this.refreshWalletLinks()
       }
     }
   })
