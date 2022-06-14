@@ -108,7 +108,11 @@
     <q-card>
       <div class="row items-center no-wrap q-mb-md">
         <div class="col q-ml-lg">
-          <q-btn unelevated color="primary" @click="scanAddressUTXOs" :disabled="scanning == true"
+          <q-btn
+            unelevated
+            color="primary"
+            @click="scanAddressUTXOs"
+            :disabled="scanning == true"
             >Scan Blockchain</q-btn
           >
           <q-spinner
@@ -139,60 +143,76 @@
 
     <q-card>
       <q-card-section>
-        <div class="row items-center no-wrap q-mb-md">
-          <div class="col">
-            <h5 class="text-subtitle1 q-my-none">Transactions</h5>
-          </div>
-          <div class="col-auto">
-            <q-input
-              borderless
+        <q-tabs v-model="tab" no-caps class="bg-dark text-white shadow-2">
+          <q-tab name="coins" label="Coins"></q-tab>
+          <q-tab name="history" label="History"></q-tab>
+          <q-tab name="addresses" label="Addresses"></q-tab>
+        </q-tabs>
+        <q-tab-panels v-model="tab">
+          <!-- todo: why blak bacground? -->
+          <q-tab-panel name="coins">
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col">
+                <h5 class="text-subtitle1 q-my-none">Transactions</h5>
+              </div>
+              <div class="col-auto">
+                <q-input
+                  borderless
+                  dense
+                  debounce="300"
+                  v-model="TxosTable.filter"
+                  placeholder="Search"
+                >
+                  <template v-slot:append>
+                    <q-icon name="search"></q-icon>
+                  </template>
+                </q-input>
+              </div>
+            </div>
+            <q-table
+              flat
               dense
-              debounce="300"
-              v-model="TxosTable.filter"
-              placeholder="Search"
+              :data="utxos.data"
+              row-key="txid"
+              :columns="TxosTable.columns"
+              :pagination.sync="TxosTable.pagination"
+              :filter="TxosTable.filter"
             >
-              <template v-slot:append>
-                <q-icon name="search"></q-icon>
+              <template v-slot:header="props">
+                <q-tr :props="props">
+                  <q-th
+                    v-for="col in props.cols"
+                    :key="col.name"
+                    :props="props"
+                    auto-width
+                  >
+                    {{ col.label }}
+                  </q-th>
+                  <q-th auto-width></q-th>
+                </q-tr>
               </template>
-            </q-input>
-          </div>
-        </div>
-        <q-table
-          flat
-          dense
-          :data="utxos.data"
-          row-key="txid"
-          :columns="TxosTable.columns"
-          :pagination.sync="TxosTable.pagination"
-          :filter="TxosTable.filter"
-        >
-          <template v-slot:header="props">
-            <q-tr :props="props">
-              <q-th
-                v-for="col in props.cols"
-                :key="col.name"
-                :props="props"
-                auto-width
-              >
-                {{ col.label }}
-              </q-th>
-              <q-th auto-width></q-th>
-            </q-tr>
-          </template>
-          <template v-slot:body="props">
-            <q-tr :props="props">
-              <q-td
-                v-for="col in props.cols"
-                :key="col.name"
-                :props="props"
-                auto-width
-                :class="col.value == true ? 'text-green-13 text-weight-bold' : ''"
-              >
-                {{ col.name == 'value' ? satBtc(col.value) : col.value }}
-              </q-td>
-            </q-tr>
-          </template>
-        </q-table>
+              <template v-slot:body="props">
+                <q-tr :props="props">
+                  <q-td
+                    v-for="col in props.cols"
+                    :key="col.name"
+                    :props="props"
+                    auto-width
+                    :class="col.value == true ? 'text-green-13 text-weight-bold' : ''"
+                  >
+                    {{ col.name == 'value' ? satBtc(col.value) : col.value }}
+                  </q-td>
+                </q-tr>
+              </template>
+            </q-table>
+          </q-tab-panel>
+          <q-tab-panel name="history">
+            <h3>H</h3>
+          </q-tab-panel>
+          <q-tab-panel name="addresses">
+            <h3>A</h3>
+          </q-tab-panel>
+        </q-tab-panels>
       </q-card-section>
     </q-card>
   </div>
@@ -362,6 +382,7 @@
         walletLinks: [],
         AddressesLinks: [], // todo: lower-case
         currentaddress: '34dq7v1SbXHBuF688EZGJK3gJav1bcURkR', // todo: fix init
+        tab: 'coins',
         Addresses: {
           // todo: lower-case
           show: false,
@@ -468,11 +489,6 @@
         for (const {id, address_no} of wallets) {
           const addrs = await this.getAddressesForWallet(id)
           this.Addresses.data.push(...addrs)
-
-          for (let gap_no = 0; gap_no < 20; gap_no++) {
-            // todo: config gap?
-            // this.Addresses.gapData.push(derive_address())
-          }
         }
 
         this.AddressesLinks = this.Addresses.data.map(function (obj) {
@@ -552,12 +568,13 @@
             address
           })
         } catch (err) {
-          if (retryCount > 4) throw err
+          if (retryCount > 10) throw err
           await sleep((retryCount + 1) * 500)
           return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
         }
       },
       scanAddressUTXOs: async function () {
+        await this.refreshAddresses()
         this.scanning = true
         this.scanCount = 0
         try {
