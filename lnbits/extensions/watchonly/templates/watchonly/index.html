@@ -380,14 +380,12 @@
         scanning: false,
         scanCount: 0,
         walletLinks: [],
-        AddressesLinks: [], // todo: lower-case
         currentaddress: '34dq7v1SbXHBuF688EZGJK3gJav1bcURkR', // todo: fix init
         tab: 'coins',
         Addresses: {
           // todo: lower-case
           show: false,
-          data: [],
-          gapData: null
+          data: []
         },
         utxos: {
           data: [],
@@ -485,15 +483,10 @@
         const wallets = await this.getWatchOnlyWallets()
         console.log('### wallets', wallets)
         this.Addresses.data = []
-        this.Addresses.gapData = []
         for (const {id, address_no} of wallets) {
           const addrs = await this.getAddressesForWallet(id)
           this.Addresses.data.push(...addrs)
         }
-
-        this.AddressesLinks = this.Addresses.data.map(function (obj) {
-          return mapAddresses(obj)
-        })
       },
       getAddressesForWallet: async function (walletID) {
         try {
@@ -569,59 +562,54 @@
           })
         } catch (err) {
           if (retryCount > 10) throw err
-          await sleep((retryCount + 1) * 500)
+          console.log('### ERR scanAddressUTXOs', (retryCount + 1) * 500, addr)
+          await sleep((retryCount + 1) * 1000)
           return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
+        }
+      },
+      addUtxos: function (utxos = []) {
+        utxos.forEach(utxo => {
+          this.utxos.data.push({
+            txid: utxo.txid,
+            confirmed: utxo.status.confirmed,
+            value: utxo.value,
+            date:
+              utxo.status?.block_time &&
+              moment(utxo.status?.block_time * 1000).format('LLL'),
+            sort: utxo.status?.block_time
+          })
+        })
+        if (utxos.length) {
+          this.utxos.data.sort((a, b) => b.sort - a.sort)
+          this.utxos.total = this.utxos.data.reduce((total, y) => {
+            total += y?.value || 0
+            return total
+          }, 0)
         }
       },
       scanAddressUTXOs: async function () {
         await this.refreshAddresses()
         this.scanning = true
         this.scanCount = 0
+        this.utxos.data = []
+
         try {
-          const addresses = this.AddressesLinks.map(x => x.address)
-          const fetchUtxo = async () => {
-            const txs = []
-            for (addr of addresses) {
-              const addressTxsUtxo = await this.getAddressTxsUtxoDelayed(addr)
-              txs.push(...addressTxsUtxo)
-              this.scanCount++
-            }
-            return txs
+          const addresses = this.Addresses.data.map(x => x.address)
+          for (addr of addresses) {
+            const utxos = await this.getAddressTxsUtxoDelayed(addr)
+            this.addUtxos(utxos)
+            console.log('### utxo', utxos)
+            this.scanCount++
           }
-          let utxos = await fetchUtxo()
-          utxos = utxos
-            .reduce((ac, x) => {
-              if (!ac)
-                return [
-                  {
-                    txid: x.txid,
-                    confirmed: x.status.confirmed,
-                    value: x.value,
-                    date: moment(x.status?.block_time * 1000).format('LLL'),
-                    sort: x.status?.block_time
-                  }
-                ]
-              if (!ac.some(y => y.txid == x.txid))
-                return [
-                  ...ac,
-                  {
-                    txid: x.txid,
-                    confirmed: x.status.confirmed,
-                    value: x.value,
-                    date: moment(x.status?.block_time * 1000).format('LLL'),
-                    sort: x.status?.block_time
-                  }
-                ]
-              return
-            }, [])
-            .sort((a, b) => b.sort - a.sort)
-          let total = utxos.reduce((total, y) => {
+
+          const total = utxos.reduce((total, y) => {
             total += y?.value || 0
             return total
           }, 0)
-          this.utxos.data = utxos
-          this.utxos.total = total
+          // // this.utxos.data = utxos
+          // // this.utxos.total = total
         } catch (err) {
+          console.error(err)
           // todo: show UI error
         } finally {
           this.scanning = false
