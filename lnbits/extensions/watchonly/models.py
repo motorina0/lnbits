@@ -38,6 +38,7 @@ class Addresses(BaseModel): # todo: why plural
     address: str
     wallet: str
     amount: int
+    address_index: int
 
     @classmethod
     def from_row(cls, row: Row) -> "Addresses":

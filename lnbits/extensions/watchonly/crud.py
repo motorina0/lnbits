@@ -70,9 +70,10 @@ async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
     if not wallet:
         return None
 
-    address = await derive_address(wallet.masterpub, wallet.address_no + 1)
+    address_index = wallet.address_no + 1
+    address = await derive_address(wallet.masterpub, address_index)
 
-    await update_watch_wallet(wallet_id=wallet_id, address_no=wallet.address_no + 1)
+    await update_watch_wallet(wallet_id=wallet_id, address_no=address_index)
     masterpub_id = urlsafe_short_hash()
     await db.execute(
         """
@@ -80,11 +81,12 @@ async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
             id,
             address,
             wallet,
-            amount
+            amount,
+            address_index
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
         """,
-        (masterpub_id, address, wallet_id, 0),
+        (masterpub_id, address, wallet_id, 0, address_index),
     )
 
     return await get_address(address)
@@ -98,9 +100,12 @@ async def get_address(address: str) -> Optional[Addresses]:
 
 
 async def get_addresses(wallet_id: str) -> List[Addresses]:
+    # wallet = await get_watch_wallet(wallet_id)
+
     rows = await db.fetchall(
         "SELECT * FROM watchonly.addresses WHERE wallet = ?", (wallet_id,)
     )
+    # if gap beteen address_no and size < 20, generate the rest
     return [Addresses(**row) for row in rows]
 
 

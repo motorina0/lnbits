@@ -481,7 +481,6 @@
       },
       refreshAddresses: async function () {
         const wallets = await this.getWatchOnlyWallets()
-        console.log('### wallets', wallets)
         this.Addresses.data = []
         for (const {id, address_no} of wallets) {
           const addrs = await this.getAddressesForWallet(id)
@@ -703,7 +702,6 @@
       if (this.g.user.wallets.length) {
         this.getMempool()
         await this.refreshAddresses()
-        // await this.scanAddressUTXOs()
         this.refreshWalletLinks()
       }
     }

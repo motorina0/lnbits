@@ -34,3 +34,9 @@ async def m001_initial(db):
         );
     """
     )
+
+async def m002_xxx(db):
+    """
+    xxxx.
+    """
+    await db.execute("ALTER TABLE watchonly.addresses ADD COLUMN address_index INTEGER DEFAULT 0;")
