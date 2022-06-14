@@ -3,13 +3,15 @@ from sqlite3 import Row
 from fastapi.param_functions import Query
 from pydantic import BaseModel
 
+from .helpers import parse_key
+
 
 class CreateWallet(BaseModel):
     masterpub: str = Query("")
     title: str = Query("")
 
 
-class Wallets(BaseModel):
+class Wallets(BaseModel): # todo: why plural
     id: str
     user: str
     masterpub: str
@@ -31,7 +33,7 @@ class Mempool(BaseModel):
         return cls(**dict(row))
 
 
-class Addresses(BaseModel):
+class Addresses(BaseModel): # todo: why plural
     id: str
     address: str
     wallet: str

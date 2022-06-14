@@ -80,7 +80,7 @@ async def api_wallet_delete(wallet_id, w: WalletTypeInfo = Depends(require_admin
 #############################ADDRESSES##########################
 
 
-@watchonly_ext.get("/api/v1/address/{wallet_id}")
+@watchonly_ext.get("/api/v1/address/{wallet_id}") #todo: is this a put/post?
 async def api_fresh_address(wallet_id, w: WalletTypeInfo = Depends(get_key_type)):
     address = await get_fresh_address(wallet_id)
 
@@ -98,7 +98,7 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
 
     
     addresses = await get_addresses(wallet_id)
-    print('### wallet_id', wallet_id, addresses)
+    
     if not addresses:
         await get_fresh_address(wallet_id)
         addresses = await get_addresses(wallet_id)

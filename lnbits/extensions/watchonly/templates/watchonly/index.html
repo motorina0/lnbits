@@ -118,7 +118,7 @@
       <q-card-section>
         <div class="row items-center no-wrap q-mb-md">
           <div class="col">
-            <h5 class="text-subtitle1 q-my-none">Transactions x</h5>
+            <h5 class="text-subtitle1 q-my-none">Transactions</h5>
           </div>
           <div class="col-auto">
             <q-input
@@ -332,11 +332,12 @@
         checker: null, // todo: remove?
         walletLinks: [],
         AddressesLinks: [], // todo: lower-case
-        currentaddress: '',
+        currentaddress: '34dq7v1SbXHBuF688EZGJK3gJav1bcURkR', // todo: fix init
         Addresses: {
           // todo: lower-case
           show: false,
-          data: null
+          data: null,
+          gapData: null
         },
         utxos: {
           data: [],
@@ -432,11 +433,17 @@
       },
       refreshAddresses: async function () {
         const wallets = await this.getWatchOnlyWallets()
-
+        console.log('### wallets', wallets)
         this.Addresses.data = []
-        for (const {id} of wallets) {
+        this.Addresses.gapData = []
+        for (const {id, address_no} of wallets) {
           const addrs = await this.getAddressesForWallet(id)
           this.Addresses.data.push(...addrs)
+
+          for (let gap_no = 0; gap_no < 20; gap_no++) {
+            // todo: config gap?
+            // this.Addresses.gapData.push(derive_address())
+          }
         }
 
         this.AddressesLinks = this.Addresses.data.map(function (obj) {
@@ -444,29 +451,16 @@
         })
       },
       getAddressesForWallet: async function (walletID) {
-        console.log('### getAddressesForWallet', walletID)
-        // var self = this
         try {
           const {data} = await LNbits.api.request(
             'GET',
             '/watchonly/api/v1/addresses/' + walletID,
             this.g.user.wallets[0].inkey
           )
-          console.log('### getAddressesForWallet: data', data)
           return data
         } catch (err) {
           LNbits.utils.notifyApiError(err)
         }
-
-        // .then(function (response) {
-        //   self.Addresses.data = response.data
-        //   self.currentaddress =
-        //     self.Addresses.data[self.Addresses.data.length - 1].address
-        //   self.AddressesLinks = response.data.map(function (obj) {
-        //     return mapAddresses(obj)
-        //   })
-        //   self.fetchUtxos()
-        // })
       },
       getFreshAddress: function (walletID) {
         var self = this
@@ -538,7 +532,7 @@
         console.log('### address', addresses)
         const fetchUtxo = async () => {
           const txs = []
-          for (addr of addresses) {            
+          for (addr of addresses) {
             const addressTxsUtxo = await this.getAddressTxsUtxoDelayed(addr)
             console.log('### OUT scanAddressUTXOs', addr)
             txs.push(...addressTxsUtxo)
@@ -591,11 +585,12 @@
       refreshWalletLinks: async function () {
         try {
           const wallets = await this.getWatchOnlyWallets()
-          this.walletLinks = data.map(obj => {
+          this.walletLinks = wallets.map(obj => {
             this.getAddressesForWallet(obj.id)
             return mapWalletLink(obj)
           })
         } catch (err) {
+          console.log('### err', err)
           LNbits.utils.notifyApiError(err)
         }
       },
