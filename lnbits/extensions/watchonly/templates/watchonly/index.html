@@ -106,11 +106,34 @@
     </q-card>
 
     <q-card>
-      <div class="row justify-center q-gutter-x-md items-center">
-        <div class="text-h3 q-pa-sm">{{satBtc(utxos.total)}}</div>
-        <q-btn flat @click="utxos.sats = !utxos.sats">
-          {{utxos.sats ? ' sats' : ' BTC'}}</q-btn
-        >
+      <div class="row items-center no-wrap q-mb-md">
+        <div class="col q-ml-lg">
+          <q-btn unelevated color="primary" @click="scanAddressUTXOs" :disabled="scanning == true"
+            >Scan Blockchain</q-btn
+          >
+          <q-spinner
+            v-if="scanning == true"
+            color="primary"
+            size="2.55em"
+          ></q-spinner>
+        </div>
+        <div class="col">
+          <div class="row justify-center q-gutter-x-md items-center">
+            <div class="text-h3 q-pa-sm">{{satBtc(utxos.total)}}</div>
+            <q-btn flat @click="utxos.sats = !utxos.sats">
+              {{utxos.sats ? ' sats' : ' BTC'}}</q-btn
+            >
+          </div>
+        </div>
+      </div>
+      <div v-if="scanning == true">
+        <!-- todo: make height smaller -->
+        <q-linear-progress
+          :value="scanCount / Addresses.data.length"
+          size="10px"
+          color="primary"
+          class="q-mt-sm"
+        ></q-linear-progress>
       </div>
     </q-card>
 
@@ -307,18 +330,22 @@
 
   var mapWalletLink = function (obj) {
     obj._data = _.clone(obj)
-    obj.date = Quasar.utils.date.formatDate(
-      new Date(obj.time * 1000),
-      'YYYY-MM-DD HH:mm'
-    )
+    obj.date = obj.time
+      ? Quasar.utils.date.formatDate(
+          new Date(obj.time * 1000),
+          'YYYY-MM-DD HH:mm'
+        )
+      : ''
     return obj
   }
   var mapAddresses = function (obj) {
     obj._data = _.clone(obj)
-    obj.date = Quasar.utils.date.formatDate(
-      new Date(obj.time * 1000),
-      'YYYY-MM-DD HH:mm'
-    )
+    obj.date = obj.time
+      ? Quasar.utils.date.formatDate(
+          new Date(obj.time * 1000),
+          'YYYY-MM-DD HH:mm'
+        )
+      : ''
     return obj
   }
 
@@ -330,13 +357,15 @@
         filter: '',
         balance: null,
         checker: null, // todo: remove?
+        scanning: false,
+        scanCount: 0,
         walletLinks: [],
         AddressesLinks: [], // todo: lower-case
         currentaddress: '34dq7v1SbXHBuF688EZGJK3gJav1bcURkR', // todo: fix init
         Addresses: {
           // todo: lower-case
           show: false,
-          data: null,
+          data: [],
           gapData: null
         },
         utxos: {
@@ -518,6 +547,7 @@
         } = mempoolJS()
         try {
           console.log('### IN scanAddressUTXOs', addr)
+          await sleep(50)
           return await addressesAPI.getAddressTxsUtxo({
             address
           })
@@ -528,50 +558,57 @@
         }
       },
       scanAddressUTXOs: async function () {
-        const addresses = this.AddressesLinks.map(x => x.address)
-        console.log('### address', addresses)
-        const fetchUtxo = async () => {
-          const txs = []
-          for (addr of addresses) {
-            const addressTxsUtxo = await this.getAddressTxsUtxoDelayed(addr)
-            console.log('### OUT scanAddressUTXOs', addr)
-            txs.push(...addressTxsUtxo)
+        this.scanning = true
+        this.scanCount = 0
+        try {
+          const addresses = this.AddressesLinks.map(x => x.address)
+          const fetchUtxo = async () => {
+            const txs = []
+            for (addr of addresses) {
+              const addressTxsUtxo = await this.getAddressTxsUtxoDelayed(addr)
+              txs.push(...addressTxsUtxo)
+              this.scanCount++
+            }
+            return txs
           }
-          return txs
+          let utxos = await fetchUtxo()
+          utxos = utxos
+            .reduce((ac, x) => {
+              if (!ac)
+                return [
+                  {
+                    txid: x.txid,
+                    confirmed: x.status.confirmed,
+                    value: x.value,
+                    date: moment(x.status?.block_time * 1000).format('LLL'),
+                    sort: x.status?.block_time
+                  }
+                ]
+              if (!ac.some(y => y.txid == x.txid))
+                return [
+                  ...ac,
+                  {
+                    txid: x.txid,
+                    confirmed: x.status.confirmed,
+                    value: x.value,
+                    date: moment(x.status?.block_time * 1000).format('LLL'),
+                    sort: x.status?.block_time
+                  }
+                ]
+              return
+            }, [])
+            .sort((a, b) => b.sort - a.sort)
+          let total = utxos.reduce((total, y) => {
+            total += y?.value || 0
+            return total
+          }, 0)
+          this.utxos.data = utxos
+          this.utxos.total = total
+        } catch (err) {
+          // todo: show UI error
+        } finally {
+          this.scanning = false
         }
-        let utxos = await fetchUtxo()
-        utxos = utxos
-          .reduce((ac, x) => {
-            if (!ac)
-              return [
-                {
-                  txid: x.txid,
-                  confirmed: x.status.confirmed,
-                  value: x.value,
-                  date: moment(x.status?.block_time * 1000).format('LLL'),
-                  sort: x.status?.block_time
-                }
-              ]
-            if (!ac.some(y => y.txid == x.txid))
-              return [
-                ...ac,
-                {
-                  txid: x.txid,
-                  confirmed: x.status.confirmed,
-                  value: x.value,
-                  date: moment(x.status?.block_time * 1000).format('LLL'),
-                  sort: x.status?.block_time
-                }
-              ]
-            return
-          }, [])
-          .sort((a, b) => b.sort - a.sort)
-        let total = utxos.reduce((total, y) => {
-          total += y?.value || 0
-          return total
-        }, 0)
-        this.utxos.data = utxos
-        this.utxos.total = total
       },
 
       getWatchOnlyWallets: async function () {
@@ -661,7 +698,7 @@
       if (this.g.user.wallets.length) {
         this.getMempool()
         await this.refreshAddresses()
-        await this.scanAddressUTXOs()
+        // await this.scanAddressUTXOs()
         this.refreshWalletLinks()
       }
     }
