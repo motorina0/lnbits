@@ -108,6 +108,17 @@ async def get_addresses(wallet_id: str) -> List[Addresses]:
     # if gap beteen address_no and size < 20, generate the rest
     return [Addresses(**row) for row in rows]
 
+async def update_address(id: str, amount: int) -> Optional[Addresses]:
+    print('### update_address', id, amount)
+    await db.execute(
+        "UPDATE watchonly.addresses SET amount =? WHERE id = ? ",
+        (amount, id),
+    )
+    row = await db.fetchone(
+        "SELECT * FROM watchonly.addresses WHERE id = ?", (id)
+    )
+    return Addresses.from_row(row) if row else None
+
 
 ######################MEMPOOL#######################
 
@@ -130,7 +141,7 @@ async def update_mempool(user: str, **kwargs) -> Optional[Mempool]:
     q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
 
     await db.execute(
-        f"""UPDATE watchonly.mempool SET {q} WHERE "user" = ?""",
+        f"""UPDATE watchonly.mempool SET {q} WHERE "user" = ?""", #todo: sql injection risk?
         (*kwargs.values(), user),
     )
     row = await db.fetchone(

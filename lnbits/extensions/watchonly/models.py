@@ -37,9 +37,14 @@ class Addresses(BaseModel): # todo: why plural
     id: str
     address: str
     wallet: str
-    amount: int
+    amount: int = 0
     address_index: int
 
     @classmethod
     def from_row(cls, row: Row) -> "Addresses":
         return cls(**dict(row))
+
+class UpdateAddressAmount(BaseModel):
+    address: str
+    wallet: str
+    amount: int

@@ -487,25 +487,40 @@
           this.Addresses.data.push(...addrs)
         }
       },
-      getAddressesForWallet: async function (walletID) {
+      getAddressesForWallet: async function (walletId) {
         try {
           const {data} = await LNbits.api.request(
             'GET',
-            '/watchonly/api/v1/addresses/' + walletID,
+            '/watchonly/api/v1/addresses/' + walletId,
             this.g.user.wallets[0].inkey
           )
+          console.log('### getAddressesForWallet', data)
           return data
         } catch (err) {
           LNbits.utils.notifyApiError(err)
         }
       },
-      getFreshAddress: function (walletID) {
+      updateAmountForAddress: async function (addressId, amount = 0) {
+        try {
+          const wallet = this.g.user.wallets[0] // todo: find active wallet
+          const {data} = await LNbits.api.request(
+            'PUT',
+            `/watchonly/api/v1/address/${addressId}`,
+            wallet.adminkey,
+            {amount}
+          )
+          console.log('### updateAmountForAddress', data)
+        } catch (err) {
+          LNbits.utils.notifyApiError(err)
+        }
+      },
+      getFreshAddress: function (walletId) {
         var self = this
 
         LNbits.api
           .request(
             'GET',
-            '/watchonly/api/v1/address/' + walletID,
+            '/watchonly/api/v1/address/' + walletId,
             this.g.user.wallets[0].inkey
           )
           .then(function (response) {
@@ -554,19 +569,24 @@
           bitcoin: {addresses: addressesAPI}
         } = mempoolJS()
         try {
-          console.log('### IN scanAddressUTXOs', addr)
+          console.log('### IN scanAddressUTXOs', address)
           await sleep(50)
           return await addressesAPI.getAddressTxsUtxo({
             address
           })
         } catch (err) {
           if (retryCount > 10) throw err
-          console.log('### ERR scanAddressUTXOs', (retryCount + 1) * 500, addr)
+          console.log(
+            '### ERR scanAddressUTXOs',
+            (retryCount + 1) * 500,
+            address
+          )
           await sleep((retryCount + 1) * 1000)
           return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
         }
       },
-      addUtxos: function (utxos = []) {
+      updateUtxosForAddress: function (addressData, utxos = []) {
+        console.log('### addUtxos', addressData, utxos)
         utxos.forEach(utxo => {
           this.utxos.data.push({
             txid: utxo.txid,
@@ -580,33 +600,30 @@
         })
         if (utxos.length) {
           this.utxos.data.sort((a, b) => b.sort - a.sort)
-          this.utxos.total = this.utxos.data.reduce((total, y) => {
-            total += y?.value || 0
-            return total
-          }, 0)
+          this.utxos.total = this.utxos.data.reduce(
+            (total, y) => (total += y?.value || 0),
+            0
+          )
         }
+        const addressTotal = utxos.reduce(
+          (total, y) => (total += y?.value || 0),
+          0
+        )
+        this.updateAmountForAddress(addressData.id, addressTotal)
       },
       scanAddressUTXOs: async function () {
         await this.refreshAddresses()
         this.scanning = true
         this.scanCount = 0
         this.utxos.data = []
-
+        // this.updateAmountForAddress('gPK5jjkqmd5qgKq28DLzsY', 0)
+        // return
         try {
-          const addresses = this.Addresses.data.map(x => x.address)
-          for (addr of addresses) {
-            const utxos = await this.getAddressTxsUtxoDelayed(addr)
-            this.addUtxos(utxos)
-            console.log('### utxo', utxos)
+          for (addrData of this.Addresses.data) {
+            const utxos = await this.getAddressTxsUtxoDelayed(addrData.address)
+            this.updateUtxosForAddress(addrData, utxos)
             this.scanCount++
           }
-
-          const total = utxos.reduce((total, y) => {
-            total += y?.value || 0
-            return total
-          }, 0)
-          // // this.utxos.data = utxos
-          // // this.utxos.total = total
         } catch (err) {
           console.error(err)
           // todo: show UI error

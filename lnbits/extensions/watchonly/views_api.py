@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from fastapi import Query
+from fastapi import Query, Request
 from fastapi.params import Depends
 from starlette.exceptions import HTTPException
 
@@ -13,6 +13,7 @@ from .crud import (
     delete_watch_wallet,
     get_addresses,
     get_fresh_address,
+    update_address,
     get_mempool,
     get_watch_wallet,
     get_watch_wallets,
@@ -80,11 +81,18 @@ async def api_wallet_delete(wallet_id, w: WalletTypeInfo = Depends(require_admin
 #############################ADDRESSES##########################
 
 
-@watchonly_ext.get("/api/v1/address/{wallet_id}") #todo: is this a put/post?
+@watchonly_ext.get("/api/v1/address/{wallet_id}")
 async def api_fresh_address(wallet_id, w: WalletTypeInfo = Depends(get_key_type)):
     address = await get_fresh_address(wallet_id)
-
     return [address.dict()]
+
+@watchonly_ext.put("/api/v1/address/{id}")
+async def api_update_address_amount(id:str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)):
+    body = await req.json()
+    amount = int(body['amount'])
+    print('### api_update_address', id, amount)
+    return  await update_address(id, amount)
+
 
 
 @watchonly_ext.get("/api/v1/addresses/{wallet_id}")
