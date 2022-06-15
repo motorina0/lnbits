@@ -92,6 +92,31 @@ async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
     return await get_address(address)
 
 
+async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_address_index: int) -> List[Addresses]:
+    if (start_address_index > end_address_index):
+        return None
+
+    wallet = await get_watch_wallet(wallet_id)
+    if not wallet:
+        return None
+
+    for address_index in range(start_address_index, end_address_index):
+        print('### wallet_id', wallet_id, address_index)
+        address = await derive_address(wallet.masterpub, address_index)
+        await db.execute(
+        """
+        INSERT INTO watchonly.addresses (
+            id,
+            address,
+            wallet,
+            amount,
+            address_index
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (urlsafe_short_hash(), address, wallet_id, 0, address_index),
+    )
+
 async def get_address(address: str) -> Optional[Addresses]:
     row = await db.fetchone(
         "SELECT * FROM watchonly.addresses WHERE address = ?", (address,)
@@ -101,9 +126,12 @@ async def get_address(address: str) -> Optional[Addresses]:
 
 async def get_addresses(wallet_id: str) -> List[Addresses]:
     # wallet = await get_watch_wallet(wallet_id)
-
+    print('### get_addresses', wallet_id)
     rows = await db.fetchall(
-        "SELECT * FROM watchonly.addresses WHERE wallet = ?", (wallet_id,)
+        """
+            SELECT * FROM watchonly.addresses WHERE wallet = ?
+            ORDER BY address_index
+        """, (wallet_id,)
     )
     # if gap beteen address_no and size < 20, generate the rest
     return [Addresses(**row) for row in rows]

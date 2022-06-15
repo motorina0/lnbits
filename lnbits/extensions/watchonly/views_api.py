@@ -13,6 +13,7 @@ from .crud import (
     delete_watch_wallet,
     get_addresses,
     get_fresh_address,
+    create_fresh_addresses,
     update_address,
     get_mempool,
     get_watch_wallet,
@@ -93,11 +94,10 @@ async def api_update_address_amount(id:str, req: Request, w: WalletTypeInfo = De
     print('### api_update_address', id, amount)
     return  await update_address(id, amount)
 
-
-
 @watchonly_ext.get("/api/v1/addresses/{wallet_id}")
 async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)):
     wallet = await get_watch_wallet(wallet_id)
+    
 
     if not wallet:
         raise HTTPException(
@@ -107,9 +107,18 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
     
     addresses = await get_addresses(wallet_id)
     
+    print('### api_get_addresses addresses', wallet_id, addresses)
     if not addresses:
-        await get_fresh_address(wallet_id)
+        await create_fresh_addresses(wallet_id, 0, 20)
         addresses = await get_addresses(wallet_id)
+
+    last_address_with_amount = list(filter(lambda addr: addr.amount > 0, addresses))[-1:]
+
+    print('### lastAddressWithAmount', last_address_with_amount)
+    if last_address_with_amount:
+        current_index = addresses[-1].address_index
+        address_index = last_address_with_amount[0].address_index
+        await create_fresh_addresses(wallet_id, current_index + 1, address_index + 20)
 
     return [address.dict() for address in addresses]
 
