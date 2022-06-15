@@ -115,12 +115,21 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
         await create_fresh_addresses(wallet_id, 0, CHANGE_GAP_LIMIT, True)
         addresses = await get_addresses(wallet_id)
 
-    last_address_with_amount = list(filter(lambda addr: addr.amount > 0, addresses))[-1:]
+    receive_addresses = list(filter(lambda addr: addr.branch_index == 0, addresses))
+    change_addresses = list(filter(lambda addr: addr.branch_index == 1, addresses))
 
-    if last_address_with_amount:
-        current_index = addresses[-1].address_index
-        address_index = last_address_with_amount[0].address_index
+    last_receive_address = list(filter(lambda addr: addr.amount > 0, receive_addresses))[-1:]
+    last_change_address = list(filter(lambda addr: addr.amount > 0, change_addresses))[-1:]
+
+    if last_receive_address:
+        current_index = receive_addresses[-1].address_index
+        address_index = last_receive_address[0].address_index
         await create_fresh_addresses(wallet_id, current_index + 1, address_index + RECEIVE_GAP_LIMIT)
+
+    if last_change_address:
+        current_index = change_addresses[-1].address_index
+        address_index = last_change_address[0].address_index
+        await create_fresh_addresses(wallet_id, current_index + 1, address_index + CHANGE_GAP_LIMIT, True)
 
     return [address.dict() for address in addresses]
 

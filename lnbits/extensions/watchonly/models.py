@@ -38,6 +38,7 @@ class Addresses(BaseModel): # todo: why plural
     address: str
     wallet: str
     amount: int = 0
+    branch_index: int = 0
     address_index: int
 
     @classmethod

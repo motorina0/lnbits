@@ -113,11 +113,12 @@ async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_a
             address,
             wallet,
             amount,
+            branch_index,
             address_index
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (urlsafe_short_hash(), address, wallet_id, 0, address_index),
+        (urlsafe_short_hash(), address, wallet_id, 0, branch_index, address_index),
     )
 
 async def get_address(address: str) -> Optional[Addresses]:
@@ -133,7 +134,7 @@ async def get_addresses(wallet_id: str) -> List[Addresses]:
     rows = await db.fetchall(
         """
             SELECT * FROM watchonly.addresses WHERE wallet = ?
-            ORDER BY address_index
+            ORDER BY branch_index, address_index
         """, (wallet_id,)
     )
     # if gap beteen address_no and size < 20, generate the rest
