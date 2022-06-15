@@ -97,24 +97,19 @@ async def api_update_address_amount(id:str, req: Request, w: WalletTypeInfo = De
 @watchonly_ext.get("/api/v1/addresses/{wallet_id}")
 async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)):
     wallet = await get_watch_wallet(wallet_id)
-    
-
     if not wallet:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="Wallet does not exist."
         )
 
-    
     addresses = await get_addresses(wallet_id)
     
-    print('### api_get_addresses addresses', wallet_id, addresses)
     if not addresses:
         await create_fresh_addresses(wallet_id, 0, 20)
         addresses = await get_addresses(wallet_id)
 
     last_address_with_amount = list(filter(lambda addr: addr.amount > 0, addresses))[-1:]
 
-    print('### lastAddressWithAmount', last_address_with_amount)
     if last_address_with_amount:
         current_index = addresses[-1].address_index
         address_index = last_address_with_amount[0].address_index

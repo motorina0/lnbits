@@ -111,12 +111,12 @@
           <q-btn
             unelevated
             color="primary"
-            @click="scanAddressUTXOs"
-            :disabled="scanning == true"
+            @click="scanAllAddressUTXOs"
+            :disabled="scan.scanning == true"
             >Scan Blockchain</q-btn
           >
           <q-spinner
-            v-if="scanning == true"
+            v-if="scan.scanning == true"
             color="primary"
             size="2.55em"
           ></q-spinner>
@@ -130,10 +130,10 @@
           </div>
         </div>
       </div>
-      <div v-if="scanning == true">
+      <div v-if="scan.scanning == true">
         <!-- todo: make height smaller -->
         <q-linear-progress
-          :value="scanCount / addresses.data.length"
+          :value="scan.scanIndex / scan.scanCount"
           size="10px"
           color="primary"
           class="q-mt-sm"
@@ -377,8 +377,12 @@
         filter: '',
         balance: null,
         checker: null, // todo: remove?
-        scanning: false,
-        scanCount: 0,
+        scan: {
+          scanning: false,
+          scanCount: 0,
+          scanIndex: 0
+        },
+
         walletLinks: [],
         currentaddress: '34dq7v1SbXHBuF688EZGJK3gJav1bcURkR', // todo: fix init
         tab: 'coins',
@@ -494,7 +498,6 @@
             '/watchonly/api/v1/addresses/' + walletId,
             this.g.user.wallets[0].inkey
           )
-          console.log('### getAddressesForWallet', data)
           return data
         } catch (err) {
           LNbits.utils.notifyApiError(err)
@@ -569,18 +572,14 @@
           bitcoin: {addresses: addressesAPI}
         } = mempoolJS()
         try {
-          console.log('### IN scanAddressUTXOs', address)
+          console.log('### IN mempool call', address)
           await sleep(50)
           return await addressesAPI.getAddressTxsUtxo({
             address
           })
         } catch (err) {
           if (retryCount > 10) throw err
-          console.log(
-            '### ERR scanAddressUTXOs',
-            (retryCount + 1) * 500,
-            address
-          )
+          console.log('### ERR mempool call', (retryCount + 1) * 500, address)
           await sleep((retryCount + 1) * 1000)
           return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
         }
@@ -611,24 +610,31 @@
         )
         this.updateAmountForAddress(addressData.id, addressTotal)
       },
-      scanAddressUTXOs: async function () {
+      scanAllAddressUTXOs: async function (addresses) {
         await this.refreshAddresses()
-        this.scanning = true
-        this.scanCount = 0
+        this.scanAddressUTXOs(this.addresses.data)
+      },
+      scanAddressWithAmountUTXOs: async function () {
+        const addresses = this.addresses.data.filter(a => a.amount)
+        this.scanAddressUTXOs(addresses)
+      },
+      scanAddressUTXOs: async function (addresses) {
+        console.log('### addresses', addresses)
+        if (!addresses) return
+
+        this.scan = {scanning: true, scanCount: addresses.length, scanIndex: 0}
         this.utxos.data = []
-        // this.updateAmountForAddress('gPK5jjkqmd5qgKq28DLzsY', 0)
-        // return
+
         try {
-          for (addrData of this.addresses.data) {
+          for (addrData of addresses) {
             const utxos = await this.getAddressTxsUtxoDelayed(addrData.address)
             this.updateUtxosForAddress(addrData, utxos)
-            this.scanCount++
+            this.scan.scanIndex++
           }
         } catch (err) {
-          console.error(err)
-          // todo: show UI error
+          console.error(err) // todo: show UI error
         } finally {
-          this.scanning = false
+          this.scan.scanning = false
         }
       },
 
@@ -719,6 +725,7 @@
       if (this.g.user.wallets.length) {
         this.getMempool()
         await this.refreshAddresses()
+        await this.scanAddressWithAmountUTXOs()
         this.refreshWalletLinks()
       }
     }
