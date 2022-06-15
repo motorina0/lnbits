@@ -147,6 +147,8 @@ async def update_address(id: str, amount: int) -> Optional[Addresses]:
     )
     return Addresses.from_row(row) if row else None
 
+async def delete_addresses_for_wallet(wallet_id: str) -> None:
+    await db.execute("DELETE FROM watchonly.addresses WHERE wallet = ?", (wallet_id,))
 
 ######################MEMPOOL#######################
 

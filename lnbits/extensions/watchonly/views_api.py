@@ -15,6 +15,7 @@ from .crud import (
     get_fresh_address,
     create_fresh_addresses,
     update_address,
+    delete_addresses_for_wallet,
     get_mempool,
     get_watch_wallet,
     get_watch_wallets,
@@ -79,6 +80,7 @@ async def api_wallet_delete(wallet_id, w: WalletTypeInfo = Depends(require_admin
         )
 
     await delete_watch_wallet(wallet_id)
+    await delete_addresses_for_wallet(wallet_id)
 
     raise HTTPException(status_code=HTTPStatus.NO_CONTENT)
 

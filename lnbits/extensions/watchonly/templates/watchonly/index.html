@@ -692,22 +692,24 @@
         var self = this
         var link = _.findWhere(this.walletLinks, {id: linkId})
         LNbits.utils
-          .confirmDialog('Are you sure you want to delete this pay link?')
-          .onOk(function () {
-            LNbits.api
-              .request(
+          .confirmDialog(
+            'Are you sure you want to delete this watch only wallet?'
+          )
+          .onOk(async () => {
+            try {
+              await LNbits.api.request(
                 'DELETE',
                 '/watchonly/api/v1/wallet/' + linkId,
-                self.g.user.wallets[0].adminkey
+                this.g.user.wallets[0].adminkey
               )
-              .then(function (response) {
-                self.walletLinks = _.reject(self.walletLinks, function (obj) {
-                  return obj.id === linkId
-                })
+              this.walletLinks = _.reject(this.walletLinks, function (obj) {
+                return obj.id === linkId
               })
-              .catch(function (error) {
-                LNbits.utils.notifyApiError(error)
-              })
+              await this.refreshAddresses()
+              await this.scanAddressWithAmountUTXOs()
+            } catch (err) {
+              LNbits.utils.notifyApiError(error)
+            }
           })
       },
       exportCSV: function () {
