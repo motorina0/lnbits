@@ -23,7 +23,7 @@ from .crud import (
 )
 from .models import CreateWallet
 
-ADDRESS_GAP_LIMIT = 20
+RECEIVE_GAP_LIMIT = 20
 CHANGE_GAP_LIMIT = 5
 
 ###################WALLETS#############################
@@ -111,7 +111,8 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
     addresses = await get_addresses(wallet_id)
     
     if not addresses:
-        await create_fresh_addresses(wallet_id, 0, ADDRESS_GAP_LIMIT)
+        await create_fresh_addresses(wallet_id, 0, RECEIVE_GAP_LIMIT)
+        await create_fresh_addresses(wallet_id, 0, CHANGE_GAP_LIMIT, True)
         addresses = await get_addresses(wallet_id)
 
     last_address_with_amount = list(filter(lambda addr: addr.amount > 0, addresses))[-1:]
@@ -119,7 +120,7 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
     if last_address_with_amount:
         current_index = addresses[-1].address_index
         address_index = last_address_with_amount[0].address_index
-        await create_fresh_addresses(wallet_id, current_index + 1, address_index + ADDRESS_GAP_LIMIT)
+        await create_fresh_addresses(wallet_id, current_index + 1, address_index + RECEIVE_GAP_LIMIT)
 
     return [address.dict() for address in addresses]
 

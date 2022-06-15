@@ -1,3 +1,4 @@
+from pickle import FALSE
 from typing import List, Optional
 
 
@@ -92,7 +93,7 @@ async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
     return await get_address(address)
 
 
-async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_address_index: int) -> List[Addresses]:
+async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_address_index: int, change_address = False) -> List[Addresses]:
     if (start_address_index > end_address_index):
         return None
 
@@ -100,9 +101,11 @@ async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_a
     if not wallet:
         return None
 
+    branch_index = 1 if change_address else 0
+
     for address_index in range(start_address_index, end_address_index):
         print('### wallet_id', wallet_id, address_index)
-        address = await derive_address(wallet.masterpub, address_index)
+        address = await derive_address(wallet.masterpub, address_index, branch_index)
         await db.execute(
         """
         INSERT INTO watchonly.addresses (
