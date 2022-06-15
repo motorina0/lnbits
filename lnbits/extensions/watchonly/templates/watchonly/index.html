@@ -133,7 +133,7 @@
       <div v-if="scanning == true">
         <!-- todo: make height smaller -->
         <q-linear-progress
-          :value="scanCount / Addresses.data.length"
+          :value="scanCount / addresses.data.length"
           size="10px"
           color="primary"
           class="q-mt-sm"
@@ -153,7 +153,7 @@
           <q-tab-panel name="coins">
             <div class="row items-center no-wrap q-mb-md">
               <div class="col">
-                <h5 class="text-subtitle1 q-my-none">Transactions</h5>
+                <h5 class="text-subtitle1 q-my-none">UTXOs</h5>
               </div>
               <div class="col-auto">
                 <q-input
@@ -271,8 +271,8 @@
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="Addresses.show" position="top">
-    <q-card v-if="Addresses.data" class="q-pa-lg lnbits__dialog-card">
+  <q-dialog v-model="addresses.show" position="top">
+    <q-card v-if="addresses.data" class="q-pa-lg lnbits__dialog-card">
       {% raw %}
       <h5 class="text-subtitle1 q-my-none">Addresses</h5>
       <q-separator></q-separator><br />
@@ -298,7 +298,7 @@
       </q-responsive>
       <p style="word-break: break-all">
         <q-scroll-area style="height: 200px; max-width: 100%">
-          <q-list bordered v-for="data in Addresses.data.slice().reverse()">
+          <q-list bordered v-for="data in addresses.data.slice().reverse()">
             <q-item>
               <q-item-section>{{ data.address }}</q-item-section>
               <q-btn
@@ -382,7 +382,7 @@
         walletLinks: [],
         currentaddress: '34dq7v1SbXHBuF688EZGJK3gJav1bcURkR', // todo: fix init
         tab: 'coins',
-        Addresses: {
+        addresses: {
           // todo: lower-case
           show: false,
           data: []
@@ -481,10 +481,10 @@
       },
       refreshAddresses: async function () {
         const wallets = await this.getWatchOnlyWallets()
-        this.Addresses.data = []
+        this.addresses.data = []
         for (const {id, address_no} of wallets) {
           const addrs = await this.getAddressesForWallet(id)
-          this.Addresses.data.push(...addrs)
+          this.addresses.data.push(...addrs)
         }
       },
       getAddressesForWallet: async function (walletId) {
@@ -524,9 +524,9 @@
             this.g.user.wallets[0].inkey
           )
           .then(function (response) {
-            self.Addresses.data = response.data
+            self.addresses.data = response.data
             self.currentaddress =
-              self.Addresses.data[self.Addresses.data.length - 1].address
+              self.addresses.data[self.addresses.data.length - 1].address
           })
       },
       getMempool: function () {
@@ -619,7 +619,7 @@
         // this.updateAmountForAddress('gPK5jjkqmd5qgKq28DLzsY', 0)
         // return
         try {
-          for (addrData of this.Addresses.data) {
+          for (addrData of this.addresses.data) {
             const utxos = await this.getAddressTxsUtxoDelayed(addrData.address)
             this.updateUtxosForAddress(addrData, utxos)
             this.scanCount++
@@ -662,7 +662,7 @@
         var self = this
         this.getAddressesForWallet(linkId)
         self.current = linkId
-        self.Addresses.show = true
+        self.addresses.show = true
       },
       sendFormData: function () {
         var wallet = this.g.user.wallets[0]
