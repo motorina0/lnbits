@@ -160,7 +160,7 @@
                   borderless
                   dense
                   debounce="300"
-                  v-model="TxosTable.filter"
+                  v-model="UtxoTable.filter"
                   placeholder="Search"
                 >
                   <template v-slot:append>
@@ -174,9 +174,9 @@
               dense
               :data="utxos.data"
               row-key="txid"
-              :columns="TxosTable.columns"
-              :pagination.sync="TxosTable.pagination"
-              :filter="TxosTable.filter"
+              :columns="UtxoTable.columns"
+              :pagination.sync="UtxoTable.pagination"
+              :filter="UtxoTable.filter"
             >
               <template v-slot:header="props">
                 <q-tr :props="props">
@@ -419,7 +419,7 @@
             rowsPerPage: 10
           }
         },
-        TxosTable: {
+        UtxoTable: {
           columns: [
             {
               name: 'confirmed',
