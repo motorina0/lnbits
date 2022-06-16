@@ -80,7 +80,7 @@
                   :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
                   @click="openQrCodeDialog(props.row.id)"
                 >
-                  <q-tooltip> Adresses </q-tooltip>
+                  <q-tooltip> Addresses </q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -592,7 +592,6 @@
         }
       },
       updateUtxosForAddress: function (addressData, utxos = []) {
-        console.log('### addUtxos', addressData, utxos)
         utxos.forEach(utxo => {
           this.utxos.data.push({
             txid: utxo.txid,
@@ -618,20 +617,37 @@
         )
         this.updateAmountForAddress(addressData.id, addressTotal)
       },
-      scanAllAddressUTXOs: async function (addresses) {
+      scanAllAddressUTXOs: async function () {
         await this.refreshAddresses()
-        this.scanAddressUTXOs(this.addresses.data)
+        let addresses = this.addresses.data
+        this.utxos.data = []
+        // Loop while new funds are found on the gap adresses.
+        // Use 1000 limit as a safety check (scan 20 000 addresses max)
+        for (let i = 0; i < 1000 && addresses.length; i++) {
+          await this.updateUtxosForAddresses(addresses)
+          const oldAddresses = this.addresses.data.slice(0)
+          await this.refreshAddresses()
+          const newAddresses = this.addresses.data.slice(0)
+          // check if gap addresses have been extended
+          addresses = newAddresses.filter(
+            newAddr => !oldAddresses.find(oldAddr => oldAddr.id === newAddr.id)
+          )
+          if (addresses.length) {
+            this.$q.notify({
+              type: 'positive',
+              message: 'Funds found! Scanning for more...',
+              timeout: 5000
+            })
+          }
+        }
       },
       scanAddressWithAmountUTXOs: async function () {
         const addresses = this.addresses.data.filter(a => a.amount)
-        this.scanAddressUTXOs(addresses)
-      },
-      scanAddressUTXOs: async function (addresses) {
-        console.log('### addresses', addresses)
-        if (!addresses) return
-
-        this.scan = {scanning: true, scanCount: addresses.length, scanIndex: 0}
         this.utxos.data = []
+        await this.updateUtxosForAddresses(addresses)
+      },
+      updateUtxosForAddresses: async function (addresses = []) {
+        this.scan = {scanning: true, scanCount: addresses.length, scanIndex: 0}
 
         try {
           for (addrData of addresses) {

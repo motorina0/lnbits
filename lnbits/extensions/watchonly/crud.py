@@ -104,7 +104,6 @@ async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_a
     branch_index = 1 if change_address else 0
 
     for address_index in range(start_address_index, end_address_index):
-        print('### wallet_id', wallet_id, address_index)
         address = await derive_address(wallet.masterpub, address_index, branch_index)
         await db.execute(
         """
@@ -129,8 +128,6 @@ async def get_address(address: str) -> Optional[Addresses]:
 
 
 async def get_addresses(wallet_id: str) -> List[Addresses]:
-    # wallet = await get_watch_wallet(wallet_id)
-    print('### get_addresses', wallet_id)
     rows = await db.fetchall(
         """
             SELECT * FROM watchonly.addresses WHERE wallet = ?
@@ -141,7 +138,6 @@ async def get_addresses(wallet_id: str) -> List[Addresses]:
     return [Addresses(**row) for row in rows]
 
 async def update_address(id: str, amount: int) -> Optional[Addresses]:
-    print('### update_address', id, amount)
     await db.execute(
         "UPDATE watchonly.addresses SET amount =? WHERE id = ? ",
         (amount, id),

@@ -97,7 +97,6 @@ async def api_fresh_address(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
 async def api_update_address_amount(id:str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)):
     body = await req.json()
     amount = int(body['amount'])
-    print('### api_update_address', id, amount)
     return  await update_address(id, amount)
 
 @watchonly_ext.get("/api/v1/addresses/{wallet_id}")
@@ -131,6 +130,7 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
         address_index = last_change_address[0].address_index
         await create_fresh_addresses(wallet_id, current_index + 1, address_index + CHANGE_GAP_LIMIT, True)
 
+    addresses = await get_addresses(wallet_id)
     return [address.dict() for address in addresses]
 
 
