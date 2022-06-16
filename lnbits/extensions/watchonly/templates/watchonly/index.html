@@ -422,17 +422,24 @@
         TxosTable: {
           columns: [
             {
-              name: 'value',
-              align: 'left',
-              label: 'Value',
-              field: 'value',
-              sortable: true
-            },
-            {
               name: 'confirmed',
               align: 'center',
               label: 'Confirmed',
               field: 'confirmed',
+              sortable: true
+            },
+            {
+              name: 'address',
+              align: 'left',
+              label: 'Address',
+              field: 'address',
+              sortable: true
+            },
+            {
+              name: 'value',
+              align: 'left',
+              label: 'Value',
+              field: 'value',
               sortable: true
             },
             {
@@ -445,7 +452,7 @@
             {
               name: 'txid',
               align: 'left',
-              label: 'ID',
+              label: 'TX ID',
               field: 'txid',
               sortable: true
             }
@@ -589,6 +596,7 @@
         utxos.forEach(utxo => {
           this.utxos.data.push({
             txid: utxo.txid,
+            address: addressData.address,
             confirmed: utxo.status.confirmed,
             value: utxo.value,
             date:
