@@ -214,6 +214,7 @@
               <div class="col">
                 <q-select
                   filled
+                  clearable
                   dense
                   emit-value
                   v-model="addresses.selectedWallet"
@@ -237,26 +238,22 @@
               </div>
             </div>
             <q-table
+              style="height: 400px"
               flat
               dense
-              :data="addresses.data"
+              :data="getReceiveAddresses()"
               row-key="id"
+              virtual-scroll
               :columns="AddressesTable.columns"
               :pagination.sync="AddressesTable.pagination"
               :filter="AddressesTable.filter"
             >
-              <template v-slot:body="props">
-                <q-tr :props="props">
-                  <q-td
-                    v-for="col in props.cols"
-                    :key="col.name"
-                    :props="props"
-                    auto-width
-                    :class="col.value == true ? 'text-green-13 text-weight-bold' : ''"
-                  >
-                    {{ col.name == 'amount' ? satBtc(col.value) : col.value }}
-                  </q-td>
-                </q-tr>
+              <template v-slot:body-cell-wallet="props">
+                <q-td :props="props">
+                  <div class="my-table-details">
+                    {{ getWalletName(props.row.wallet) }}
+                  </div>
+                </q-td>
               </template>
             </q-table>
           </q-tab-panel>
@@ -405,7 +402,7 @@
         )
       : ''
     const mP = obj.masterpub || ''
-    obj.label = `${obj.title}    - ${mP.substring(0, 10)}...${mP.slice(-10)}`
+    obj.label = `${obj.title} - ${mP.substring(0, 10)}...${mP.slice(-10)}`
     return obj
   }
   var mapAddresses = function (obj) {
@@ -528,11 +525,20 @@
               field: 'amount',
               sortable: true
             },
+            {
+              name: 'wallet',
+              align: 'left',
+              label: 'Wallet',
+              field: 'wallet',
+              sortable: true
+            }
           ],
           pagination: {
-            rowsPerPage: 10
+            rowsPerPage: 0,
+            sortBy: 'amount',
+            descending: true
           },
-          uxtosFilter: ''
+          addressesFilter: ''
         },
 
         formDialog: {
@@ -548,6 +554,19 @@
     },
 
     methods: {
+      getWalletName: function (walletId) {
+        const wallet = this.walletLinks.find(wl => wl.id === walletId)
+        return wallet.title || 'unknown'
+      },
+      getReceiveAddresses: function () {
+        const selectedWalletId = this.addresses.selectedWallet?.id
+        const addresses = this.addresses.data.filter(
+          a =>
+            a.branch_index === 0 &&
+            (!selectedWalletId || a.wallet === selectedWalletId)
+        )
+        return addresses
+      },
       getAddressDetails: function (address) {
         LNbits.api
           .request(
@@ -569,6 +588,7 @@
           const addrs = await this.getAddressesForWallet(id)
           this.addresses.data.push(...addrs)
         }
+        console.log('### refreshAddresses', this.addresses.data)
       },
       getAddressesForWallet: async function (walletId) {
         try {
@@ -785,8 +805,11 @@
       },
       deleteWalletLink: function (linkId) {
         console.log('### this.walletLinks', this.walletLinks)
-        console.log('### addresses.selectedWallet', this.addresses.selectedWallet)
-        
+        console.log(
+          '### addresses.selectedWallet',
+          this.addresses.selectedWallet
+        )
+
         var self = this
         var link = _.findWhere(this.walletLinks, {id: linkId})
         LNbits.utils
