@@ -210,7 +210,55 @@
             <h3>H</h3>
           </q-tab-panel>
           <q-tab-panel name="addresses">
-            <h3>A</h3>
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col">
+                <q-select
+                  filled
+                  dense
+                  emit-value
+                  v-model="addresses.selectedWallet"
+                  :options="walletLinks"
+                  label="Watch Only Wallet"
+                ></q-select>
+              </div>
+              <div class="col"></div>
+              <div class="col-auto">
+                <q-input
+                  borderless
+                  dense
+                  debounce="300"
+                  v-model="AddressesTable.filter"
+                  placeholder="Search"
+                >
+                  <template v-slot:append>
+                    <q-icon name="search"></q-icon>
+                  </template>
+                </q-input>
+              </div>
+            </div>
+            <q-table
+              flat
+              dense
+              :data="addresses.data"
+              row-key="id"
+              :columns="AddressesTable.columns"
+              :pagination.sync="AddressesTable.pagination"
+              :filter="AddressesTable.filter"
+            >
+              <template v-slot:body="props">
+                <q-tr :props="props">
+                  <q-td
+                    v-for="col in props.cols"
+                    :key="col.name"
+                    :props="props"
+                    auto-width
+                    :class="col.value == true ? 'text-green-13 text-weight-bold' : ''"
+                  >
+                    {{ col.name == 'amount' ? satBtc(col.value) : col.value }}
+                  </q-td>
+                </q-tr>
+              </template>
+            </q-table>
           </q-tab-panel>
         </q-tab-panels>
       </q-card-section>
@@ -356,6 +404,8 @@
           'YYYY-MM-DD HH:mm'
         )
       : ''
+    const mP = obj.masterpub || ''
+    obj.label = `${obj.title}    - ${mP.substring(0, 10)}...${mP.slice(-10)}`
     return obj
   }
   var mapAddresses = function (obj) {
@@ -387,9 +437,9 @@
         currentaddress: '34dq7v1SbXHBuF688EZGJK3gJav1bcURkR', // todo: fix init
         tab: 'coins',
         addresses: {
-          // todo: lower-case
           show: false,
-          data: []
+          data: [],
+          selectedWallet: null
         },
         utxos: {
           data: [],
@@ -462,6 +512,28 @@
           },
           uxtosFilter: ''
         },
+        AddressesTable: {
+          columns: [
+            {
+              name: 'address',
+              align: 'left',
+              label: 'Address',
+              field: 'address',
+              sortable: true
+            },
+            {
+              name: 'amount',
+              align: 'left',
+              label: 'Amount',
+              field: 'amount',
+              sortable: true
+            },
+          ],
+          pagination: {
+            rowsPerPage: 10
+          },
+          uxtosFilter: ''
+        },
 
         formDialog: {
           show: false,
@@ -519,7 +591,6 @@
             wallet.adminkey,
             {amount}
           )
-          console.log('### updateAmountForAddress', data)
         } catch (err) {
           LNbits.utils.notifyApiError(err)
         }
@@ -713,6 +784,9 @@
           })
       },
       deleteWalletLink: function (linkId) {
+        console.log('### this.walletLinks', this.walletLinks)
+        console.log('### addresses.selectedWallet', this.addresses.selectedWallet)
+        
         var self = this
         var link = _.findWhere(this.walletLinks, {id: linkId})
         LNbits.utils
