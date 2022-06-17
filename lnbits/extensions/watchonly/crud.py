@@ -74,7 +74,7 @@ async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
     # todo: filter on DB side
     wallet_addresses = await get_addresses(wallet_id)
     receive_addresses = list(filter(lambda addr: addr.branch_index == 0 and addr.amount != 0, wallet_addresses))
-    last_receive_index = receive_addresses.pop().address_index if receive_addresses else None
+    last_receive_index = receive_addresses.pop().address_index if receive_addresses else -1
     address_index = last_receive_index if last_receive_index > wallet.address_no else  wallet.address_no
 
     address = await get_address_at_index(wallet_id, 0, address_index + 1)
