@@ -194,7 +194,7 @@
               style="height: 400px"
               flat
               dense
-              :data="getReceiveAddresses()"
+              :data="getFilteredAddresses()"
               row-key="id"
               virtual-scroll
               :columns="AddressesTable.columns"
@@ -490,7 +490,11 @@
           data: [],
           selectedWallet: null,
           note: '',
-          filterOptions: ['Change Addresses', 'Gap Addresses'],
+          filterOptions: [
+            'Show Change Addresses',
+            'Show Gap Addresses',
+            'Only With Amount'
+          ],
           filterValues: []
         },
         utxos: {
@@ -626,14 +630,25 @@
         const wallet = this.walletLinks.find(wl => wl.id === walletId)
         return wallet ? wallet.title : 'unknown'
       },
-      getReceiveAddresses: function () {
+      getFilteredAddresses: function () {
         const selectedWalletId = this.addresses.selectedWallet?.id
-        const includeChangeAddrs = (this.addresses.filterValues || []).includes(
-          'Change Addresses'
-        )
+        const filter = this.addresses.filterValues || []
+        const includeChangeAddrs = filter.includes('Show Change Addresses')
+        const includeGapAddrs = filter.includes('Show Gap Addresses')
+        const excludeNoAmount = filter.includes('Only With Amount')
+
+        const walletsLimit = this.walletLinks.reduce((r, w) => {
+          r[`_${w.id}`] = w.address_no
+          return r
+        }, {})
+
         const addresses = this.addresses.data.filter(
           a =>
-            (a.branch_index === 0 || includeChangeAddrs) &&
+            (includeChangeAddrs || a.branch_index === 0) &&
+            (includeGapAddrs ||
+              a.branch_index === 1 ||
+              a.address_index <= walletsLimit[`_${a.wallet}`]) &&
+            !(excludeNoAmount && a.amount === 0) &&
             (!selectedWalletId || a.wallet === selectedWalletId)
         )
         return addresses

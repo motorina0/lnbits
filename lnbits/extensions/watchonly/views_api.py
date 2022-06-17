@@ -20,6 +20,7 @@ from .crud import (
     get_watch_wallet,
     get_watch_wallets,
     update_mempool,
+    update_watch_wallet,
 )
 from .models import CreateWallet
 
@@ -94,7 +95,7 @@ async def api_fresh_address(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
     return address.dict()
 
 @watchonly_ext.put("/api/v1/address/{id}")
-async def api_update_address_amount(id:str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)):
+async def api_update_address(id:str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)):
     body = await req.json()
     params = {}
     if 'amount' in body:
@@ -102,7 +103,15 @@ async def api_update_address_amount(id:str, req: Request, w: WalletTypeInfo = De
     if 'note' in body:
         params['note'] = str(body['note'])
 
-    return  await update_address(**params, id = id)
+    address = await update_address(**params, id = id)
+
+    wallet = await get_watch_wallet(address.wallet) if address.branch_index == 0 and address.amount != 0 else None
+    
+    if wallet and wallet.address_no < address.address_index:
+        print('### wallet', wallet)
+        print('### address', address)
+        await update_watch_wallet(address.wallet, **{"address_no": address.address_index})
+    return address
 
 @watchonly_ext.get("/api/v1/addresses/{wallet_id}")
 async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)):
