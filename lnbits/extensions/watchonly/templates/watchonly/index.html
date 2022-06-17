@@ -6,7 +6,7 @@
       <q-card-section>
         {% raw %}
         <q-btn unelevated color="primary" @click="formDialog.show = true"
-          >New wallet
+          >Add Wallet Account
         </q-btn>
         <q-btn unelevated color="primary" icon="edit">
           <div class="cursor-pointer">
@@ -30,7 +30,7 @@
       <q-card-section>
         <div class="row items-center no-wrap q-mb-md">
           <div class="col">
-            <h5 class="text-subtitle1 q-my-none">Wallets</h5>
+            <h5 class="text-subtitle1 q-my-none">Wallet Accounts</h5>
           </div>
           <div class="col-auto">
             <q-input
@@ -160,7 +160,7 @@
                   emit-value
                   v-model="addresses.selectedWallet"
                   :options="walletLinks"
-                  label="Watch Only Wallet"
+                  label="Watch Only Wallet Account"
                 ></q-select>
               </div>
               <div class="col"></div>
@@ -190,9 +190,9 @@
               :filter="AddressesTable.filter"
             >
               <template v-slot:body-cell-actions="props">
-                <div class="row">
-                  <div class="cell">
-                    <q-td :props="props">
+                <q-td :props="props">
+                  <div class="row">
+                    <div class="cell">
                       <q-btn
                         unelevated
                         dense
@@ -200,24 +200,21 @@
                         icon="qr_code"
                         :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
                         @click="openQrCodeDialog(props.row)"
-                      >
+                      ></q-btn>
+                    </div>
+                    <div class="cell">
+                      <q-btn
+                        v-if="props.row.amount"
+                        flat
+                        dense
+                        size="sm"
+                        icon="launch"
+                        type="a"
+                        :href="mempool.endpoint + '/address/' + props.row.address"
+                        target="_blank"
+                      ></q-btn>
+                    </div>
                   </div>
-                  <div class="cell">
-                    <q-btn
-                    v-if="props.row.amount"
-                    flat
-                    dense
-                    size="sm"
-                    icon="launch"
-                    type="a"
-                    :href="mempool.endpoint + '/address/' + props.row.address"
-                    target="_blank"
-                  ></q-btn>
-                  </div>
-                </div>
-                
-                 
-                 
                 </q-td>
               </template>
               <template v-slot:body-cell-wallet="props">
@@ -345,7 +342,7 @@
                 formDialog.data.masterpub == null ||
                 formDialog.data.title == null"
             type="submit"
-            >Create Watch-only Wallet</q-btn
+            >Add Watch-only Account</q-btn
           >
           <q-btn v-close-popup flat color="grey" class="q-ml-auto"
             >Cancel</q-btn
