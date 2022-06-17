@@ -152,7 +152,7 @@
           </q-tab-panel>
           <q-tab-panel name="addresses">
             <div class="row items-center no-wrap q-mb-md">
-              <div class="col">
+              <div class="col q-pr-lg">
                 <q-select
                   filled
                   clearable
@@ -160,10 +160,22 @@
                   emit-value
                   v-model="addresses.selectedWallet"
                   :options="walletLinks"
-                  label="Watch Only Wallet Account"
+                  label="Wallet Account"
                 ></q-select>
               </div>
-              <div class="col"></div>
+              <div class="col q-pr-lg">
+                <q-select
+                  filled
+                  clearable
+                  dense
+                  emit-value
+                  multiple
+                  :options="addresses.filterOptions"
+                  v-model="addresses.filterValues"
+                  :options="walletLinks"
+                  label="Filter"
+                ></q-select>
+              </div>
               <div class="col-auto">
                 <q-input
                   borderless
@@ -232,7 +244,16 @@
               </template>
               <template v-slot:body-cell-address="props">
                 <q-td :props="props">
-                  <div>{{props.row.address}}</div>
+                  <div>
+                    {{props.row.address}}
+                    <q-badge
+                      v-if="props.row.branch_index === 1"
+                      color="orange"
+                      class="q-mr-md"
+                    >
+                      change
+                    </q-badge>
+                  </div>
                 </q-td>
               </template>
             </q-table>
@@ -462,14 +483,15 @@
         walletLinks: [],
 
         currentAddress: null,
-        currentWallet: null,
 
         tab: 'addresses',
         addresses: {
           show: false,
           data: [],
           selectedWallet: null,
-          note: ''
+          note: '',
+          filterOptions: ['Change Addresses', 'Gap Addresses'],
+          filterValues: []
         },
         utxos: {
           data: [],
@@ -558,17 +580,17 @@
               sortable: true
             },
             {
-              name: 'note',
-              align: 'left',
-              label: 'Note',
-              field: 'note',
-              sortable: true
-            },
-            {
               name: 'amount',
               align: 'left',
               label: 'Amount',
               field: 'amount',
+              sortable: true
+            },
+            {
+              name: 'note',
+              align: 'left',
+              label: 'Note',
+              field: 'note',
               sortable: true
             },
             {
@@ -606,9 +628,12 @@
       },
       getReceiveAddresses: function () {
         const selectedWalletId = this.addresses.selectedWallet?.id
+        const includeChangeAddrs = (this.addresses.filterValues || []).includes(
+          'Change Addresses'
+        )
         const addresses = this.addresses.data.filter(
           a =>
-            a.branch_index === 0 &&
+            (a.branch_index === 0 || includeChangeAddrs) &&
             (!selectedWalletId || a.wallet === selectedWalletId)
         )
         return addresses
@@ -859,10 +884,7 @@
       },
       deleteWalletLink: function (linkId) {
         console.log('### this.walletLinks', this.walletLinks)
-        console.log(
-          '### addresses.selectedWallet',
-          this.addresses.selectedWallet
-        )
+        console.log('### addresses.filterValues', this.addresses.filterValues)
 
         var self = this
         var link = _.findWhere(this.walletLinks, {id: linkId})
