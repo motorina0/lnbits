@@ -91,7 +91,7 @@ async def api_wallet_delete(wallet_id, w: WalletTypeInfo = Depends(require_admin
 @watchonly_ext.get("/api/v1/address/{wallet_id}")
 async def api_fresh_address(wallet_id, w: WalletTypeInfo = Depends(get_key_type)):
     address = await get_fresh_address(wallet_id)
-    return [address.dict()]
+    return address.dict()
 
 @watchonly_ext.put("/api/v1/address/{id}")
 async def api_update_address_amount(id:str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)):

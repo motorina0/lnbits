@@ -71,26 +71,21 @@ async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
     if not wallet:
         return None
 
-    address_index = wallet.address_no + 1
-    address = await derive_address(wallet.masterpub, address_index)
+    # todo: filter on DB side
+    wallet_addresses = await get_addresses(wallet_id)
+    receive_addresses = list(filter(lambda addr: addr.branch_index == 0 and addr.amount != 0, wallet_addresses))
+    last_receive_index = receive_addresses.pop().address_index if receive_addresses else None
+    address_index = last_receive_index if last_receive_index > wallet.address_no else  wallet.address_no
 
-    await update_watch_wallet(wallet_id=wallet_id, address_no=address_index)
-    masterpub_id = urlsafe_short_hash()
-    await db.execute(
-        """
-        INSERT INTO watchonly.addresses (
-            id,
-            address,
-            wallet,
-            amount,
-            address_index
-        )
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (masterpub_id, address, wallet_id, 0, address_index),
-    )
+    address = await get_address_at_index(wallet_id, 0, address_index + 1)
 
-    return await get_address(address)
+    if not address:
+        addresses = await create_fresh_addresses(wallet_id, address_index + 1, address_index + 2)
+        address = addresses.pop()
+
+    await update_watch_wallet(wallet_id, **{"address_no": address_index + 1})
+
+    return address
 
 
 async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_address_index: int, change_address = False) -> List[Addresses]:
@@ -103,8 +98,10 @@ async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_a
 
     branch_index = 1 if change_address else 0
 
+    # todo: use batch insert (?)
     for address_index in range(start_address_index, end_address_index):
         address = await derive_address(wallet.masterpub, address_index, branch_index)
+        
         await db.execute(
         """
         INSERT INTO watchonly.addresses (
@@ -120,9 +117,31 @@ async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_a
         (urlsafe_short_hash(), address, wallet_id, 0, branch_index, address_index),
     )
 
+    # return fresh addresses
+    rows = await db.fetchall(
+        """
+            SELECT * FROM watchonly.addresses 
+            WHERE wallet = ? AND branch_index = ? AND address_index >= ? AND address_index < ?
+            ORDER BY branch_index, address_index
+        """,
+        (wallet_id, branch_index, start_address_index, end_address_index)
+    )
+
+    return [Addresses(**row) for row in rows]
+
 async def get_address(address: str) -> Optional[Addresses]:
     row = await db.fetchone(
         "SELECT * FROM watchonly.addresses WHERE address = ?", (address,)
+    )
+    return Addresses.from_row(row) if row else None
+
+async def get_address_at_index(wallet_id: str, branch_index: int, address_index: int) -> Optional[Addresses]:
+    row = await db.fetchone(
+        """
+            SELECT * FROM watchonly.addresses 
+            WHERE wallet = ? AND branch_index = ? AND address_index = ?
+        """, 
+        (wallet_id, branch_index, address_index,)
     )
     return Addresses.from_row(row) if row else None
 
@@ -132,9 +151,10 @@ async def get_addresses(wallet_id: str) -> List[Addresses]:
         """
             SELECT * FROM watchonly.addresses WHERE wallet = ?
             ORDER BY branch_index, address_index
-        """, (wallet_id,)
+        """,
+        (wallet_id,)
     )
-    # if gap beteen address_no and size < 20, generate the rest
+
     return [Addresses(**row) for row in rows]
 
 async def update_address(id: str, amount: int) -> Optional[Addresses]:
