@@ -189,6 +189,37 @@
               :pagination.sync="AddressesTable.pagination"
               :filter="AddressesTable.filter"
             >
+              <template v-slot:body-cell-actions="props">
+                <div class="row">
+                  <div class="cell">
+                    <q-td :props="props">
+                      <q-btn
+                        unelevated
+                        dense
+                        size="sm"
+                        icon="qr_code"
+                        :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
+                        @click="openQrCodeDialog(props.row)"
+                      >
+                  </div>
+                  <div class="cell">
+                    <q-btn
+                    v-if="props.row.amount"
+                    flat
+                    dense
+                    size="sm"
+                    icon="launch"
+                    type="a"
+                    :href="mempool.endpoint + '/address/' + props.row.address"
+                    target="_blank"
+                  ></q-btn>
+                  </div>
+                </div>
+                
+                 
+                 
+                </q-td>
+              </template>
               <template v-slot:body-cell-wallet="props">
                 <q-td :props="props">
                   <div>{{ getWalletName(props.row.wallet) }}</div>
@@ -204,28 +235,7 @@
               </template>
               <template v-slot:body-cell-address="props">
                 <q-td :props="props">
-                  <div>
-                    <q-btn
-                      unelevated
-                      dense
-                      size="sm"
-                      icon="qr_code"
-                      :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
-                      @click="openQrCodeDialog(props.row.address)"
-                    >
-                    </q-btn>
-                    {{props.row.address}}
-                    <q-btn
-                      v-if="props.row.amount"
-                      flat
-                      dense
-                      size="sm"
-                      icon="launch"
-                      type="a"
-                      :href="mempool.endpoint + '/address/' + props.row.address"
-                      target="_blank"
-                    ></q-btn>
-                  </div>
+                  <div>{{props.row.address}}</div>
                 </q-td>
               </template>
             </q-table>
@@ -351,40 +361,47 @@
 
       <h5 class="text-subtitle1 q-my-none">Address Details</h5>
       <q-separator></q-separator><br />
-      <p>
-        {{ currentAddress }}
+
+      <q-responsive :ratio="1" class="q-mx-xl q-mb-md">
+        <qrcode
+          v-if="currentAddress"
+          :value="currentAddress.address"
+          :options="{width: 800}"
+          class="rounded-borders"
+        ></qrcode>
+      </q-responsive>
+      <p v-if="currentAddress">
+        {{ currentAddress.address }}
         <q-btn
           flat
           dense
           size="ms"
           icon="launch"
           type="a"
-          :href="mempool.endpoint + '/address/' + currentAddress"
+          :href="mempool.endpoint + '/address/' + currentAddress.address"
           target="_blank"
         ></q-btn>
       </p>
-      <p>
+      <p v-if="currentAddress">
         <q-input
           filled
           dense
-          v-model.trim="currentAddressNote"
+          v-model.trim="addresses.note"
           type="text"
           label="Note"
         ></q-input>
       </p>
-      <q-responsive :ratio="1" class="q-mx-xl q-mb-md">
-        <qrcode
+      <div class="row q-mt-lg q-gutter-sm">
+        <q-btn
           v-if="currentAddress"
-          :value="currentAddress"
-          :options="{width: 800}"
-          class="rounded-borders"
-        ></qrcode>
-      </q-responsive>
-
-      <div class="row items-center">
-        <div class="col text-center">
-          <q-btn v-close-popup flat color="grey">Close</q-btn>
-        </div>
+          outline
+          v-close-popup
+          color="grey"
+          @click="updateNoteForAddress(currentAddress)"
+          class="q-ml-sm"
+          >Update Note</q-btn
+        >
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
       </div>
     </q-card>
   </q-dialog>
@@ -447,15 +464,15 @@
 
         walletLinks: [],
 
-        currentAddress: '',
-        currentAddressNote: null,
+        currentAddress: null,
         currentWallet: null,
 
         tab: 'addresses',
         addresses: {
           show: false,
           data: [],
-          selectedWallet: null
+          selectedWallet: null,
+          note: ''
         },
         utxos: {
           data: [],
@@ -531,10 +548,23 @@
         AddressesTable: {
           columns: [
             {
+              name: 'actions',
+              align: 'left',
+              label: '',
+              field: 'actions'
+            },
+            {
               name: 'address',
               align: 'left',
               label: 'Address',
               field: 'address',
+              sortable: true
+            },
+            {
+              name: 'note',
+              align: 'left',
+              label: 'Note',
+              field: 'note',
               sortable: true
             },
             {
@@ -634,6 +664,21 @@
           LNbits.utils.notifyApiError(err)
         }
       },
+      updateNoteForAddress: async function (addressData) {
+        try {
+          const wallet = this.g.user.wallets[0] // todo: find active wallet
+          addressData.note = this.addresses.note
+          const {data} = await LNbits.api.request(
+            'PUT',
+            `/watchonly/api/v1/address/${addressData.id}`,
+            wallet.adminkey,
+            {note: addressData.note}
+          )
+        } catch (err) {
+          LNbits.utils.notifyApiError(err)
+        }
+      },
+
       openGetFreshAddressDialog: async function (walletId) {
         const wallet = this.g.user.wallets[0] // todo: find active wallet
         const {data} = await LNbits.api.request(
@@ -641,7 +686,7 @@
           `/watchonly/api/v1/address/${walletId}`,
           this.g.user.wallets[0].inkey
         )
-        this.openQrCodeDialog(data.address)
+        this.openQrCodeDialog(data)
       },
       getMempool: function () {
         var self = this
@@ -684,13 +729,13 @@
         } = mempoolJS()
         try {
           console.log('### IN mempool call', address)
-          await sleep(50)
+          await sleep(250)
           return await addressesAPI.getAddressTxsUtxo({
             address
           })
         } catch (err) {
           if (retryCount > 10) throw err
-          console.log('### ERR mempool call', (retryCount + 1) * 500, address)
+          console.log('### ERR mempool call', (retryCount + 1) * 1000, address)
           await sleep((retryCount + 1) * 1000)
           return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
         }
@@ -740,7 +785,7 @@
             this.$q.notify({
               type: 'positive',
               message: 'Funds found! Scanning for more...',
-              timeout: 5000
+              timeout: 10000
             })
           }
         }
@@ -794,6 +839,7 @@
       },
       openQrCodeDialog: function (address) {
         this.currentAddress = address
+        this.addresses.note = address.note || ''
         this.addresses.show = true
       },
       sendFormData: function () {

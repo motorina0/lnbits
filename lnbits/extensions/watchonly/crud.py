@@ -145,7 +145,6 @@ async def get_address_at_index(wallet_id: str, branch_index: int, address_index:
     )
     return Addresses.from_row(row) if row else None
 
-
 async def get_addresses(wallet_id: str) -> List[Addresses]:
     rows = await db.fetchall(
         """
@@ -157,10 +156,12 @@ async def get_addresses(wallet_id: str) -> List[Addresses]:
 
     return [Addresses(**row) for row in rows]
 
-async def update_address(id: str, amount: int) -> Optional[Addresses]:
+async def update_address(id: str, **kwargs) -> Optional[Addresses]:
+    q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
+
     await db.execute(
-        "UPDATE watchonly.addresses SET amount =? WHERE id = ? ",
-        (amount, id),
+        f"""UPDATE watchonly.addresses SET {q} WHERE id = ? """,
+        (*kwargs.values(), id),
     )
     row = await db.fetchone(
         "SELECT * FROM watchonly.addresses WHERE id = ?", (id)

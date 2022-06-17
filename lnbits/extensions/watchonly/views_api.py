@@ -96,8 +96,13 @@ async def api_fresh_address(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
 @watchonly_ext.put("/api/v1/address/{id}")
 async def api_update_address_amount(id:str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)):
     body = await req.json()
-    amount = int(body['amount'])
-    return  await update_address(id, amount)
+    params = {}
+    if 'amount' in body:
+        params['amount'] = int(body['amount'])
+    if 'note' in body:
+        params['note'] = str(body['note'])
+
+    return  await update_address(**params, id = id)
 
 @watchonly_ext.get("/api/v1/addresses/{wallet_id}")
 async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)):

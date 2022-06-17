@@ -40,6 +40,7 @@ class Addresses(BaseModel): # todo: why plural
     amount: int = 0
     branch_index: int = 0
     address_index: int
+    note: str = None
 
     @classmethod
     def from_row(cls, row: Row) -> "Addresses":

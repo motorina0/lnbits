@@ -42,3 +42,4 @@ async def m002_xxx(db):
     
     await db.execute("ALTER TABLE watchonly.addresses ADD COLUMN branch_index INTEGER NOT NULL DEFAULT 0;")
     await db.execute("ALTER TABLE watchonly.addresses ADD COLUMN address_index INTEGER NOT NULL DEFAULT 0;")
+    await db.execute("ALTER TABLE watchonly.addresses ADD COLUMN note TEXT;")
