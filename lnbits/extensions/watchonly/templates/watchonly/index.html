@@ -792,7 +792,7 @@
         return addresses
       },
 
-      getFilteredAddressesHistory: function() {
+      getFilteredAddressesHistory: function () {
         return this.addresses.history.filter(a => !a.isChange)
       },
       showAddressHistoryDetails: function (addressHistory) {
@@ -909,7 +909,9 @@
         const addressHistory = []
         txs.forEach(tx => {
           const sent = tx.vin
-            .filter(vin => vin.prevout.scriptpubkey_address === addressData.address)
+            .filter(
+              vin => vin.prevout.scriptpubkey_address === addressData.address
+            )
             .map(vin => ({
               sent: true,
               txId: tx.txid,
@@ -945,7 +947,9 @@
         try {
           console.log('### IN address tx call', addrData.address)
           await sleep(250)
-          const addressTxs = await addressesAPI.getAddressTxs({address: addrData.address})
+          const addressTxs = await addressesAPI.getAddressTxs({
+            address: addrData.address
+          })
           return this.addressHistoryFromTxs(addrData, addressTxs)
         } catch (err) {
           console.log('### err tx call ', err)
@@ -1031,9 +1035,7 @@
 
         try {
           for (addrData of addresses) {
-            const addressHistory = await this.getAddressTxsDelayed(
-              addrData
-            )
+            const addressHistory = await this.getAddressTxsDelayed(addrData)
             console.log('### addressHistory', addressHistory)
             this.addresses.history.push(...addressHistory)
             if (addressHistory.length) {
@@ -1064,10 +1066,7 @@
       refreshWalletLinks: async function () {
         try {
           const wallets = await this.getWatchOnlyWallets()
-          this.walletLinks = wallets.map(obj => {
-            this.getAddressesForWallet(obj.id)
-            return mapWalletLink(obj)
-          })
+          this.walletLinks = wallets.map(w => mapWalletLink(w))
         } catch (err) {
           console.log('### err', err)
           LNbits.utils.notifyApiError(err)
@@ -1143,9 +1142,9 @@
     created: async function () {
       if (this.g.user.wallets.length) {
         this.getMempool()
+        await this.refreshWalletLinks()
         await this.refreshAddresses()
         await this.scanAddressWithAmountUTXOs()
-        this.refreshWalletLinks()
       }
     }
   })
