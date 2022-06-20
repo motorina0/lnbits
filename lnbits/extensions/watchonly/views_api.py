@@ -108,8 +108,6 @@ async def api_update_address(id:str, req: Request, w: WalletTypeInfo = Depends(r
     wallet = await get_watch_wallet(address.wallet) if address.branch_index == 0 and address.amount != 0 else None
     
     if wallet and wallet.address_no < address.address_index:
-        print('### wallet', wallet)
-        print('### address', address)
         await update_watch_wallet(address.wallet, **{"address_no": address.address_index})
     return address
 
