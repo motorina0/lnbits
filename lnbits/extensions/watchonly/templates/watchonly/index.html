@@ -72,13 +72,6 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td auto-width>
-                <q-badge
-                  color="secondary"
-                  class="q-mr-md cursor-pointer"
-                  @click="openGetFreshAddressDialog(props.row.id)"
-                >
-                  New Receive Address
-                </q-badge>
                 <q-btn
                   flat
                   dense
@@ -87,6 +80,13 @@
                   icon="cancel"
                   color="pink"
                 ></q-btn>
+                <q-badge
+                  color="secondary"
+                  class="q-mr-md cursor-pointer"
+                  @click="openGetFreshAddressDialog(props.row.id)"
+                >
+                  New Receive Address
+                </q-badge>
               </q-td>
               <q-td
                 v-for="col in props.cols"
@@ -507,13 +507,19 @@
         },
         WalletsTable: {
           columns: [
-            {name: 'id', align: 'left', label: 'ID', field: 'id'},
             {
               name: 'title',
               align: 'left',
               label: 'Title',
               field: 'title'
             },
+            {
+              name: 'type',
+              align: 'left',
+              label: 'Type',
+              field: 'type'
+            },
+            {name: 'id', align: 'left', label: 'ID', field: 'id'},
             {
               name: 'masterpub',
               align: 'left',

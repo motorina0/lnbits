@@ -18,6 +18,7 @@ class Wallets(BaseModel): # todo: why plural
     title: str
     address_no: int
     balance: int
+    type: str = ''
 
     @classmethod
     def from_row(cls, row: Row) -> "Wallets":

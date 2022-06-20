@@ -13,7 +13,9 @@ from .helpers import parse_key, derive_address
 
 async def create_watch_wallet(user: str, masterpub: str, title: str) -> Wallets:
     # check the masterpub is fine, it will raise an exception if not
-    parse_key(masterpub)
+    (descriptor, _) = parse_key(masterpub)
+   
+    type = descriptor.scriptpubkey_type()
     wallet_id = urlsafe_short_hash()
     await db.execute(
         """
@@ -22,13 +24,14 @@ async def create_watch_wallet(user: str, masterpub: str, title: str) -> Wallets:
             "user",
             masterpub,
             title,
+            type,
             address_no,
             balance
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         # address_no is -1 so fresh address on empty wallet can get address with index 0
-        (wallet_id, user, masterpub, title, -1, 0),
+        (wallet_id, user, masterpub, title, type, -1, 0),
     )
 
     return await get_watch_wallet(wallet_id)
