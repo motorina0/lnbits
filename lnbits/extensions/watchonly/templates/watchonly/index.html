@@ -338,18 +338,6 @@
                       <div class="col-2 q-pr-lg text-weight-bold">Fee</div>
                       <div class="col-4 q-pr-lg">{{satBtc(props.row.fee)}}</div>
                     </div>
-                    <div class="row items-center no-wrap q-mb-md">
-                      <div class="col-2 q-pr-lg text-weight-bold">Note</div>
-                      <div class="col-10 q-pr-lg">
-                        <q-input
-                          filled
-                          dense
-                          v-model.trim="props.row.note"
-                          type="text"
-                          label="Note"
-                        ></q-input>
-                      </div>
-                    </div>
                   </q-td>
                 </q-tr>
               </template>
@@ -1028,7 +1016,7 @@
         }
       },
       scanAddressWithAmountUTXOs: async function () {
-        const addresses = this.addresses.data.filter(a => a.amount) // todo: remove duplicates
+        const addresses = this.addresses.data.filter(a => a.has_activity) // todo: remove duplicates
         this.utxos.data = []
         await this.updateUtxosForAddresses(addresses)
       },

@@ -98,8 +98,11 @@ async def api_fresh_address(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
 async def api_update_address(id:str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)):
     body = await req.json()
     params = {}
+    #amout is only updated if the address has history
     if 'amount' in body:
         params['amount'] = int(body['amount'])
+        params['has_activity'] = True
+        
     if 'note' in body:
         params['note'] = str(body['note'])
 
