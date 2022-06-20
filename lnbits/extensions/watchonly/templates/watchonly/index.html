@@ -147,9 +147,7 @@
         </q-tabs>
         <q-tab-panels v-model="tab">
           <!-- todo: why blak bacground? -->
-          <q-tab-panel name="history">
-            <h3>H</h3>
-          </q-tab-panel>
+
           <q-tab-panel name="addresses">
             <div class="row items-center no-wrap q-mb-md">
               <div class="col q-pr-lg">
@@ -255,6 +253,105 @@
                     </q-badge>
                   </div>
                 </q-td>
+              </template>
+            </q-table>
+          </q-tab-panel>
+          <q-tab-panel name="history">
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col q-pr-lg"></div>
+              <div class="col q-pr-lg"></div>
+              <div class="col-auto">
+                <q-input
+                  borderless
+                  dense
+                  debounce="300"
+                  v-model="HistoryTable.filter"
+                  placeholder="Search"
+                >
+                  <template v-slot:append>
+                    <q-icon name="search"></q-icon>
+                  </template>
+                </q-input>
+              </div>
+            </div>
+            <q-table
+              style="height: 400px"
+              flat
+              dense
+              :data="addresses.history"
+              row-key="id"
+              virtual-scroll
+              :columns="HistoryTable.columns"
+              :pagination.sync="HistoryTable.pagination"
+              :filter="HistoryTable.filter"
+            >
+              <template v-slot:body="props">
+                <q-tr :props="props">
+                  <q-td auto-width>
+                    <q-btn
+                      size="sm"
+                      color="accent"
+                      round
+                      dense
+                      @click="props.row.expanded = !props.row.expanded"
+                      :icon="props.row.expanded ? 'remove' : 'add'"
+                    />
+                  </q-td>
+
+                  <q-td key="status" :props="props">
+                    <q-badge
+                      v-if="props.row.sent"
+                      color="orange"
+                      class="q-mr-md"
+                    >
+                      {{props.row.confirmed ? 'Sent' : 'Sending...'}}
+                    </q-badge>
+                    <q-badge
+                      v-if="props.row.received"
+                      color="green"
+                      class="q-mr-md"
+                    >
+                      {{props.row.confirmed ? 'Received' : 'Receiving...'}}
+                    </q-badge>
+                  </q-td>
+                  <q-td
+                    key="amount"
+                    :props="props"
+                    :class="props.row.amount && props.row.received > 0 ? 'text-green-13 text-weight-bold' : ''"
+                  >
+                    <div>{{satBtc(props.row.amount)}}</div>
+                  </q-td>
+                  <q-td key="address" :props="props">
+                    {{ props.row.address }}
+                  </q-td>
+                  <q-td key="date" :props="props"> {{ props.row.date }} </q-td>
+                </q-tr>
+                <q-tr v-show="props.row.expanded" :props="props">
+                  <q-td colspan="100%">
+                    <div class="row items-center no-wrap q-mb-md">
+                      <div class="col-2 q-pr-lg text-weight-bold">
+                        Transaction Id
+                      </div>
+                      <div class="col-10 q-pr-lg">{{props.row.txId}}</div>
+                    </div>
+                    <div class="row items-center no-wrap q-mb-md">
+                      <div class="col-2 q-pr-lg text-weight-bold">Fee</div>
+                      <div class="col-4 q-pr-lg">{{satBtc(props.row.fee)}}</div>
+                    </div>
+                    <div class="row items-center no-wrap q-mb-md">
+                      <div class="col-2 q-pr-lg text-weight-bold">Note</div>
+                      <div class="col-10 q-pr-lg">
+                        <q-input
+                          filled
+                          dense
+                          v-model.trim="props.row.note"
+                          type="text"
+                          label="Note"
+                        ></q-input>
+                      </div>
+                    </div>
+                  </q-td>
+                </q-tr>
               </template>
             </q-table>
           </q-tab-panel>
@@ -456,6 +553,10 @@
     obj.label = `${obj.title} - ${mP.substring(0, 10)}...${mP.slice(-10)}`
     return obj
   }
+
+  const blockTimeToDate = blockTime =>
+    blockTime ? moment(blockTime * 1000).format('LLL') : ''
+
   var mapAddresses = function (obj) {
     obj._data = _.clone(obj)
     obj.date = obj.time
@@ -488,6 +589,7 @@
         addresses: {
           show: false,
           data: [],
+          history: [],
           selectedWallet: null,
           note: '',
           filterOptions: [
@@ -619,6 +721,48 @@
           addressesFilter: ''
         },
 
+        HistoryTable: {
+          columns: [
+            {
+              name: 'expand',
+              align: 'left',
+              label: ''
+            },
+            {
+              name: 'status',
+              align: 'left',
+              label: 'Status'
+            },
+            {
+              name: 'amount',
+              align: 'left',
+              label: 'Amount',
+              field: 'amount',
+              sortable: true
+            },
+            {
+              name: 'address',
+              align: 'left',
+              label: 'Address',
+              field: 'address',
+              sortable: true
+            },
+            {
+              name: 'date',
+              align: 'left',
+              label: 'Date',
+              field: 'date',
+              sortable: true
+            }
+          ],
+          pagination: {
+            rowsPerPage: 0,
+            sortBy: 'date',
+            descending: true
+          },
+          addressesFilter: ''
+        },
+
         formDialog: {
           show: false,
           data: {}
@@ -658,6 +802,9 @@
             (!selectedWalletId || a.wallet === selectedWalletId)
         )
         return addresses
+      },
+      showAddressHistoryDetails: function (addressHistory) {
+        addressHistory.expanded = true
       },
       getAddressDetails: function (address) {
         LNbits.api
@@ -766,19 +913,66 @@
             LNbits.utils.notifyApiError(error)
           })
       },
+      addressHistoryFromTxs: function (address, txs) {
+        const addressHistory = []
+        txs.forEach(tx => {
+          const sent = tx.vin
+            .filter(vin => vin.prevout.scriptpubkey_address === address)
+            .map(vin => ({
+              sent: true,
+              txId: tx.txid,
+              address: address,
+              amount: vin.prevout.value,
+              date: blockTimeToDate(tx.status.block_time),
+              confirmed: tx.status.confirmed,
+              fee: tx.fee,
+              expanded: false
+            }))
+          const received = tx.vout
+            .filter(vout => vout.scriptpubkey_address === address)
+            .map(vout => ({
+              received: true,
+              txId: tx.txid,
+              address: address,
+              amount: vout.value,
+              date: blockTimeToDate(tx.status.block_time),
+              confirmed: tx.status.confirmed,
+              fee: tx.fee,
+              expanded: false
+            }))
+          addressHistory.push(...sent, ...received)
+        })
+        return addressHistory
+      },
+      getAddressTxsDelayed: async function (address, retryCount = 0) {
+        const {
+          bitcoin: {addresses: addressesAPI}
+        } = mempoolJS()
+        try {
+          console.log('### IN address tx call', address)
+          await sleep(250)
+          const addressTxs = await addressesAPI.getAddressTxs({address})
+          return this.addressHistoryFromTxs(address, addressTxs)
+        } catch (err) {
+          console.log('### err tx call ', err)
+          if (retryCount > 10) throw err
+          await sleep((retryCount + 1) * 1000)
+          return this.getAddressTxsDelayed(address, retryCount + 1)
+        }
+      },
       getAddressTxsUtxoDelayed: async function (address, retryCount = 0) {
         const {
           bitcoin: {addresses: addressesAPI}
         } = mempoolJS()
         try {
-          console.log('### IN mempool call', address)
+          console.log('### IN utxo tx call', address)
           await sleep(250)
           return await addressesAPI.getAddressTxsUtxo({
             address
           })
         } catch (err) {
           if (retryCount > 10) throw err
-          console.log('### ERR mempool call', (retryCount + 1) * 1000, address)
+          console.log('### ERR utxo call', (retryCount + 1) * 1000, address)
           await sleep((retryCount + 1) * 1000)
           return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
         }
@@ -790,9 +984,7 @@
             address: addressData.address,
             confirmed: utxo.status.confirmed,
             value: utxo.value,
-            date:
-              utxo.status?.block_time &&
-              moment(utxo.status?.block_time * 1000).format('LLL'),
+            date: blockTimeToDate(utxo.status?.block_time),
             sort: utxo.status?.block_time
           })
         })
@@ -811,6 +1003,7 @@
       },
       scanAllAddressUTXOs: async function () {
         await this.refreshAddresses()
+        this.addresses.history = []
         let addresses = this.addresses.data
         this.utxos.data = []
         // Loop while new funds are found on the gap adresses.
@@ -831,10 +1024,11 @@
               timeout: 10000
             })
           }
+          console.log('### this.addresses.history', this.addresses.history)
         }
       },
       scanAddressWithAmountUTXOs: async function () {
-        const addresses = this.addresses.data.filter(a => a.amount)
+        const addresses = this.addresses.data.filter(a => a.amount) // todo: remove duplicates
         this.utxos.data = []
         await this.updateUtxosForAddresses(addresses)
       },
@@ -843,8 +1037,19 @@
 
         try {
           for (addrData of addresses) {
-            const utxos = await this.getAddressTxsUtxoDelayed(addrData.address)
-            this.updateUtxosForAddress(addrData, utxos)
+            const addressHistory = await this.getAddressTxsDelayed(
+              addrData.address
+            )
+            console.log('### addressHistory', addressHistory)
+            this.addresses.history.push(...addressHistory)
+            if (addressHistory.length) {
+              // only if it ever had any activity
+              const utxos = await this.getAddressTxsUtxoDelayed(
+                addrData.address
+              )
+              this.updateUtxosForAddress(addrData, utxos)
+            }
+
             this.scan.scanIndex++
           }
         } catch (err) {
