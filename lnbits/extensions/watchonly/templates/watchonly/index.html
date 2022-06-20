@@ -278,7 +278,7 @@
               style="height: 400px"
               flat
               dense
-              :data="addresses.history"
+              :data="getFilteredAddressesHistory()"
               row-key="id"
               virtual-scroll
               :columns="HistoryTable.columns"
@@ -791,6 +791,10 @@
         )
         return addresses
       },
+
+      getFilteredAddressesHistory: function() {
+        return this.addresses.history.filter(a => !a.isChange)
+      },
       showAddressHistoryDetails: function (addressHistory) {
         addressHistory.expanded = true
       },
@@ -901,15 +905,16 @@
             LNbits.utils.notifyApiError(error)
           })
       },
-      addressHistoryFromTxs: function (address, txs) {
+      addressHistoryFromTxs: function (addressData, txs) {
         const addressHistory = []
         txs.forEach(tx => {
           const sent = tx.vin
-            .filter(vin => vin.prevout.scriptpubkey_address === address)
+            .filter(vin => vin.prevout.scriptpubkey_address === addressData.address)
             .map(vin => ({
               sent: true,
               txId: tx.txid,
-              address: address,
+              address: addressData.address,
+              isChange: addressData.branch_index === 1,
               amount: vin.prevout.value,
               date: blockTimeToDate(tx.status.block_time),
               confirmed: tx.status.confirmed,
@@ -917,11 +922,12 @@
               expanded: false
             }))
           const received = tx.vout
-            .filter(vout => vout.scriptpubkey_address === address)
+            .filter(vout => vout.scriptpubkey_address === addressData.address)
             .map(vout => ({
               received: true,
               txId: tx.txid,
-              address: address,
+              address: addressData.address,
+              isChange: addressData.branch_index === 1,
               amount: vout.value,
               date: blockTimeToDate(tx.status.block_time),
               confirmed: tx.status.confirmed,
@@ -932,20 +938,20 @@
         })
         return addressHistory
       },
-      getAddressTxsDelayed: async function (address, retryCount = 0) {
+      getAddressTxsDelayed: async function (addrData, retryCount = 0) {
         const {
           bitcoin: {addresses: addressesAPI}
         } = mempoolJS()
         try {
-          console.log('### IN address tx call', address)
+          console.log('### IN address tx call', addrData.address)
           await sleep(250)
-          const addressTxs = await addressesAPI.getAddressTxs({address})
-          return this.addressHistoryFromTxs(address, addressTxs)
+          const addressTxs = await addressesAPI.getAddressTxs({address: addrData.address})
+          return this.addressHistoryFromTxs(addrData, addressTxs)
         } catch (err) {
           console.log('### err tx call ', err)
           if (retryCount > 10) throw err
           await sleep((retryCount + 1) * 1000)
-          return this.getAddressTxsDelayed(address, retryCount + 1)
+          return this.getAddressTxsDelayed(addrData, retryCount + 1)
         }
       },
       getAddressTxsUtxoDelayed: async function (address, retryCount = 0) {
@@ -1026,7 +1032,7 @@
         try {
           for (addrData of addresses) {
             const addressHistory = await this.getAddressTxsDelayed(
-              addrData.address
+              addrData
             )
             console.log('### addressHistory', addressHistory)
             this.addresses.history.push(...addressHistory)
