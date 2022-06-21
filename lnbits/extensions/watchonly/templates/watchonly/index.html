@@ -426,6 +426,11 @@
                     />
                   </q-td>
 
+                  <q-td key="selected" :props="props">
+                    <div>
+                      <q-checkbox v-model="props.row.selected"></q-checkbox>
+                    </div>
+                  </q-td>
                   <q-td key="status" :props="props">
                     <div>
                       <q-badge
@@ -707,6 +712,11 @@
           columns: [
             {
               name: 'expand',
+              align: 'left',
+              label: ''
+            },
+            {
+              name: 'selected',
               align: 'left',
               label: ''
             },
