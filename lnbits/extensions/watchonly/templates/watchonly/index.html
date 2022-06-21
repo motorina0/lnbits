@@ -199,60 +199,106 @@
               :pagination.sync="AddressesTable.pagination"
               :filter="AddressesTable.filter"
             >
-              <template v-slot:body-cell-actions="props">
-                <q-td :props="props">
-                  <div class="row">
-                    <div class="cell">
-                      <q-btn
-                        unelevated
-                        dense
-                        size="sm"
-                        icon="qr_code"
-                        :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
-                        @click="openQrCodeDialog(props.row)"
-                      ></q-btn>
+              <template v-slot:body="props">
+                <q-tr :props="props">
+                  <q-td auto-width>
+                    <q-btn
+                      size="sm"
+                      color="accent"
+                      round
+                      dense
+                      @click="props.row.expanded= !props.row.expanded"
+                      :icon="props.row.expanded? 'remove' : 'add'"
+                    />
+                  </q-td>
+
+                  <q-td key="address" :props="props">
+                    <div>
+                      {{props.row.address}}
+                      <q-badge
+                        v-if="props.row.branch_index === 1"
+                        color="orange"
+                        class="q-mr-md"
+                      >
+                        change
+                      </q-badge>
                     </div>
-                    <div class="cell">
-                      <q-btn
-                        v-if="props.row.amount"
-                        flat
-                        dense
-                        size="sm"
-                        icon="launch"
-                        type="a"
-                        :href="mempool.endpoint + '/address/' + props.row.address"
-                        target="_blank"
-                      ></q-btn>
+                  </q-td>
+
+                  <q-td
+                    key="amount"
+                    :props="props"
+                    :class="props.row.amount > 0 ? 'text-green-13 text-weight-bold' : ''"
+                  >
+                    <div>{{satBtc(props.row.amount)}}</div>
+                  </q-td>
+
+                  <q-td key="note" :props="props" :class="">
+                    <div>{{props.row.note}}</div>
+                  </q-td>
+                  <q-td key="wallet" :props="props" :class="">
+                    <div>{{getWalletName(props.row.wallet)}}</div>
+                  </q-td>
+                </q-tr>
+                <q-tr v-show="props.row.expanded" :props="props">
+                  <q-td colspan="100%">
+                    <div class="row items-center q-mb-md">
+                      <div class="col-2 q-pr-lg ">
+                        View Details On:
+                      </div>
+                      <div class="col-10 q-pr-lg">
+                        <q-btn
+                          v-if="props.row.amount"
+                          flat
+                          dense
+                          size="sm"
+                          icon="launch"
+                          type="a"
+                          :href="mempool.endpoint + '/address/' + props.row.address"
+                          target="_blank"
+                          Details
+                          >{{mempool.endpoint}}</q-btn
+                        >
+                      </div>
                     </div>
-                  </div>
-                </q-td>
-              </template>
-              <template v-slot:body-cell-wallet="props">
-                <q-td :props="props">
-                  <div>{{ getWalletName(props.row.wallet) }}</div>
-                </q-td>
-              </template>
-              <template v-slot:body-cell-amount="props">
-                <q-td
-                  :props="props"
-                  :class="props.row.amount > 0 ? 'text-green-13 text-weight-bold' : ''"
-                >
-                  <div>{{satBtc(props.row.amount)}}</div>
-                </q-td>
-              </template>
-              <template v-slot:body-cell-address="props">
-                <q-td :props="props">
-                  <div>
-                    {{props.row.address}}
-                    <q-badge
-                      v-if="props.row.branch_index === 1"
-                      color="orange"
-                      class="q-mr-md"
-                    >
-                      change
-                    </q-badge>
-                  </div>
-                </q-td>
+                    <div class="row items-center q-mb-md">
+                      <div class="col-2 q-pr-lg">QR Code:</div>
+                      <div class="col-10 q-pr-lg">
+                        <q-btn
+                          unelevated
+                          dense
+                          size="sm"
+                          icon="qr_code"
+                          :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
+                          @click="openQrCodeDialog(props.row)"
+                        ></q-btn>
+                      </div>
+                    </div>
+                    <div class="row items-center no-wrap q-mb-md">
+                      <div class="col-2 q-pr-lg">Note:</div>
+                      <div class="col-8 q-pr-lg">
+                        <q-input
+                          filled
+                          dense
+                          v-model.trim="props.row.note"
+                          type="text"
+                          label="Note"
+                        ></q-input>
+                      </div>
+                      <div class="col-2 q-pr-lg">
+                        <q-btn
+                          outline
+                          v-close-popup
+                          color="grey"
+                          @click="updateNoteForAddress(props.row, props.row.note)"
+                          class="q-ml-sm"
+                          >Update</q-btn
+                        >
+                      </div>
+                    </div>
+                    <!-- todo: link to coins -->
+                  </q-td>
+                </q-tr>
               </template>
             </q-table>
           </q-tab-panel>
@@ -329,13 +375,13 @@
                 <q-tr v-show="props.row.expanded" :props="props">
                   <q-td colspan="100%">
                     <div class="row items-center no-wrap q-mb-md">
-                      <div class="col-2 q-pr-lg text-weight-bold">
+                      <div class="col-2 q-pr-lg ">
                         Transaction Id
                       </div>
                       <div class="col-10 q-pr-lg">{{props.row.txId}}</div>
                     </div>
                     <div class="row items-center no-wrap q-mb-md">
-                      <div class="col-2 q-pr-lg text-weight-bold">Fee</div>
+                      <div class="col-2 q-pr-lg ">Fee</div>
                       <div class="col-4 q-pr-lg">{{satBtc(props.row.fee)}}</div>
                     </div>
                   </q-td>
@@ -500,7 +546,7 @@
           outline
           v-close-popup
           color="grey"
-          @click="updateNoteForAddress(currentAddress)"
+          @click="updateNoteForAddress(currentAddress, addresses.note)"
           class="q-ml-sm"
           >Update Note</q-btn
         >
@@ -696,7 +742,7 @@
             {
               name: 'wallet',
               align: 'left',
-              label: 'Wallet',
+              label: 'Account',
               field: 'wallet',
               sortable: true
             }
@@ -817,6 +863,7 @@
         this.addresses.data = []
         for (const {id, address_no} of wallets) {
           const addrs = await this.getAddressesForWallet(id)
+          addrs.forEach(a => a.expanded = false)
           this.addresses.data.push(...addrs)
         }
         console.log('### refreshAddresses', this.addresses.data)
@@ -846,10 +893,10 @@
           LNbits.utils.notifyApiError(err)
         }
       },
-      updateNoteForAddress: async function (addressData) {
+      updateNoteForAddress: async function (addressData, note) {
         try {
           const wallet = this.g.user.wallets[0] // todo: find active wallet
-          addressData.note = this.addresses.note
+          addressData.note = note
           const {data} = await LNbits.api.request(
             'PUT',
             `/watchonly/api/v1/address/${addressData.id}`,
