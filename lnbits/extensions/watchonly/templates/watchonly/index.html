@@ -485,6 +485,69 @@
                 </q-tr>
               </template>
             </q-table>
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col">
+                <h5 class="text-subtitle1 q-my-none">New Payment</h5>
+              </div>
+            </div>
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col">
+                <q-table
+                  flat
+                  dense
+                  :data="payment.data"
+                  :columns="PaymentTable.columns"
+                  :pagination.sync="PaymentTable.pagination"
+                >
+                  <template v-slot:body="props">
+                    <q-tr :props="props">
+                      <div class="row no-wrap q-mb-md">
+                        <div class="col-7 q-pr-lg">
+                          <q-input
+                            filled
+                            dense
+                            v-model.trim="props.row.address"
+                            type="text"
+                            label="Address"
+                          ></q-input>
+                        </div>
+                        <div class="col-4 q-pr-lg">
+                          <q-input
+                            filled
+                            dense
+                            v-model.trim="props.row.amount"
+                            type="number"
+                            label="Amount (sats)"
+                          ></q-input>
+                        </div>
+                        <div class="col-1">
+                          <q-btn
+                            flat
+                            dense
+                            size="l"
+                            @click="deletePaymentAddress(props.row)"
+                            icon="cancel"
+                            color="pink"
+                          ></q-btn>
+                        </div>
+                      </div>
+                    </q-tr>
+                  </template>
+                  <template v-slot:bottom-row>
+                    <q-tr>
+                      <q-td colspan="100%">
+                        <q-btn
+                          unelevated
+                          color="secondary"
+                          @click="addPaymentAddress"
+                          >Add Send Address</q-btn
+                        >
+                      </q-td>
+                    </q-tr>
+                  </template>
+                </q-table>
+              </div>
+            </div>
           </q-tab-panel>
         </q-tab-panels>
       </q-card-section>
@@ -679,6 +742,12 @@
           total: 0,
           sats: true
         },
+        payment: {
+          data: [{id: '0', address: '', amount: 0}],
+          changeWallet: '',
+          feeRate: 1,
+          show: false
+        },
         mempool: {
           endpoint: ''
         },
@@ -759,6 +828,17 @@
             rowsPerPage: 10
           },
           uxtosFilter: ''
+        },
+        PaymentTable: {
+          columns: [
+            {
+              name: 'data',
+              align: 'left'
+            }
+          ],
+          pagination: {
+            rowsPerPage: 10
+          }
         },
         AddressesTable: {
           columns: [
@@ -887,7 +967,16 @@
         )
         return addresses
       },
-
+      deletePaymentAddress: function (v) {
+        const index = this.payment.data.indexOf(v)
+        if (index !== -1) {
+          this.payment.data.splice(index, 1)
+        }
+        console.log('### value', v)
+      },
+      addPaymentAddress: function () {
+        this.payment.data.push({address: '', amount: 0})
+      },
       getFilteredAddressesHistory: function () {
         return this.addresses.history.filter(a => !a.isChange)
       },
@@ -1091,12 +1180,12 @@
         if (utxos.length) {
           this.utxos.data.sort((a, b) => b.sort - a.sort)
           this.utxos.total = this.utxos.data.reduce(
-            (total, y) => (total += y?.value || 0),
+            (total, y) => (total += y?.amount || 0),
             0
           )
         }
         const addressTotal = utxos.reduce(
-          (total, y) => (total += y?.value || 0),
+          (total, y) => (total += y?.amount || 0),
           0
         )
         this.updateAmountForAddress(addressData.id, addressTotal)
