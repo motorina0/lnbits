@@ -484,6 +484,16 @@
                   </q-td>
                 </q-tr>
               </template>
+              <template v-slot:bottom-row>
+                <q-tr>
+                  <q-td colspan="100%">
+                    <div class="row items-center no-wrap q-mb-md">
+                      <div class="col-9 q-pr-lg"></div>
+                      <div class="col-3">Total: {{getTotalUtxoAmount()}}</div>
+                    </div>
+                  </q-td>
+                </q-tr>
+              </template>
             </q-table>
             <div class="row items-center no-wrap q-mb-md">
               <div class="col">
@@ -515,8 +525,9 @@
                           <q-input
                             filled
                             dense
-                            v-model.trim="props.row.amount"
+                            v-model.number="props.row.amount"
                             type="number"
+                            step="1"
                             label="Amount (sats)"
                           ></q-input>
                         </div>
@@ -536,17 +547,88 @@
                   <template v-slot:bottom-row>
                     <q-tr>
                       <q-td colspan="100%">
-                        <q-btn
-                          unelevated
-                          color="secondary"
-                          @click="addPaymentAddress"
-                          >Add Send Address</q-btn
-                        >
+                        <div class="row items-center no-wrap q-mb-md">
+                          <div class="col-3 q-pr-lg">
+                            <q-btn
+                              unelevated
+                              color="grey"
+                              @click="addPaymentAddress"
+                              >Add Send Address</q-btn
+                            >
+                          </div>
+                          <div class="col-6 q-pr-lg"></div>
+                          <div class="col-3">
+                            Total: {{getTotalPaymentAmount()}}
+                          </div>
+                        </div>
                       </q-td>
                     </q-tr>
                   </template>
                 </q-table>
               </div>
+            </div>
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col-3 q-pr-lg">Send Change To Account</div>
+              <div class="col-3 q-pr-lg">
+                <q-select
+                  filled
+                  dense
+                  emit-value
+                  v-model="payment.changeWallet"
+                  :options="walletLinks"
+                  label="Wallet Account"
+                ></q-select>
+              </div>
+              <div class="col-6 q-pl-lg">
+                <q-input
+                  filled
+                  dense
+                  readonly
+                  v-model.trim="payment.changeAddress"
+                  type="text"
+                  label="Change Address"
+                ></q-input>
+              </div>
+            </div>
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col-3 q-pr-lg">Fee Rate</div>
+              <div class="col-3 q-pr-lg">
+                <q-input
+                  filled
+                  dense
+                  v-model.trim="payment.feeRate"
+                  type="number"
+                  label="sats/vbyte"
+                ></q-input>
+              </div>
+              <div class="col-6 q-pl-lg">
+                <!-- todo: fetch from mempool, show slider -->
+              </div>
+            </div>
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col-3 q-pr-lg">UTXO Selection Mode</div>
+              <div class="col-3 q-pr-lg">
+                <q-select
+                  filled
+                  dense
+                  emit-value
+                  v-model="payment.utxoSelectionMode"
+                  :options="payment.utxoSelectionModes"
+                  label="Selection Algorithm"
+                ></q-select>
+              </div>
+              <div class="col-6 q-pl-lg">
+                <!-- todo: fetch from mempool, show slider -->
+              </div>
+            </div>
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col-4 q-pr-lg">
+                <q-btn unelevated color="secondary" @click="addPaymentAddress"
+                  >Create Transaction</q-btn
+                >
+              </div>
+
+              <div class="col-8 q-pl-lg"></div>
             </div>
           </q-tab-panel>
         </q-tab-panels>
@@ -688,7 +770,7 @@
         )
       : ''
     const mP = obj.masterpub || ''
-    obj.label = `${obj.title} - ${mP.substring(0, 10)}...${mP.slice(-10)}`
+    obj.label = obj.title
     return obj
   }
 
@@ -743,9 +825,17 @@
           sats: true
         },
         payment: {
-          data: [{id: '0', address: '', amount: 0}],
+          data: [{address: '', amount: undefined}],
           changeWallet: '',
+          changeAddress: '',
           feeRate: 1,
+          utxoSelectionModes: [
+            'Manual',
+            'Random',
+            'Smaller Inputs First',
+            'Larger Inputs First'
+          ],
+          utxoSelectionMode: 'Manual',
           show: false
         },
         mempool: {
@@ -972,10 +1062,17 @@
         if (index !== -1) {
           this.payment.data.splice(index, 1)
         }
-        console.log('### value', v)
       },
       addPaymentAddress: function () {
-        this.payment.data.push({address: '', amount: 0})
+        this.payment.data.push({address: '', amount: undefined})
+      },
+      getTotalPaymentAmount: function () {
+        const total = this.payment.data.reduce((t, a) => t + (a.amount || 0), 0)
+        return this.satBtc(total)
+      },
+      getTotalUtxoAmount: function () {
+        const total = this.utxos.data.reduce((t, a) => t + (a.amount || 0), 0)
+        return this.satBtc(total)
       },
       getFilteredAddressesHistory: function () {
         return this.addresses.history.filter(a => !a.isChange)
