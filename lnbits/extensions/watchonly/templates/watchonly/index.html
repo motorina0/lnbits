@@ -495,141 +495,148 @@
                 </q-tr>
               </template>
             </q-table>
-            <div class="row items-center no-wrap q-mb-md">
-              <div class="col">
-                <h5 class="text-subtitle1 q-my-none">New Payment</h5>
+            <q-form @submit="createTransaction" class="q-gutter-md">
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col">
+                  <h5 class="text-subtitle1 q-my-none">New Payment</h5>
+                </div>
               </div>
-            </div>
-            <div class="row items-center no-wrap q-mb-md">
-              <div class="col">
-                <q-table
-                  flat
-                  dense
-                  :data="payment.data"
-                  :columns="PaymentTable.columns"
-                  :pagination.sync="PaymentTable.pagination"
-                >
-                  <template v-slot:body="props">
-                    <q-tr :props="props">
-                      <div class="row no-wrap q-mb-md">
-                        <div class="col-7 q-pr-lg">
-                          <q-input
-                            filled
-                            dense
-                            v-model.trim="props.row.address"
-                            type="text"
-                            label="Address"
-                          ></q-input>
-                        </div>
-                        <div class="col-4 q-pr-lg">
-                          <q-input
-                            filled
-                            dense
-                            v-model.number="props.row.amount"
-                            type="number"
-                            step="1"
-                            label="Amount (sats)"
-                          ></q-input>
-                        </div>
-                        <div class="col-1">
-                          <q-btn
-                            flat
-                            dense
-                            size="l"
-                            @click="deletePaymentAddress(props.row)"
-                            icon="cancel"
-                            color="pink"
-                          ></q-btn>
-                        </div>
-                      </div>
-                    </q-tr>
-                  </template>
-                  <template v-slot:bottom-row>
-                    <q-tr>
-                      <q-td colspan="100%">
-                        <div class="row items-center no-wrap q-mb-md">
-                          <div class="col-3 q-pr-lg">
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col">
+                  <q-table
+                    flat
+                    dense
+                    :data="payment.data"
+                    :columns="PaymentTable.columns"
+                    :pagination.sync="PaymentTable.pagination"
+                  >
+                    <template v-slot:body="props">
+                      <q-tr :props="props">
+                        <div class="row no-wrap q-mb-md">
+                          <div class="col-7 q-pr-lg">
+                            <q-input
+                              filled
+                              dense
+                              v-model.trim="props.row.address"
+                              type="text"
+                              label="Address"
+                              :rules="[val => !!val || 'Field is required']"
+                            ></q-input>
+                          </div>
+                          <div class="col-4 q-pr-lg">
+                            <q-input
+                              filled
+                              dense
+                              v-model.number="props.row.amount"
+                              type="number"
+                              step="1"
+                              label="Amount (sats)"
+                              :rules="[val => !!val || 'Field is required']"
+                            ></q-input>
+                          </div>
+                          <div class="col-1">
                             <q-btn
-                              unelevated
-                              color="grey"
-                              @click="addPaymentAddress"
-                              >Add Send Address</q-btn
-                            >
-                          </div>
-                          <div class="col-6 q-pr-lg"></div>
-                          <div class="col-3">
-                            Total: {{getTotalPaymentAmount()}}
+                              flat
+                              dense
+                              size="l"
+                              @click="deletePaymentAddress(props.row)"
+                              icon="cancel"
+                              color="pink"
+                            ></q-btn>
                           </div>
                         </div>
-                      </q-td>
-                    </q-tr>
-                  </template>
-                </q-table>
+                      </q-tr>
+                    </template>
+                    <template v-slot:bottom-row>
+                      <q-tr>
+                        <q-td colspan="100%">
+                          <div class="row items-center no-wrap q-mb-md">
+                            <div class="col-3 q-pr-lg">
+                              <q-btn
+                                unelevated
+                                color="grey"
+                                @click="addPaymentAddress"
+                                >Add Send Address</q-btn
+                              >
+                            </div>
+                            <div class="col-6 q-pr-lg"></div>
+                            <div class="col-3">
+                              Total: {{getTotalPaymentAmount()}}
+                            </div>
+                          </div>
+                        </q-td>
+                      </q-tr>
+                    </template>
+                  </q-table>
+                </div>
               </div>
-            </div>
-            <div class="row items-center no-wrap q-mb-md">
-              <div class="col-3 q-pr-lg">Send Change To Account</div>
-              <div class="col-3 q-pr-lg">
-                <q-select
-                  filled
-                  dense
-                  emit-value
-                  v-model="payment.changeWallet"
-                  :options="walletLinks"
-                  label="Wallet Account"
-                ></q-select>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg">Send Change To Account</div>
+                <div class="col-3 q-pr-lg">
+                  <q-select
+                    filled
+                    dense
+                    emit-value
+                    v-model="payment.changeWallet"
+                    :options="walletLinks"
+                    :rules="[val => !!val || 'Field is required']"
+                    label="Wallet Account"
+                  ></q-select>
+                </div>
+                <div class="col-6 q-pl-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    v-model.trim="payment.changeAddress"
+                    type="text"
+                    label="Change Address"
+                    :rules="[val => !!val || 'Please select an wallet account']"
+                  ></q-input>
+                </div>
               </div>
-              <div class="col-6 q-pl-lg">
-                <q-input
-                  filled
-                  dense
-                  readonly
-                  v-model.trim="payment.changeAddress"
-                  type="text"
-                  label="Change Address"
-                ></q-input>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg">Fee Rate</div>
+                <div class="col-3 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    v-model.trim="payment.feeRate"
+                    :rules="[val => !!val || 'Field is required']"
+                    type="number"
+                    label="sats/vbyte"
+                  ></q-input>
+                </div>
+                <div class="col-6 q-pl-lg">
+                  <!-- todo: fetch from mempool, show slider -->
+                </div>
               </div>
-            </div>
-            <div class="row items-center no-wrap q-mb-md">
-              <div class="col-3 q-pr-lg">Fee Rate</div>
-              <div class="col-3 q-pr-lg">
-                <q-input
-                  filled
-                  dense
-                  v-model.trim="payment.feeRate"
-                  type="number"
-                  label="sats/vbyte"
-                ></q-input>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg">UTXO Selection Mode</div>
+                <div class="col-3 q-pr-lg">
+                  <q-select
+                    filled
+                    dense
+                    emit-value
+                    v-model="payment.utxoSelectionMode"
+                    :options="payment.utxoSelectionModes"
+                    label="Selection Algorithm"
+                  ></q-select>
+                </div>
+                <div class="col-6 q-pl-lg">
+                  <!-- todo: fetch from mempool, show slider -->
+                </div>
               </div>
-              <div class="col-6 q-pl-lg">
-                <!-- todo: fetch from mempool, show slider -->
-              </div>
-            </div>
-            <div class="row items-center no-wrap q-mb-md">
-              <div class="col-3 q-pr-lg">UTXO Selection Mode</div>
-              <div class="col-3 q-pr-lg">
-                <q-select
-                  filled
-                  dense
-                  emit-value
-                  v-model="payment.utxoSelectionMode"
-                  :options="payment.utxoSelectionModes"
-                  label="Selection Algorithm"
-                ></q-select>
-              </div>
-              <div class="col-6 q-pl-lg">
-                <!-- todo: fetch from mempool, show slider -->
-              </div>
-            </div>
-            <div class="row items-center no-wrap q-mb-md">
-              <div class="col-4 q-pr-lg">
-                <q-btn unelevated color="secondary" @click="addPaymentAddress"
-                  >Create Transaction</q-btn
-                >
-              </div>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-4 q-pr-lg">
+                  <q-btn unelevated color="secondary" type="submit"
+                    >Create Transaction</q-btn
+                  >
+                </div>
 
-              <div class="col-8 q-pl-lg"></div>
-            </div>
+                <div class="col-8 q-pl-lg"></div>
+              </div>
+            </q-form>
           </q-tab-panel>
         </q-tab-panels>
       </q-card-section>
@@ -826,7 +833,7 @@
         },
         payment: {
           data: [{address: '', amount: undefined}],
-          changeWallet: '',
+          changeWallet: null,
           changeAddress: '',
           feeRate: 1,
           utxoSelectionModes: [
@@ -835,7 +842,7 @@
             'Smaller Inputs First',
             'Larger Inputs First'
           ],
-          utxoSelectionMode: 'Manual',
+          utxoSelectionMode: 'Random',
           show: false
         },
         mempool: {
@@ -1073,6 +1080,10 @@
       getTotalUtxoAmount: function () {
         const total = this.utxos.data.reduce((t, a) => t + (a.amount || 0), 0)
         return this.satBtc(total)
+      },
+      createTransaction: function () {
+        console.log('### createTransaction')
+        const tx = {}
       },
       getFilteredAddressesHistory: function () {
         return this.addresses.history.filter(a => !a.isChange)
@@ -1390,9 +1401,6 @@
           })
       },
       deleteWalletLink: function (linkId) {
-        console.log('### this.walletLinks', this.walletLinks)
-        console.log('### addresses.filterValues', this.addresses.filterValues)
-
         var self = this
         var link = _.findWhere(this.walletLinks, {id: linkId})
         LNbits.utils
@@ -1409,6 +1417,7 @@
               this.walletLinks = _.reject(this.walletLinks, function (obj) {
                 return obj.id === linkId
               })
+              await this.refreshWalletLinks()
               await this.refreshAddresses()
               await this.scanAddressWithAmountUTXOs()
             } catch (err) {
