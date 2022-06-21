@@ -243,9 +243,7 @@
                 <q-tr v-show="props.row.expanded" :props="props">
                   <q-td colspan="100%">
                     <div class="row items-center q-mb-md">
-                      <div class="col-2 q-pr-lg ">
-                        View Details On:
-                      </div>
+                      <div class="col-2 q-pr-lg">View Details On:</div>
                       <div class="col-10 q-pr-lg">
                         <q-btn
                           v-if="props.row.amount"
@@ -375,13 +373,11 @@
                 <q-tr v-show="props.row.expanded" :props="props">
                   <q-td colspan="100%">
                     <div class="row items-center no-wrap q-mb-md">
-                      <div class="col-2 q-pr-lg ">
-                        Transaction Id
-                      </div>
+                      <div class="col-2 q-pr-lg">Transaction Id</div>
                       <div class="col-10 q-pr-lg">{{props.row.txId}}</div>
                     </div>
                     <div class="row items-center no-wrap q-mb-md">
-                      <div class="col-2 q-pr-lg ">Fee</div>
+                      <div class="col-2 q-pr-lg">Fee</div>
                       <div class="col-4 q-pr-lg">{{satBtc(props.row.fee)}}</div>
                     </div>
                   </q-td>
@@ -412,34 +408,74 @@
               flat
               dense
               :data="utxos.data"
-              row-key="txid"
+              row-key="id"
               :columns="UtxoTable.columns"
               :pagination.sync="UtxoTable.pagination"
               :filter="UtxoTable.filter"
             >
-              <template v-slot:header="props">
-                <q-tr :props="props">
-                  <q-th
-                    v-for="col in props.cols"
-                    :key="col.name"
-                    :props="props"
-                    auto-width
-                  >
-                    {{ col.label }}
-                  </q-th>
-                  <q-th auto-width></q-th>
-                </q-tr>
-              </template>
               <template v-slot:body="props">
                 <q-tr :props="props">
+                  <q-td auto-width>
+                    <q-btn
+                      size="sm"
+                      color="accent"
+                      round
+                      dense
+                      @click="props.row.expanded= !props.row.expanded"
+                      :icon="props.row.expanded? 'remove' : 'add'"
+                    />
+                  </q-td>
+
+                  <q-td key="status" :props="props">
+                    <div>
+                      <q-badge
+                        v-if="props.row.confirmed"
+                        color="green"
+                        class="q-mr-md"
+                      >
+                        Confirmed
+                      </q-badge>
+                      <q-badge
+                        v-if="!props.row.confirmed"
+                        color="orange"
+                        class="q-mr-md"
+                      >
+                        Pending
+                      </q-badge>
+                    </div>
+                  </q-td>
+                  <q-td key="address" :props="props">
+                    <div>
+                      {{props.row.address}}
+                      <q-badge
+                        v-if="props.row.isChange"
+                        color="orange"
+                        class="q-mr-md"
+                      >
+                        change
+                      </q-badge>
+                    </div>
+                  </q-td>
+
                   <q-td
-                    v-for="col in props.cols"
-                    :key="col.name"
+                    key="amount"
                     :props="props"
-                    auto-width
-                    :class="col.value == true ? 'text-green-13 text-weight-bold' : ''"
+                    class="text-green-13 text-weight-bold"
                   >
-                    {{ col.name == 'value' ? satBtc(col.value) : col.value }}
+                    <div>{{satBtc(props.row.amount)}}</div>
+                  </q-td>
+
+                  <q-td key="date" :props="props"> {{ props.row.date }} </q-td>
+                  <q-td key="wallet" :props="props" :class="">
+                    <div>{{getWalletName(props.row.wallet)}}</div>
+                  </q-td>
+                </q-tr>
+                <q-tr v-show="props.row.expanded" :props="props">
+                  <q-td colspan="100%">
+                    <div class="row items-center q-mb-md">
+                      <div class="col-2 q-pr-lg">Transaction Id</div>
+                      <div class="col-10 q-pr-lg">{{ props.row.txId }}</div>
+                    </div>
                   </q-td>
                 </q-tr>
               </template>
@@ -670,10 +706,14 @@
         UtxoTable: {
           columns: [
             {
-              name: 'confirmed',
+              name: 'expand',
+              align: 'left',
+              label: ''
+            },
+            {
+              name: 'status',
               align: 'center',
-              label: 'Confirmed',
-              field: 'confirmed',
+              label: 'Status',
               sortable: true
             },
             {
@@ -684,10 +724,10 @@
               sortable: true
             },
             {
-              name: 'value',
+              name: 'amount',
               align: 'left',
-              label: 'Value',
-              field: 'value',
+              label: 'Amount',
+              field: 'amount',
               sortable: true
             },
             {
@@ -698,10 +738,10 @@
               sortable: true
             },
             {
-              name: 'txid',
+              name: 'wallet',
               align: 'left',
-              label: 'TX ID',
-              field: 'txid',
+              label: 'Account',
+              field: 'wallet',
               sortable: true
             }
           ],
@@ -863,7 +903,7 @@
         this.addresses.data = []
         for (const {id, address_no} of wallets) {
           const addrs = await this.getAddressesForWallet(id)
-          addrs.forEach(a => a.expanded = false)
+          addrs.forEach(a => (a.expanded = false))
           this.addresses.data.push(...addrs)
         }
         console.log('### refreshAddresses', this.addresses.data)
@@ -1025,12 +1065,17 @@
       updateUtxosForAddress: function (addressData, utxos = []) {
         utxos.forEach(utxo => {
           this.utxos.data.push({
-            txid: utxo.txid,
+            id: addressData.id,
             address: addressData.address,
+            isChange: addressData.branch_index === 1,
+            wallet: addressData.wallet,
+            txId: utxo.txid,
             confirmed: utxo.status.confirmed,
-            value: utxo.value,
+            amount: utxo.value,
             date: blockTimeToDate(utxo.status?.block_time),
-            sort: utxo.status?.block_time
+            sort: utxo.status?.block_time,
+            expanded: false,
+            selected: false
           })
         })
         if (utxos.length) {
