@@ -1053,6 +1053,8 @@
           return r
         }, {})
 
+        console.log('### addresses 1', this.addresses.data)
+
         const addresses = this.addresses.data.filter(
           a =>
             (includeChangeAddrs || a.branch_index === 0) &&
@@ -1082,8 +1084,7 @@
         return this.satBtc(total)
       },
       createTransaction: function () {
-        console.log('### createTransaction')
-        const tx = {}
+       
       },
       getFilteredAddressesHistory: function () {
         return this.addresses.history.filter(a => !a.isChange)
@@ -1288,12 +1289,12 @@
         if (utxos.length) {
           this.utxos.data.sort((a, b) => b.sort - a.sort)
           this.utxos.total = this.utxos.data.reduce(
-            (total, y) => (total += y?.amount || 0),
+            (total, y) => (total += y?.value || 0),
             0
           )
         }
         const addressTotal = utxos.reduce(
-          (total, y) => (total += y?.amount || 0),
+          (total, y) => (total += y?.value || 0),
           0
         )
         this.updateAmountForAddress(addressData.id, addressTotal)
