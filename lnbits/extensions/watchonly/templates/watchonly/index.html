@@ -591,7 +591,7 @@
                 v-if="payment.showAdvanced"
                 class="row items-center no-wrap q-mb-md"
               >
-                <div class="col-3 q-pr-lg">Send Change To Account</div>
+                <div class="col-3 q-pr-lg">Send Change To Account:</div>
                 <div class="col-3 q-pr-lg">
                   <q-select
                     filled
@@ -618,7 +618,7 @@
                 v-if="payment.showAdvanced"
                 class="row items-center no-wrap q-mb-md"
               >
-                <div class="col-3 q-pr-lg">Fee Rate</div>
+                <div class="col-3 q-pr-lg">Fee Rate:</div>
                 <div class="col-3 q-pr-lg">
                   <q-input
                     filled
@@ -629,15 +629,14 @@
                     label="sats/vbyte"
                   ></q-input>
                 </div>
-                <div class="col-6 q-pl-lg">
-                  <!-- todo: fetch from mempool, show slider -->
-                </div>
+                <div class="col-3 q-pr-lg">Fee:</div>
+                <div class="col-3 q-pr-lg">-</div>
               </div>
               <div
                 v-if="payment.showAdvanced"
                 class="row items-center no-wrap q-mb-md"
               >
-                <div class="col-3 q-pr-lg">UTXO Selection Mode</div>
+                <div class="col-3 q-pr-lg">UTXO Selection Mode:</div>
                 <div class="col-3 q-pr-lg">
                   <q-select
                     filled
@@ -1110,7 +1109,6 @@
         }
       },
       initPaymentData: function () {
-        console.log('### initPaymentData', this.payment.show)
         if (!this.payment.show) return
 
         this.payment.changeWallet = this.walletLinks[0]
@@ -1139,7 +1137,6 @@
             fee_rate: this.payment.feeRate,
             masterpubs: this.walletLinks.map(w => w.masterpub)
           }
-          console.log('### this.utxos', this.utxos)
           tx.inputs = this.utxos.data
             .filter(utxo => utxo.selected)
             .map(utxo => ({
@@ -1170,7 +1167,6 @@
             input.tx_hex = await this.fetchTxHex(input.txid)
           }
 
-          console.log('### psbt tx', tx)
           const {data} = await LNbits.api.request(
             'POST',
             '/watchonly/api/v1/psbt',
@@ -1178,14 +1174,12 @@
             tx
           )
 
-          console.log('### psbt response', data)
           this.payment.psbtBase64 = data
         } catch (err) {
           console.log('### err', err)
         }
       },
       getFilteredAddressesHistory: function () {
-        console.log('### this.addresses.history', JSON.stringify(this.addresses.history))
         return this.addresses.history
           .filter(a => !a.isChange)
           .sort((a, b) => (!a.height ? -1 : b.height - a.height))
@@ -1288,6 +1282,8 @@
           `/watchonly/api/v1/address/${walletId}`,
           this.g.user.wallets[0].inkey
         )
+        // todo: refresh address list
+        console.log('### data', data)
         this.openQrCodeDialog(data)
       },
       getMempool: function () {
@@ -1394,7 +1390,6 @@
         }
       },
       updateUtxosForAddress: function (addressData, utxos = []) {
-        console.log('### updateUtxosForAddress', utxos)
         const wallet =
           this.walletLinks.find(w => w.id === addressData.wallet) || {}
         utxos.forEach(utxo => {
