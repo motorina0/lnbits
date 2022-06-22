@@ -660,12 +660,17 @@
                 </div>
                 <div class="col-8 q-pl-lg"></div>
               </div>
-              <div v-if="payment.psbtBase64" class="row items-center no-wrap q-mb-md">
-                <div class="col-2 q-pr-lg">
-                  PSBT
-                </div>
+              <div
+                v-if="payment.psbtBase64"
+                class="row items-center no-wrap q-mb-md"
+              >
+                <div class="col-2 q-pr-lg">PSBT</div>
                 <div class="col-10 q-pl-lg">
-                  <q-input v-model="payment.psbtBase64"  filled type="textarea" />
+                  <q-input
+                    v-model="payment.psbtBase64"
+                    filled
+                    type="textarea"
+                  />
                 </div>
               </div>
             </q-form>
@@ -1180,7 +1185,10 @@
         }
       },
       getFilteredAddressesHistory: function () {
-        return this.addresses.history.filter(a => !a.isChange)
+        console.log('### this.addresses.history', JSON.stringify(this.addresses.history))
+        return this.addresses.history
+          .filter(a => !a.isChange)
+          .sort((a, b) => (!a.height ? -1 : b.height - a.height))
       },
       fetchTxHex: async function (txId, retryCount = 0) {
         const {
@@ -1331,6 +1339,7 @@
               isChange: addressData.branch_index === 1,
               amount: vin.prevout.value,
               date: blockTimeToDate(tx.status.block_time),
+              height: tx.status.block_height,
               confirmed: tx.status.confirmed,
               fee: tx.fee,
               expanded: false
@@ -1344,6 +1353,7 @@
               isChange: addressData.branch_index === 1,
               amount: vout.value,
               date: blockTimeToDate(tx.status.block_time),
+              height: tx.status.block_height,
               confirmed: tx.status.confirmed,
               fee: tx.fee,
               expanded: false
