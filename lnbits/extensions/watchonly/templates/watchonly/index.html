@@ -591,7 +591,6 @@
                     v-model.trim="payment.changeAddress"
                     type="text"
                     label="Change Address"
-                    :rules="[val => !!val || 'Please select an wallet account']"
                   ></q-input>
                 </div>
               </div>
@@ -1081,28 +1080,73 @@
         const total = this.utxos.data.reduce((t, a) => t + (a.amount || 0), 0)
         return this.satBtc(total)
       },
-      createTransaction: function () {
-        const tx = {
-          feeRate: this.payment.data.feeRate,
-          masterPubs: this.walletLinks.map(w => w.masterpub)
-        }
-        tx.ins = this.utxos.data
-          .filter(utxo => utxo.selected)
-          .map(utxo => ({
-            nonWitnessUtxo: null,
-            witnessUtxo: null,
-            derivationPath: '',
-            masterFingerPrint: ''
+      createTransaction: async function () {
+        const wallet = this.g.user.wallets[0] // todo: find active wallet
+        try {
+          const tx = {
+            fee_rate: this.payment.feeRate,
+            masterpubs: this.walletLinks.map(w => w.masterpub)
+          }
+          console.log('### this.utxos', this.utxos)
+          tx.inputs = this.utxos.data
+            .filter(utxo => utxo.selected)
+            .map(utxo => ({
+              txid: utxo.txId,
+              vout: utxo.vout,
+              amount: utxo.amount,
+              address: utxo.address,
+              branch_index: utxo.branch_index,
+              address_index: utxo.address_index,
+              master_fingerprint: utxo.master_fingerprint,
+              txHex: ''
+            }))
+          tx.outputs = this.payment.data.map(out => ({
+            address: out.address,
+            amount: out.amount
           }))
-        tx.outs = this.payment.data.map(out => ({
-          address: out.address,
-          amount: out.amount,
-          derivationPath: '',
-          masterFingerPrint: ''
-        }))
+
+          // change address
+          tx.outputs.push({
+            address: 'bc1qs2ys7y4rksn7urgmu2nvzaxdc576uz95c6v480',
+            amount: 0,
+            branch_index: 0,
+            address_index: 0,
+            master_fingerprint: ''
+          })
+
+         
+          for (const input of tx.inputs) {
+            console.log('### input', input)
+            input.tx_hex = await this.fetchTxHex(input.txid)
+          }
+
+          console.log('### psbt tx', tx)
+          const response = await LNbits.api.request(
+            'POST',
+            '/watchonly/api/v1/psbt',
+            wallet.adminkey,
+            tx
+          )
+
+          console.log('### psbt response', response)
+        } catch (err) {
+          console.log('### err', err)
+        }
       },
       getFilteredAddressesHistory: function () {
         return this.addresses.history.filter(a => !a.isChange)
+      },
+      fetchTxHex: async function (txId, retryCount = 0) {
+        const {
+          bitcoin: {transactions: transactionsAPI}
+        } = mempoolJS()
+        try {
+          return await transactionsAPI.getTxHex({txid: txId})
+        } catch (err) {
+          if (retryCount > 10) throw err
+          await sleep((retryCount + 1) * 1000)
+          return this.fetchTxHex(txId, retryCount + 1)
+        }
       },
       showAddressHistoryDetails: function (addressHistory) {
         addressHistory.expanded = true
@@ -1294,13 +1338,20 @@
         }
       },
       updateUtxosForAddress: function (addressData, utxos = []) {
+        console.log('### updateUtxosForAddress', utxos)
+        const wallet =
+          this.walletLinks.find(w => w.id === addressData.wallet) || {}
         utxos.forEach(utxo => {
           this.utxos.data.push({
             id: addressData.id,
             address: addressData.address,
             isChange: addressData.branch_index === 1,
+            address_index: addressData.address_index,
+            branch_index: addressData.branch_index,
             wallet: addressData.wallet,
+            master_fingerprint: wallet.fingerprint,
             txId: utxo.txid,
+            vout: utxo.vout,
             confirmed: utxo.status.confirmed,
             amount: utxo.value,
             date: blockTimeToDate(utxo.status?.block_time),

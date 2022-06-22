@@ -46,3 +46,4 @@ async def m002_xxx(db):
     await db.execute("ALTER TABLE watchonly.addresses ADD COLUMN has_activity BOOLEAN DEFAULT false;")
 
     await db.execute("ALTER TABLE watchonly.wallets ADD COLUMN type TEXT;")
+    await db.execute("ALTER TABLE watchonly.wallets ADD COLUMN fingerprint TEXT NOT NULL;")

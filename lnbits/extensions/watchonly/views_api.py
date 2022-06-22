@@ -4,6 +4,12 @@ from fastapi import Query, Request
 from fastapi.params import Depends
 from starlette.exceptions import HTTPException
 
+from embit.descriptor import Descriptor, Key
+from embit.psbt import PSBT, DerivationPath
+from embit.ec import PublicKey
+from embit.transaction import Transaction, TransactionInput, TransactionOutput
+from embit import script
+
 from lnbits.decorators import WalletTypeInfo, get_key_type, require_admin_key
 from lnbits.extensions.watchonly import watchonly_ext
 
@@ -22,7 +28,7 @@ from .crud import (
     update_mempool,
     update_watch_wallet,
 )
-from .models import CreateWallet
+from .models import CreateWallet, CreatePsbt
 
 RECEIVE_GAP_LIMIT = 20
 CHANGE_GAP_LIMIT = 5
@@ -148,6 +154,65 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
     addresses = await get_addresses(wallet_id)
     return [address.dict() for address in addresses]
 
+#############################PSBT##########################
+
+@watchonly_ext.post("/api/v1/psbt")
+async def api_psbt_create(
+    data: CreatePsbt, wallet_id=None, w: WalletTypeInfo = Depends(require_admin_key)
+):
+    # todo: reeeefactor
+    try:
+        print('### data 1', data.outputs)
+        vin = [TransactionInput(bytes.fromhex(inp.txid), inp.vout) for inp in data.inputs]
+        print('### data.outputs', data.outputs[0].address)
+        print('### address_to_scriptpubkey', script.address_to_scriptpubkey(data.outputs[0].address))
+        vout = [TransactionOutput(out.amount, script.address_to_scriptpubkey(out.address)) for out in data.outputs]
+        print('### p50')
+        # temp
+        k1 = Key.from_string(data.masterpubs[0])
+        descriptorStr = "wpkh([%s/84h/1h/0h]%s/{0,1}/*)" % (k1.fingerprint.hex(), data.masterpubs[0])
+        desc = Descriptor.from_string(descriptorStr)
+
+
+        print('### p100')
+        inputs_extra = []
+        bip32_derivations = {}  
+        for i, inp in enumerate(data.inputs):
+            d = desc.derive(inp.address_index, inp.branch_index)
+            for k in d.keys:
+                bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(k.origin.fingerprint, k.origin.derivation)
+            inputs_extra.append({
+                'bip32_derivations': bip32_derivations,
+                'non_witness_utxo': Transaction.from_string(inp.tx_hex),
+            })
+
+        print('### p200')
+        tx = Transaction(vin=vin, vout=vout)
+        psbt = PSBT(tx)
+
+        for i, inp in enumerate(inputs_extra):
+            print('### i', i, inp)
+            psbt.inputs[i].bip32_derivations = inp["bip32_derivations"]
+            psbt.inputs[i].witness_utxo = inp.get("witness_utxo", None) #todo
+            psbt.inputs[i].non_witness_utxo = inp.get("non_witness_utxo", None)
+
+        print('### p300')
+        bip32_derivations = {}
+        for _, out in enumerate(data.outputs):
+            if 'branch_index' in out and  out['branch_index'] == 1:
+                d = desc.derive(out['address_index'], out['branch_index'])
+                for k in d.keys:
+                    bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(k.origin.fingerprint, k.origin.derivation)
+                out['bip32_derivations'] = bip32_derivations
+
+        for i, out in enumerate(data.outputs):
+            psbt.outputs[i].bip32_derivations = out['bip32_derivations'] if 'bip32_derivations' in out else []
+
+        return psbt.to_string()
+
+    except Exception as e:
+        print('### e', e)
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
 #############################MEMPOOL##########################
 

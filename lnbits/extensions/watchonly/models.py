@@ -1,5 +1,5 @@
 from sqlite3 import Row
-
+from typing import List
 from fastapi.param_functions import Query
 from pydantic import BaseModel
 
@@ -15,6 +15,7 @@ class Wallets(BaseModel): # todo: why plural
     id: str
     user: str
     masterpub: str
+    fingerprint: str
     title: str
     address_no: int
     balance: int
@@ -48,7 +49,25 @@ class Addresses(BaseModel): # todo: why plural
     def from_row(cls, row: Row) -> "Addresses":
         return cls(**dict(row))
 
-class UpdateAddressAmount(BaseModel):
-    address: str
-    wallet: str
+class TransactionInput(BaseModel):
+    txid: str
+    vout: int
     amount: int
+    address: str
+    branch_index: int
+    address_index: int
+    master_fingerprint: str
+    tx_hex: str
+
+class TransactionOutput(BaseModel):
+    amount: int
+    address: str
+    branch_index: int = None
+    address_index: int = None
+    master_fingerprint: str = None
+
+class CreatePsbt(BaseModel):    
+    masterpubs: List[str]
+    inputs: List[TransactionInput]
+    outputs: List[TransactionOutput]
+    fee_rate: int

@@ -15,22 +15,25 @@ async def create_watch_wallet(user: str, masterpub: str, title: str) -> Wallets:
     (descriptor, _) = parse_key(masterpub)
    
     type = descriptor.scriptpubkey_type()
+    fingerprint = descriptor.keys[0].fingerprint.hex()
     wallet_id = urlsafe_short_hash()
+    
     await db.execute(
         """
         INSERT INTO watchonly.wallets (
             id,
             "user",
             masterpub,
+            fingerprint,
             title,
             type,
             address_no,
             balance
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         # address_no is -1 so fresh address on empty wallet can get address with index 0
-        (wallet_id, user, masterpub, title, type, -1, 0),
+        (wallet_id, user, masterpub, fingerprint, title, type, -1, 0),
     )
 
     return await get_watch_wallet(wallet_id)
