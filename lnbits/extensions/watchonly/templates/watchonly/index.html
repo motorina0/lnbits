@@ -387,9 +387,7 @@
           </q-tab-panel>
           <q-tab-panel name="coins">
             <div class="row items-center no-wrap q-mb-md">
-              <div class="col">
-                <h5 class="text-subtitle1 q-my-none">UTXOs</h5>
-              </div>
+              <div class="col">UTXOs</div>
               <div class="col-auto">
                 <q-input
                   borderless
@@ -495,12 +493,22 @@
                 </q-tr>
               </template>
             </q-table>
-            <q-form @submit="createTransaction" class="q-gutter-md">
-              <div class="row items-center no-wrap q-mb-md">
-                <div class="col">
-                  <h5 class="text-subtitle1 q-my-none">New Payment</h5>
-                </div>
+
+            <div class="row items-center no-wrap q-mb-md">
+              <div class="col">
+                <q-toggle
+                  label="Make Payment"
+                  color="secodary"
+                  v-model="payment.show"
+                  @input="initPaymentData()"
+                ></q-toggle>
               </div>
+            </div>
+            <q-form
+              v-if="payment.show"
+              @submit="createTransaction"
+              class="q-gutter-md"
+            >
               <div class="row items-center no-wrap q-mb-md">
                 <div class="col">
                   <q-table
@@ -571,6 +579,18 @@
                 </div>
               </div>
               <div class="row items-center no-wrap q-mb-md">
+                <div class="col">
+                  <q-toggle
+                    label="Show Advanced"
+                    color="secodary"
+                    v-model="payment.showAdvanced"
+                  ></q-toggle>
+                </div>
+              </div>
+              <div
+                v-if="payment.showAdvanced"
+                class="row items-center no-wrap q-mb-md"
+              >
                 <div class="col-3 q-pr-lg">Send Change To Account</div>
                 <div class="col-3 q-pr-lg">
                   <q-select
@@ -594,7 +614,10 @@
                   ></q-input>
                 </div>
               </div>
-              <div class="row items-center no-wrap q-mb-md">
+              <div
+                v-if="payment.showAdvanced"
+                class="row items-center no-wrap q-mb-md"
+              >
                 <div class="col-3 q-pr-lg">Fee Rate</div>
                 <div class="col-3 q-pr-lg">
                   <q-input
@@ -610,7 +633,10 @@
                   <!-- todo: fetch from mempool, show slider -->
                 </div>
               </div>
-              <div class="row items-center no-wrap q-mb-md">
+              <div
+                v-if="payment.showAdvanced"
+                class="row items-center no-wrap q-mb-md"
+              >
                 <div class="col-3 q-pr-lg">UTXO Selection Mode</div>
                 <div class="col-3 q-pr-lg">
                   <q-select
@@ -629,11 +655,18 @@
               <div class="row items-center no-wrap q-mb-md">
                 <div class="col-4 q-pr-lg">
                   <q-btn unelevated color="secondary" type="submit"
-                    >Create Transaction</q-btn
+                    >Create PSBT</q-btn
                   >
                 </div>
-
                 <div class="col-8 q-pl-lg"></div>
+              </div>
+              <div v-if="payment.psbtBase64" class="row items-center no-wrap q-mb-md">
+                <div class="col-2 q-pr-lg">
+                  PSBT
+                </div>
+                <div class="col-10 q-pl-lg">
+                  <q-input v-model="payment.psbtBase64"  filled type="textarea" />
+                </div>
               </div>
             </q-form>
           </q-tab-panel>
@@ -835,14 +868,16 @@
           changeWallet: null,
           changeAddress: '',
           feeRate: 1,
+          psbtBase64: '',
           utxoSelectionModes: [
             'Manual',
             'Random',
             'Smaller Inputs First',
             'Larger Inputs First'
           ],
-          utxoSelectionMode: 'Random',
-          show: false
+          utxoSelectionMode: 'Manual',
+          show: false,
+          showAdvanced: false
         },
         mempool: {
           endpoint: ''
@@ -1069,6 +1104,18 @@
           this.payment.data.splice(index, 1)
         }
       },
+      initPaymentData: function () {
+        console.log('### initPaymentData', this.payment.show)
+        if (!this.payment.show) return
+
+        this.payment.changeWallet = this.walletLinks[0]
+        // temp solution
+        const changeAddress = this.addresses.data.filter(
+          a => a.wallet === this.payment.changeWallet.id
+        )
+        this.payment.changeAddress = changeAddress.pop().address
+        this.payment.showAdvanced = false
+      },
       addPaymentAddress: function () {
         this.payment.data.push({address: '', amount: undefined})
       },
@@ -1106,29 +1153,28 @@
           }))
 
           // change address
-          tx.outputs.push({
-            address: 'bc1qs2ys7y4rksn7urgmu2nvzaxdc576uz95c6v480',
-            amount: 0,
-            branch_index: 0,
-            address_index: 0,
-            master_fingerprint: ''
-          })
+          // tx.outputs.push({
+          //   address: 'bc1qs2ys7y4rksn7urgmu2nvzaxdc576uz95c6v480',
+          //   amount: 0,
+          //   branch_index: 0,
+          //   address_index: 0,
+          //   master_fingerprint: ''
+          // })
 
-         
           for (const input of tx.inputs) {
-            console.log('### input', input)
             input.tx_hex = await this.fetchTxHex(input.txid)
           }
 
           console.log('### psbt tx', tx)
-          const response = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'POST',
             '/watchonly/api/v1/psbt',
             wallet.adminkey,
             tx
           )
 
-          console.log('### psbt response', response)
+          console.log('### psbt response', data)
+          this.payment.psbtBase64 = data
         } catch (err) {
           console.log('### err', err)
         }
