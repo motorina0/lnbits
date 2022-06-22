@@ -1053,8 +1053,6 @@
           return r
         }, {})
 
-        console.log('### addresses 1', this.addresses.data)
-
         const addresses = this.addresses.data.filter(
           a =>
             (includeChangeAddrs || a.branch_index === 0) &&
@@ -1084,7 +1082,24 @@
         return this.satBtc(total)
       },
       createTransaction: function () {
-       
+        const tx = {
+          feeRate: this.payment.data.feeRate,
+          masterPubs: this.walletLinks.map(w => w.masterpub)
+        }
+        tx.ins = this.utxos.data
+          .filter(utxo => utxo.selected)
+          .map(utxo => ({
+            nonWitnessUtxo: null,
+            witnessUtxo: null,
+            derivationPath: '',
+            masterFingerPrint: ''
+          }))
+        tx.outs = this.payment.data.map(out => ({
+          address: out.address,
+          amount: out.amount,
+          derivationPath: '',
+          masterFingerPrint: ''
+        }))
       },
       getFilteredAddressesHistory: function () {
         return this.addresses.history.filter(a => !a.isChange)
@@ -1114,7 +1129,6 @@
           addrs.forEach(a => (a.expanded = false))
           this.addresses.data.push(...addrs)
         }
-        console.log('### refreshAddresses', this.addresses.data)
       },
       getAddressesForWallet: async function (walletId) {
         try {
@@ -1128,12 +1142,25 @@
           LNbits.utils.notifyApiError(err)
         }
       },
-      updateAmountForAddress: async function (addressId, amount = 0) {
+      updateAmountForAddress: async function (addressData, amount = 0) {
         try {
           const wallet = this.g.user.wallets[0] // todo: find active wallet
+          addressData.amount = amount
+          if (addressData.branch_index === 0) {
+            const addressWallet = this.walletLinks.find(
+              w => w.id === addressData.wallet
+            )
+            if (
+              addressWallet &&
+              addressWallet.address_no < addressData.address_index
+            ) {
+              addressWallet.address_no = addressData.address_index
+            }
+          }
+
           const {data} = await LNbits.api.request(
             'PUT',
-            `/watchonly/api/v1/address/${addressId}`,
+            `/watchonly/api/v1/address/${addressData.id}`,
             wallet.adminkey,
             {amount}
           )
@@ -1240,14 +1267,12 @@
           bitcoin: {addresses: addressesAPI}
         } = mempoolJS()
         try {
-          console.log('### IN address tx call', addrData.address)
           await sleep(250)
           const addressTxs = await addressesAPI.getAddressTxs({
             address: addrData.address
           })
           return this.addressHistoryFromTxs(addrData, addressTxs)
         } catch (err) {
-          console.log('### err tx call ', err)
           if (retryCount > 10) throw err
           await sleep((retryCount + 1) * 1000)
           return this.getAddressTxsDelayed(addrData, retryCount + 1)
@@ -1258,14 +1283,12 @@
           bitcoin: {addresses: addressesAPI}
         } = mempoolJS()
         try {
-          console.log('### IN utxo tx call', address)
           await sleep(250)
           return await addressesAPI.getAddressTxsUtxo({
             address
           })
         } catch (err) {
           if (retryCount > 10) throw err
-          console.log('### ERR utxo call', (retryCount + 1) * 1000, address)
           await sleep((retryCount + 1) * 1000)
           return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
         }
@@ -1289,7 +1312,7 @@
         if (utxos.length) {
           this.utxos.data.sort((a, b) => b.sort - a.sort)
           this.utxos.total = this.utxos.data.reduce(
-            (total, y) => (total += y?.value || 0),
+            (total, y) => (total += y?.amount || 0),
             0
           )
         }
@@ -1297,7 +1320,7 @@
           (total, y) => (total += y?.value || 0),
           0
         )
-        this.updateAmountForAddress(addressData.id, addressTotal)
+        this.updateAmountForAddress(addressData, addressTotal)
       },
       scanAllAddressUTXOs: async function () {
         await this.refreshAddresses()
@@ -1322,7 +1345,6 @@
               timeout: 10000
             })
           }
-          console.log('### this.addresses.history', this.addresses.history)
         }
       },
       scanAddressWithAmountUTXOs: async function () {
@@ -1336,7 +1358,6 @@
         try {
           for (addrData of addresses) {
             const addressHistory = await this.getAddressTxsDelayed(addrData)
-            console.log('### addressHistory', addressHistory)
             this.addresses.history.push(...addressHistory)
             if (addressHistory.length) {
               // only if it ever had any activity
@@ -1368,7 +1389,6 @@
           const wallets = await this.getWatchOnlyWallets()
           this.walletLinks = wallets.map(w => mapWalletLink(w))
         } catch (err) {
-          console.log('### err', err)
           LNbits.utils.notifyApiError(err)
         }
       },
@@ -1388,18 +1408,20 @@
         var data = _.omit(this.formDialog.data, 'wallet')
         this.createWalletLink(wallet, data)
       },
-      createWalletLink: function (wallet, data) {
-        var self = this
-
-        LNbits.api
-          .request('POST', '/watchonly/api/v1/wallet', wallet.adminkey, data)
-          .then(function (response) {
-            self.walletLinks.push(mapWalletLink(response.data))
-            self.formDialog.show = false
-          })
-          .catch(function (error) {
-            LNbits.utils.notifyApiError(error)
-          })
+      createWalletLink: async function (wallet, data) {
+        try {
+          const response = await LNbits.api.request(
+            'POST',
+            '/watchonly/api/v1/wallet',
+            wallet.adminkey,
+            data
+          )
+          this.walletLinks.push(mapWalletLink(response.data))
+          this.formDialog.show = false
+          await this.refreshWalletLinks()
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
       },
       deleteWalletLink: function (linkId) {
         var self = this
