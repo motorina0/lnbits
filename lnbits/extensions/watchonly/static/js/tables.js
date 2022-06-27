@@ -23,7 +23,8 @@ const tables = {
     ],
     pagination: {
       rowsPerPage: 10
-    }
+    },
+    filter: ''
   },
   UtxoTable: {
     columns: [
@@ -75,7 +76,7 @@ const tables = {
     pagination: {
       rowsPerPage: 10
     },
-    uxtosFilter: ''
+    filter: ''
   },
   PaymentTable: {
     columns: [
@@ -86,7 +87,8 @@ const tables = {
     ],
     pagination: {
       rowsPerPage: 10
-    }
+    },
+    filter: ''
   },
   AddressesTable: {
     columns: [
@@ -130,9 +132,8 @@ const tables = {
       sortBy: 'amount',
       descending: true
     },
-    addressesFilter: ''
+    filter: ''
   },
-
   HistoryTable: {
     columns: [
       {
@@ -172,7 +173,7 @@ const tables = {
       sortBy: 'date',
       descending: true
     },
-    addressesFilter: ''
+    filter: ''
   }
 }
 
