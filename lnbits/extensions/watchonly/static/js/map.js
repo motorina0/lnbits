@@ -72,6 +72,7 @@ const mapWalletAccount = function (obj) {
         'YYYY-MM-DD HH:mm'
       )
     : ''
+  obj.label = obj.title // for drop-downs
   obj.expanded = false
   return obj
 }

@@ -147,6 +147,12 @@ new Vue({
         LNbits.utils.notifyApiError(err)
       }
     },
+    getAmmountForWallet: function (walletId) {
+      const amount = this.addresses.data
+        .filter(a => a.wallet === walletId)
+        .reduce((t, a) => t + a.amount || 0, 0)
+      return this.satBtc(amount)
+    },
 
     //################### ADDRESSES ###################
     getAddressDetails: async function (address) {
@@ -325,6 +331,11 @@ new Vue({
     getTotalPaymentAmount: function () {
       const total = this.payment.data.reduce((t, a) => t + (a.amount || 0), 0)
       return this.satBtc(total)
+    },
+    goToPaymentView: function () {
+      this.payment.show = true
+      this.initPaymentData()
+      this.tab = 'utxos'
     },
 
     //################### UTXOs ###################
