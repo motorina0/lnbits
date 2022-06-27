@@ -21,7 +21,6 @@ const mapWalletLink = function (obj) {
         'YYYY-MM-DD HH:mm'
       )
     : ''
-  const mP = obj.masterpub || ''
   obj.label = obj.title
   return obj
 }
@@ -450,24 +449,22 @@ new Vue({
     showAddressHistoryDetails: function (addressHistory) {
       addressHistory.expanded = true
     },
-    getAddressDetails: function (address) {
-      LNbits.api
-        .request(
+    getAddressDetails: async function (address) {
+      try {
+        const {data} = await LNbits.api.request(
           'GET',
           '/watchonly/api/v1/mempool/' + address,
           this.g.user.wallets[0].inkey
         )
-        .then(function (response) {
-          return reponse.data
-        })
-        .catch(function (error) {
-          LNbits.utils.notifyApiError(error)
-        })
+        return data
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
     },
     refreshAddresses: async function () {
       const wallets = await this.getWatchOnlyWallets()
       this.addresses.data = []
-      for (const {id, address_no} of wallets) {
+      for (const {id} of wallets) {
         const addrs = await this.getAddressesForWallet(id)
         addrs.forEach(a => (a.expanded = false))
         this.addresses.data.push(...addrs)
@@ -537,40 +534,34 @@ new Vue({
       console.log('### data', data)
       this.openQrCodeDialog(data)
     },
-    getMempool: function () {
-      var self = this
-
-      LNbits.api
-        .request(
+    getMempool: async function () {
+      try {
+        const {data} = await LNbits.api.request(
           'GET',
           '/watchonly/api/v1/mempool',
           this.g.user.wallets[0].adminkey
         )
-        .then(function (response) {
-          self.mempool.endpoint = response.data.endpoint
-        })
-        .catch(function (error) {
-          LNbits.utils.notifyApiError(error)
-        })
+        this.mempool.endpoint = data.endpoint
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
     },
 
-    updateMempool: function () {
-      var self = this
+    updateMempool: async function () {
       var wallet = this.g.user.wallets[0]
-      LNbits.api
-        .request(
+      try {
+        const {data} = await LNbits.api.request(
           'PUT',
           '/watchonly/api/v1/mempool',
           wallet.adminkey,
-          self.mempool
+          this.mempool
         )
-        .then(function (response) {
-          self.mempool.endpoint = response.data.endpoint
-          self.walletLinks.push(mapwalletLink(response.data))
-        })
-        .catch(function (error) {
-          LNbits.utils.notifyApiError(error)
-        })
+
+        this.mempool.endpoint = data.endpoint
+        this.walletLinks.push(mapwalletLink(data))
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
     },
     addressHistoryFromTxs: function (addressData, txs) {
       const addressHistory = []
