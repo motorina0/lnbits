@@ -6,14 +6,14 @@ Vue.filter('reverse', function (value) {
   // slice to make a copy of array, then reverse the copy
   return value.slice().reverse()
 })
-var locationPath = [
+const locationPath = [
   window.location.protocol,
   '//',
   window.location.hostname,
   window.location.pathname
 ].join('')
 
-var mapWalletLink = function (obj) {
+const mapWalletLink = function (obj) {
   obj._data = _.clone(obj)
   obj.date = obj.time
     ? Quasar.utils.date.formatDate(
@@ -29,7 +29,7 @@ var mapWalletLink = function (obj) {
 const blockTimeToDate = blockTime =>
   blockTime ? moment(blockTime * 1000).format('LLL') : ''
 
-var mapAddresses = function (obj) {
+const mapAddresses = function (obj) {
   obj._data = _.clone(obj)
   obj.date = obj.time
     ? Quasar.utils.date.formatDate(
@@ -38,6 +38,184 @@ var mapAddresses = function (obj) {
       )
     : ''
   return obj
+}
+
+const watchonlyTables = {
+  WalletsTable: {
+    columns: [
+      {
+        name: 'title',
+        align: 'left',
+        label: 'Title',
+        field: 'title'
+      },
+      {
+        name: 'type',
+        align: 'left',
+        label: 'Type',
+        field: 'type'
+      },
+      {name: 'id', align: 'left', label: 'ID', field: 'id'},
+      {
+        name: 'masterpub',
+        align: 'left',
+        label: 'MasterPub',
+        field: 'masterpub'
+      }
+    ],
+    pagination: {
+      rowsPerPage: 10
+    }
+  },
+  UtxoTable: {
+    columns: [
+      {
+        name: 'expand',
+        align: 'left',
+        label: ''
+      },
+      {
+        name: 'selected',
+        align: 'left',
+        label: ''
+      },
+      {
+        name: 'status',
+        align: 'center',
+        label: 'Status',
+        sortable: true
+      },
+      {
+        name: 'address',
+        align: 'left',
+        label: 'Address',
+        field: 'address',
+        sortable: true
+      },
+      {
+        name: 'amount',
+        align: 'left',
+        label: 'Amount',
+        field: 'amount',
+        sortable: true
+      },
+      {
+        name: 'date',
+        align: 'left',
+        label: 'Date',
+        field: 'date',
+        sortable: true
+      },
+      {
+        name: 'wallet',
+        align: 'left',
+        label: 'Account',
+        field: 'wallet',
+        sortable: true
+      }
+    ],
+    pagination: {
+      rowsPerPage: 10
+    },
+    uxtosFilter: ''
+  },
+  PaymentTable: {
+    columns: [
+      {
+        name: 'data',
+        align: 'left'
+      }
+    ],
+    pagination: {
+      rowsPerPage: 10
+    }
+  },
+  AddressesTable: {
+    columns: [
+      {
+        name: 'actions',
+        align: 'left',
+        label: '',
+        field: 'actions'
+      },
+      {
+        name: 'address',
+        align: 'left',
+        label: 'Address',
+        field: 'address',
+        sortable: true
+      },
+      {
+        name: 'amount',
+        align: 'left',
+        label: 'Amount',
+        field: 'amount',
+        sortable: true
+      },
+      {
+        name: 'note',
+        align: 'left',
+        label: 'Note',
+        field: 'note',
+        sortable: true
+      },
+      {
+        name: 'wallet',
+        align: 'left',
+        label: 'Account',
+        field: 'wallet',
+        sortable: true
+      }
+    ],
+    pagination: {
+      rowsPerPage: 0,
+      sortBy: 'amount',
+      descending: true
+    },
+    addressesFilter: ''
+  },
+
+  HistoryTable: {
+    columns: [
+      {
+        name: 'expand',
+        align: 'left',
+        label: ''
+      },
+      {
+        name: 'status',
+        align: 'left',
+        label: 'Status'
+      },
+      {
+        name: 'amount',
+        align: 'left',
+        label: 'Amount',
+        field: 'amount',
+        sortable: true
+      },
+      {
+        name: 'address',
+        align: 'left',
+        label: 'Address',
+        field: 'address',
+        sortable: true
+      },
+      {
+        name: 'date',
+        align: 'left',
+        label: 'Date',
+        field: 'date',
+        sortable: true
+      }
+    ],
+    pagination: {
+      rowsPerPage: 0,
+      sortBy: 'date',
+      descending: true
+    },
+    addressesFilter: ''
+  }
 }
 
 new Vue({
@@ -95,181 +273,6 @@ new Vue({
       mempool: {
         endpoint: ''
       },
-      WalletsTable: {
-        columns: [
-          {
-            name: 'title',
-            align: 'left',
-            label: 'Title',
-            field: 'title'
-          },
-          {
-            name: 'type',
-            align: 'left',
-            label: 'Type',
-            field: 'type'
-          },
-          {name: 'id', align: 'left', label: 'ID', field: 'id'},
-          {
-            name: 'masterpub',
-            align: 'left',
-            label: 'MasterPub',
-            field: 'masterpub'
-          }
-        ],
-        pagination: {
-          rowsPerPage: 10
-        }
-      },
-      UtxoTable: {
-        columns: [
-          {
-            name: 'expand',
-            align: 'left',
-            label: ''
-          },
-          {
-            name: 'selected',
-            align: 'left',
-            label: ''
-          },
-          {
-            name: 'status',
-            align: 'center',
-            label: 'Status',
-            sortable: true
-          },
-          {
-            name: 'address',
-            align: 'left',
-            label: 'Address',
-            field: 'address',
-            sortable: true
-          },
-          {
-            name: 'amount',
-            align: 'left',
-            label: 'Amount',
-            field: 'amount',
-            sortable: true
-          },
-          {
-            name: 'date',
-            align: 'left',
-            label: 'Date',
-            field: 'date',
-            sortable: true
-          },
-          {
-            name: 'wallet',
-            align: 'left',
-            label: 'Account',
-            field: 'wallet',
-            sortable: true
-          }
-        ],
-        pagination: {
-          rowsPerPage: 10
-        },
-        uxtosFilter: ''
-      },
-      PaymentTable: {
-        columns: [
-          {
-            name: 'data',
-            align: 'left'
-          }
-        ],
-        pagination: {
-          rowsPerPage: 10
-        }
-      },
-      AddressesTable: {
-        columns: [
-          {
-            name: 'actions',
-            align: 'left',
-            label: '',
-            field: 'actions'
-          },
-          {
-            name: 'address',
-            align: 'left',
-            label: 'Address',
-            field: 'address',
-            sortable: true
-          },
-          {
-            name: 'amount',
-            align: 'left',
-            label: 'Amount',
-            field: 'amount',
-            sortable: true
-          },
-          {
-            name: 'note',
-            align: 'left',
-            label: 'Note',
-            field: 'note',
-            sortable: true
-          },
-          {
-            name: 'wallet',
-            align: 'left',
-            label: 'Account',
-            field: 'wallet',
-            sortable: true
-          }
-        ],
-        pagination: {
-          rowsPerPage: 0,
-          sortBy: 'amount',
-          descending: true
-        },
-        addressesFilter: ''
-      },
-
-      HistoryTable: {
-        columns: [
-          {
-            name: 'expand',
-            align: 'left',
-            label: ''
-          },
-          {
-            name: 'status',
-            align: 'left',
-            label: 'Status'
-          },
-          {
-            name: 'amount',
-            align: 'left',
-            label: 'Amount',
-            field: 'amount',
-            sortable: true
-          },
-          {
-            name: 'address',
-            align: 'left',
-            label: 'Address',
-            field: 'address',
-            sortable: true
-          },
-          {
-            name: 'date',
-            align: 'left',
-            label: 'Date',
-            field: 'date',
-            sortable: true
-          }
-        ],
-        pagination: {
-          rowsPerPage: 0,
-          sortBy: 'date',
-          descending: true
-        },
-        addressesFilter: ''
-      },
 
       formDialog: {
         show: false,
@@ -279,7 +282,9 @@ new Vue({
       qrCodeDialog: {
         show: false,
         data: null
-      }
+      },
+
+      ...watchonlyTables
     }
   },
 
@@ -768,3 +773,5 @@ new Vue({
     }
   }
 })
+
+
