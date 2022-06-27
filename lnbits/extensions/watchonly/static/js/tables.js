@@ -2,10 +2,20 @@ const tables = {
   walletsTable: {
     columns: [
       {
+        name: 'new',
+        align: 'left',
+        label: ''
+      },
+      {
         name: 'title',
         align: 'left',
         label: 'Title',
         field: 'title'
+      },
+      {
+        name: 'amount',
+        align: 'left',
+        label: 'Amount'
       },
       {
         name: 'type',
@@ -13,13 +23,7 @@ const tables = {
         label: 'Type',
         field: 'type'
       },
-      {name: 'id', align: 'left', label: 'ID', field: 'id'},
-      {
-        name: 'masterpub',
-        align: 'left',
-        label: 'MasterPub',
-        field: 'masterpub'
-      }
+      {name: 'id', align: 'left', label: 'ID', field: 'id'}
     ],
     pagination: {
       rowsPerPage: 10
@@ -93,10 +97,9 @@ const tables = {
   addressesTable: {
     columns: [
       {
-        name: 'actions',
+        name: 'expand',
         align: 'left',
-        label: '',
-        field: 'actions'
+        label: ''
       },
       {
         name: 'address',

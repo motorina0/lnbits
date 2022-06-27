@@ -474,6 +474,9 @@ new Vue({
         : val == 0
         ? 0.0
         : (val / 100000000).toFixed(8)
+    },
+    getAccountDescription: function (accountType) {
+      return getAccountDescription(accountType)
     }
   },
   created: async function () {

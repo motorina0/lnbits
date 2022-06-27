@@ -73,14 +73,17 @@
             <q-tr :props="props">
               <q-td auto-width>
                 <q-btn
-                  flat
+                  size="sm"
+                  color="accent"
+                  round
                   dense
-                  size="xs"
-                  @click="deleteWalletAccount(props.row.id)"
-                  icon="cancel"
-                  color="pink"
-                ></q-btn>
+                  @click="props.row.expanded= !props.row.expanded"
+                  :icon="props.row.expanded? 'remove' : 'add'"
+                />
+              </q-td>
+              <q-td key="new">
                 <q-badge
+                  size="lg"
                   color="secondary"
                   class="q-mr-md cursor-pointer"
                   @click="openGetFreshAddressDialog(props.row.id)"
@@ -88,13 +91,50 @@
                   New Receive Address
                 </q-badge>
               </q-td>
-              <q-td
-                v-for="col in props.cols"
-                :key="col.name"
-                :props="props"
-                auto-width
-              >
-                {{ col.value }}
+
+              <q-td key="title" :props="props" :class="">
+                <div>{{props.row.title}}</div>
+              </q-td>
+              <q-td key="amount" :props="props" :class="">
+                <div>{{props.row.amount}}</div>
+              </q-td>
+              <q-td key="type" :props="props" :class="">
+                <div>{{props.row.type}}</div>
+              </q-td>
+              <q-td key="id" :props="props" :class="">
+                <div>{{props.row.id}}</div>
+              </q-td>
+            </q-tr>
+            <q-tr v-show="props.row.expanded" :props="props">
+              <q-td colspan="100%">
+                <div class="row items-center q-mt-md q-mb-lg">
+                  <div class="col-2 q-pr-lg"></div>
+                  <div class="col-4 q-pr-lg">
+                    <q-btn
+                      unelevated
+                      color="secondary"
+                      @click="openGetFreshAddressDialog(props.row.id)"
+                      >New Receive Address</q-btn
+                    >
+                  </div>
+                  <div class="col-4">
+                    {{getAccountDescription(props.row.type)}}
+                  </div>
+                  <div class="col-2 q-pr-lg"></div>
+                </div>
+
+                <div class="row items-center no-wrap q-mb-md">
+                  <div class="col-2 q-pr-lg">Master Pubkey:</div>
+                  <div class="col-8">
+                    <q-input
+                      v-model="props.row.masterpub"
+                      filled
+                      readonly
+                      type="textarea"
+                    />
+                  </div>
+                  <div class="col-2 q-pr-lg"></div>
+                </div>
               </q-td>
             </q-tr>
           </template>
