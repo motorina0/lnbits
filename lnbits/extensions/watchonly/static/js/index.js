@@ -40,6 +40,61 @@ const mapAddresses = function (obj) {
   return obj
 }
 
+const mapInputToSentHistory = (tx, addressData, vin) => ({
+  sent: true,
+  txId: tx.txid,
+  address: addressData.address,
+  isChange: addressData.branch_index === 1,
+  amount: vin.prevout.value,
+  date: blockTimeToDate(tx.status.block_time),
+  height: tx.status.block_height,
+  confirmed: tx.status.confirmed,
+  fee: tx.fee,
+  expanded: false
+})
+
+const mapOutputToReceiveHistory = (tx, addressData, vout) => ({
+  received: true,
+  txId: tx.txid,
+  address: addressData.address,
+  isChange: addressData.branch_index === 1,
+  amount: vout.value,
+  date: blockTimeToDate(tx.status.block_time),
+  height: tx.status.block_height,
+  confirmed: tx.status.confirmed,
+  fee: tx.fee,
+  expanded: false
+})
+
+const mapUtxoToTxInput = utxo => ({
+  txid: utxo.txId,
+  vout: utxo.vout,
+  amount: utxo.amount,
+  address: utxo.address,
+  branch_index: utxo.branch_index,
+  address_index: utxo.address_index,
+  master_fingerprint: utxo.master_fingerprint,
+  txHex: ''
+})
+
+const mapToAddressUtxo = (wallet, addressData, utxo) => ({
+  id: addressData.id,
+  address: addressData.address,
+  isChange: addressData.branch_index === 1,
+  address_index: addressData.address_index,
+  branch_index: addressData.branch_index,
+  wallet: addressData.wallet,
+  master_fingerprint: wallet.fingerprint,
+  txId: utxo.txid,
+  vout: utxo.vout,
+  confirmed: utxo.status.confirmed,
+  amount: utxo.value,
+  date: blockTimeToDate(utxo.status?.block_time),
+  sort: utxo.status?.block_time,
+  expanded: false,
+  selected: false
+})
+
 const watchonlyTables = {
   WalletsTable: {
     columns: [
@@ -353,16 +408,7 @@ new Vue({
         }
         tx.inputs = this.utxos.data
           .filter(utxo => utxo.selected)
-          .map(utxo => ({
-            txid: utxo.txId,
-            vout: utxo.vout,
-            amount: utxo.amount,
-            address: utxo.address,
-            branch_index: utxo.branch_index,
-            address_index: utxo.address_index,
-            master_fingerprint: utxo.master_fingerprint,
-            txHex: ''
-          }))
+          .map(mapUtxoToTxInput)
         tx.outputs = this.payment.data.map(out => ({
           address: out.address,
           amount: out.amount
@@ -455,7 +501,7 @@ new Vue({
           }
         }
 
-        const {data} = await LNbits.api.request(
+        await LNbits.api.request(
           'PUT',
           `/watchonly/api/v1/address/${addressData.id}`,
           wallet.adminkey,
@@ -469,7 +515,7 @@ new Vue({
       try {
         const wallet = this.g.user.wallets[0] // todo: find active wallet
         addressData.note = note
-        const {data} = await LNbits.api.request(
+        await LNbits.api.request(
           'PUT',
           `/watchonly/api/v1/address/${addressData.id}`,
           wallet.adminkey,
@@ -533,32 +579,10 @@ new Vue({
           .filter(
             vin => vin.prevout.scriptpubkey_address === addressData.address
           )
-          .map(vin => ({
-            sent: true,
-            txId: tx.txid,
-            address: addressData.address,
-            isChange: addressData.branch_index === 1,
-            amount: vin.prevout.value,
-            date: blockTimeToDate(tx.status.block_time),
-            height: tx.status.block_height,
-            confirmed: tx.status.confirmed,
-            fee: tx.fee,
-            expanded: false
-          }))
+          .map(vin => mapInputToSentHistory(tx, addressData, vin))
         const received = tx.vout
           .filter(vout => vout.scriptpubkey_address === addressData.address)
-          .map(vout => ({
-            received: true,
-            txId: tx.txid,
-            address: addressData.address,
-            isChange: addressData.branch_index === 1,
-            amount: vout.value,
-            date: blockTimeToDate(tx.status.block_time),
-            height: tx.status.block_height,
-            confirmed: tx.status.confirmed,
-            fee: tx.fee,
-            expanded: false
-          }))
+          .map(vout => mapOutputToReceiveHistory(tx, addressData, vout))
         addressHistory.push(...sent, ...received)
       })
       return addressHistory
@@ -597,25 +621,11 @@ new Vue({
     updateUtxosForAddress: function (addressData, utxos = []) {
       const wallet =
         this.walletLinks.find(w => w.id === addressData.wallet) || {}
-      utxos.forEach(utxo => {
-        this.utxos.data.push({
-          id: addressData.id,
-          address: addressData.address,
-          isChange: addressData.branch_index === 1,
-          address_index: addressData.address_index,
-          branch_index: addressData.branch_index,
-          wallet: addressData.wallet,
-          master_fingerprint: wallet.fingerprint,
-          txId: utxo.txid,
-          vout: utxo.vout,
-          confirmed: utxo.status.confirmed,
-          amount: utxo.value,
-          date: blockTimeToDate(utxo.status?.block_time),
-          sort: utxo.status?.block_time,
-          expanded: false,
-          selected: false
-        })
-      })
+
+      const newUtxos = utxos.map(utxo =>
+        mapToAddressUtxo(wallet, addressData, utxo)
+      )
+      this.utxos.data.push(...newUtxos)
       if (utxos.length) {
         this.utxos.data.sort((a, b) => b.sort - a.sort)
         this.utxos.total = this.utxos.data.reduce(
@@ -773,5 +783,3 @@ new Vue({
     }
   }
 })
-
-
