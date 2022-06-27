@@ -41,112 +41,114 @@ new Vue({
   },
 
   methods: {
+    //################### MEMPOOL ###################
+    getMempool: async function () {
+      try {
+        const {data} = await LNbits.api.request(
+          'GET',
+          '/watchonly/api/v1/mempool',
+          this.g.user.wallets[0].adminkey
+        )
+        this.mempool.endpoint = data.endpoint
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
+    updateMempool: async function () {
+      const wallet = this.g.user.wallets[0]
+      try {
+        const {data} = await LNbits.api.request(
+          'PUT',
+          '/watchonly/api/v1/mempool',
+          wallet.adminkey,
+          this.mempool
+        )
+
+        this.mempool.endpoint = data.endpoint
+        this.walletAccounts.push(mapWalletAccount(data))
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
+
+    //################### WALLETS ###################
     getWalletName: function (walletId) {
       const wallet = this.walletAccounts.find(wl => wl.id === walletId)
       return wallet ? wallet.title : 'unknown'
     },
-    getFilteredAddresses: function () {
-      const selectedWalletId = this.addresses.selectedWallet?.id
-      const filter = this.addresses.filterValues || []
-      const includeChangeAddrs = filter.includes('Show Change Addresses')
-      const includeGapAddrs = filter.includes('Show Gap Addresses')
-      const excludeNoAmount = filter.includes('Only With Amount')
-
-      const walletsLimit = this.walletAccounts.reduce((r, w) => {
-        r[`_${w.id}`] = w.address_no
-        return r
-      }, {})
-
-      const addresses = this.addresses.data.filter(
-        a =>
-          (includeChangeAddrs || a.branch_index === 0) &&
-          (includeGapAddrs ||
-            a.branch_index === 1 ||
-            a.address_index <= walletsLimit[`_${a.wallet}`]) &&
-          !(excludeNoAmount && a.amount === 0) &&
-          (!selectedWalletId || a.wallet === selectedWalletId)
-      )
-      return addresses
+    addWalletAccount: function () {
+      const wallet = this.g.user.wallets[0]
+      const data = _.omit(this.formDialog.data, 'wallet')
+      this.createWalletAccount(wallet, data)
     },
-    deletePaymentAddress: function (v) {
-      const index = this.payment.data.indexOf(v)
-      if (index !== -1) {
-        this.payment.data.splice(index, 1)
-      }
-    },
-    initPaymentData: function () {
-      if (!this.payment.show) return
-
-      this.payment.changeWallet = this.walletAccounts[0]
-      // temp solution
-      const changeAddress = this.addresses.data.filter(
-        a => a.wallet === this.payment.changeWallet.id
-      )
-      this.payment.changeAddress = changeAddress.pop().address
-      this.payment.showAdvanced = false
-    },
-    addPaymentAddress: function () {
-      this.payment.data.push({address: '', amount: undefined})
-    },
-    getTotalPaymentAmount: function () {
-      const total = this.payment.data.reduce((t, a) => t + (a.amount || 0), 0)
-      return this.satBtc(total)
-    },
-    getTotalUtxoAmount: function () {
-      const total = this.utxos.data.reduce((t, a) => t + (a.amount || 0), 0)
-      return this.satBtc(total)
-    },
-    createTransaction: async function () {
-      const wallet = this.g.user.wallets[0] // todo: find active wallet
+    createWalletAccount: async function (wallet, data) {
       try {
-        const tx = {
-          fee_rate: this.payment.feeRate,
-          masterpubs: this.walletAccounts.map(w => w.masterpub)
-        }
-        tx.inputs = this.utxos.data
-          .filter(utxo => utxo.selected)
-          .map(mapUtxoToTxInput)
-        tx.outputs = this.payment.data.map(out => ({
-          address: out.address,
-          amount: out.amount
-        }))
-
-        for (const input of tx.inputs) {
-          input.tx_hex = await this.fetchTxHex(input.txid)
-        }
-
-        const {data} = await LNbits.api.request(
+        const response = await LNbits.api.request(
           'POST',
-          '/watchonly/api/v1/psbt',
+          '/watchonly/api/v1/wallet',
           wallet.adminkey,
-          tx
+          data
         )
-
-        this.payment.psbtBase64 = data
-      } catch (err) {
-        console.log('### err', err)
+        this.walletAccounts.push(mapWalletAccount(response.data))
+        this.formDialog.show = false
+        await this.refreshWalletAccounts()
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
       }
     },
-    getFilteredAddressesHistory: function () {
-      return this.addresses.history
-        .filter(a => !a.isChange)
-        .sort((a, b) => (!a.height ? -1 : b.height - a.height))
+    deleteWalletAccount: function (linkId) {
+      LNbits.utils
+        .confirmDialog(
+          'Are you sure you want to delete this watch only wallet?'
+        )
+        .onOk(async () => {
+          try {
+            await LNbits.api.request(
+              'DELETE',
+              '/watchonly/api/v1/wallet/' + linkId,
+              this.g.user.wallets[0].adminkey
+            )
+            this.walletAccounts = _.reject(this.walletAccounts, function (obj) {
+              return obj.id === linkId
+            })
+            await this.refreshWalletAccounts()
+            await this.refreshAddresses()
+            await this.scanAddressWithAmountUTXOs()
+          } catch (error) {
+            LNbits.utils.notifyApiError(error)
+          }
+        })
     },
-    fetchTxHex: async function (txId, retryCount = 0) {
-      const {
-        bitcoin: {transactions: transactionsAPI}
-      } = mempoolJS()
+    getAddressesForWallet: async function (walletId) {
       try {
-        return await transactionsAPI.getTxHex({txid: txId})
+        const {data} = await LNbits.api.request(
+          'GET',
+          '/watchonly/api/v1/addresses/' + walletId,
+          this.g.user.wallets[0].inkey
+        )
+        return data
       } catch (err) {
-        if (retryCount > 10) throw err
-        await sleep((retryCount + 1) * 1000)
-        return this.fetchTxHex(txId, retryCount + 1)
+        LNbits.utils.notifyApiError(err)
       }
     },
-    showAddressHistoryDetails: function (addressHistory) {
-      addressHistory.expanded = true
+    getWatchOnlyWallets: async function () {
+      const {data} = await LNbits.api.request(
+        'GET',
+        '/watchonly/api/v1/wallet',
+        this.g.user.wallets[0].inkey
+      )
+      return data
     },
+    refreshWalletAccounts: async function () {
+      try {
+        const wallets = await this.getWatchOnlyWallets()
+        this.walletAccounts = wallets.map(w => mapWalletAccount(w))
+      } catch (err) {
+        LNbits.utils.notifyApiError(err)
+      }
+    },
+
+    //################### ADDRESSES ###################
     getAddressDetails: async function (address) {
       try {
         const {data} = await LNbits.api.request(
@@ -166,18 +168,6 @@ new Vue({
         const addrs = await this.getAddressesForWallet(id)
         addrs.forEach(a => (a.expanded = false))
         this.addresses.data.push(...addrs)
-      }
-    },
-    getAddressesForWallet: async function (walletId) {
-      try {
-        const {data} = await LNbits.api.request(
-          'GET',
-          '/watchonly/api/v1/addresses/' + walletId,
-          this.g.user.wallets[0].inkey
-        )
-        return data
-      } catch (err) {
-        LNbits.utils.notifyApiError(err)
       }
     },
     updateAmountForAddress: async function (addressData, amount = 0) {
@@ -220,7 +210,29 @@ new Vue({
         LNbits.utils.notifyApiError(err)
       }
     },
+    getFilteredAddresses: function () {
+      const selectedWalletId = this.addresses.selectedWallet?.id
+      const filter = this.addresses.filterValues || []
+      const includeChangeAddrs = filter.includes('Show Change Addresses')
+      const includeGapAddrs = filter.includes('Show Gap Addresses')
+      const excludeNoAmount = filter.includes('Only With Amount')
 
+      const walletsLimit = this.walletAccounts.reduce((r, w) => {
+        r[`_${w.id}`] = w.address_no
+        return r
+      }, {})
+
+      const addresses = this.addresses.data.filter(
+        a =>
+          (includeChangeAddrs || a.branch_index === 0) &&
+          (includeGapAddrs ||
+            a.branch_index === 1 ||
+            a.address_index <= walletsLimit[`_${a.wallet}`]) &&
+          !(excludeNoAmount && a.amount === 0) &&
+          (!selectedWalletId || a.wallet === selectedWalletId)
+      )
+      return addresses
+    },
     openGetFreshAddressDialog: async function (walletId) {
       const {data: addressData} = await LNbits.api.request(
         'GET',
@@ -232,35 +244,8 @@ new Vue({
       wallet.address_no = addressData.address_index
       await this.refreshAddresses()
     },
-    getMempool: async function () {
-      try {
-        const {data} = await LNbits.api.request(
-          'GET',
-          '/watchonly/api/v1/mempool',
-          this.g.user.wallets[0].adminkey
-        )
-        this.mempool.endpoint = data.endpoint
-      } catch (error) {
-        LNbits.utils.notifyApiError(error)
-      }
-    },
 
-    updateMempool: async function () {
-      const wallet = this.g.user.wallets[0]
-      try {
-        const {data} = await LNbits.api.request(
-          'PUT',
-          '/watchonly/api/v1/mempool',
-          wallet.adminkey,
-          this.mempool
-        )
-
-        this.mempool.endpoint = data.endpoint
-        this.walletAccounts.push(mapWalletAccount(data))
-      } catch (error) {
-        LNbits.utils.notifyApiError(error)
-      }
-    },
+    //################### ADDRESS HISTORY ###################
     addressHistoryFromTxs: function (addressData, txs) {
       const addressHistory = []
       txs.forEach(tx => {
@@ -276,37 +261,73 @@ new Vue({
       })
       return addressHistory
     },
-    getAddressTxsDelayed: async function (addrData, retryCount = 0) {
-      const {
-        bitcoin: {addresses: addressesAPI}
-      } = mempoolJS()
+    getFilteredAddressesHistory: function () {
+      return this.addresses.history
+        .filter(a => !a.isChange)
+        .sort((a, b) => (!a.height ? -1 : b.height - a.height))
+    },
+    createTransaction: async function () {
+      const wallet = this.g.user.wallets[0] // todo: find active wallet
       try {
-        await sleep(250)
-        const addressTxs = await addressesAPI.getAddressTxs({
-          address: addrData.address
-        })
-        return this.addressHistoryFromTxs(addrData, addressTxs)
+        const tx = {
+          fee_rate: this.payment.feeRate,
+          masterpubs: this.walletAccounts.map(w => w.masterpub)
+        }
+        tx.inputs = this.utxos.data
+          .filter(utxo => utxo.selected)
+          .map(mapUtxoToTxInput)
+        tx.outputs = this.payment.data.map(out => ({
+          address: out.address,
+          amount: out.amount
+        }))
+
+        for (const input of tx.inputs) {
+          input.tx_hex = await this.fetchTxHex(input.txid)
+        }
+
+        const {data} = await LNbits.api.request(
+          'POST',
+          '/watchonly/api/v1/psbt',
+          wallet.adminkey,
+          tx
+        )
+
+        this.payment.psbtBase64 = data
       } catch (err) {
-        if (retryCount > 10) throw err
-        await sleep((retryCount + 1) * 1000)
-        return this.getAddressTxsDelayed(addrData, retryCount + 1)
+        console.log('### err', err)
       }
     },
-    getAddressTxsUtxoDelayed: async function (address, retryCount = 0) {
-      const {
-        bitcoin: {addresses: addressesAPI}
-      } = mempoolJS()
-      try {
-        await sleep(250)
-        return await addressesAPI.getAddressTxsUtxo({
-          address
-        })
-      } catch (err) {
-        if (retryCount > 10) throw err
-        await sleep((retryCount + 1) * 1000)
-        return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
+    showAddressHistoryDetails: function (addressHistory) {
+      addressHistory.expanded = true
+    },
+
+    //################### PAYMENT ###################
+    deletePaymentAddress: function (v) {
+      const index = this.payment.data.indexOf(v)
+      if (index !== -1) {
+        this.payment.data.splice(index, 1)
       }
     },
+    initPaymentData: function () {
+      if (!this.payment.show) return
+
+      this.payment.changeWallet = this.walletAccounts[0]
+      // temp solution
+      const changeAddress = this.addresses.data.filter(
+        a => a.wallet === this.payment.changeWallet.id
+      )
+      this.payment.changeAddress = changeAddress.pop().address
+      this.payment.showAdvanced = false
+    },
+    addPaymentAddress: function () {
+      this.payment.data.push({address: '', amount: undefined})
+    },
+    getTotalPaymentAmount: function () {
+      const total = this.payment.data.reduce((t, a) => t + (a.amount || 0), 0)
+      return this.satBtc(total)
+    },
+
+    //################### UTXOs ###################
     updateUtxosForAddress: function (addressData, utxos = []) {
       const wallet =
         this.walletAccounts.find(w => w.id === addressData.wallet) || {}
@@ -379,24 +400,57 @@ new Vue({
         this.scan.scanning = false
       }
     },
-
-    getWatchOnlyWallets: async function () {
-      const {data} = await LNbits.api.request(
-        'GET',
-        '/watchonly/api/v1/wallet',
-        this.g.user.wallets[0].inkey
-      )
-      return data
+    getTotalUtxoAmount: function () {
+      const total = this.utxos.data.reduce((t, a) => t + (a.amount || 0), 0)
+      return this.satBtc(total)
     },
-    refreshWalletAccounts: async function () {
+
+    //################### MEMPOOL API ###################
+    getAddressTxsDelayed: async function (addrData, retryCount = 0) {
+      const {
+        bitcoin: {addresses: addressesAPI}
+      } = mempoolJS()
       try {
-        const wallets = await this.getWatchOnlyWallets()
-        this.walletAccounts = wallets.map(w => mapWalletAccount(w))
+        await sleep(250)
+        const addressTxs = await addressesAPI.getAddressTxs({
+          address: addrData.address
+        })
+        return this.addressHistoryFromTxs(addrData, addressTxs)
       } catch (err) {
-        LNbits.utils.notifyApiError(err)
+        if (retryCount > 10) throw err
+        await sleep((retryCount + 1) * 1000)
+        return this.getAddressTxsDelayed(addrData, retryCount + 1)
+      }
+    },
+    getAddressTxsUtxoDelayed: async function (address, retryCount = 0) {
+      const {
+        bitcoin: {addresses: addressesAPI}
+      } = mempoolJS()
+      try {
+        await sleep(250)
+        return await addressesAPI.getAddressTxsUtxo({
+          address
+        })
+      } catch (err) {
+        if (retryCount > 10) throw err
+        await sleep((retryCount + 1) * 1000)
+        return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
+      }
+    },
+    fetchTxHex: async function (txId, retryCount = 0) {
+      const {
+        bitcoin: {transactions: transactionsAPI}
+      } = mempoolJS()
+      try {
+        return await transactionsAPI.getTxHex({txid: txId})
+      } catch (err) {
+        if (retryCount > 10) throw err
+        await sleep((retryCount + 1) * 1000)
+        return this.fetchTxHex(txId, retryCount + 1)
       }
     },
 
+    //################### OTHER ###################
     closeFormDialog: function () {
       this.formDialog.data = {
         is_unique: false
@@ -410,49 +464,6 @@ new Vue({
     searchInTab: function (tab, value) {
       this.tab = tab
       this[`${tab}Table`].filter = value
-    },
-    sendFormData: function () {
-      const wallet = this.g.user.wallets[0]
-      const data = _.omit(this.formDialog.data, 'wallet')
-      this.createWalletAccount(wallet, data)
-    },
-    createWalletAccount: async function (wallet, data) {
-      try {
-        const response = await LNbits.api.request(
-          'POST',
-          '/watchonly/api/v1/wallet',
-          wallet.adminkey,
-          data
-        )
-        this.walletAccounts.push(mapWalletAccount(response.data))
-        this.formDialog.show = false
-        await this.refreshWalletAccounts()
-      } catch (error) {
-        LNbits.utils.notifyApiError(error)
-      }
-    },
-    deleteWalletAccount: function (linkId) {
-      LNbits.utils
-        .confirmDialog(
-          'Are you sure you want to delete this watch only wallet?'
-        )
-        .onOk(async () => {
-          try {
-            await LNbits.api.request(
-              'DELETE',
-              '/watchonly/api/v1/wallet/' + linkId,
-              this.g.user.wallets[0].adminkey
-            )
-            this.walletAccounts = _.reject(this.walletAccounts, function (obj) {
-              return obj.id === linkId
-            })
-            await this.refreshWalletAccounts()
-            await this.refreshAddresses()
-            await this.scanAddressWithAmountUTXOs()
-          } catch (error) {
-            LNbits.utils.notifyApiError(error)
-          }
-        })
     },
     exportCSV: function () {
       LNbits.utils.exportCSV(this.paywallsTable.columns, this.paywalls) // todo: paywallsTable??
