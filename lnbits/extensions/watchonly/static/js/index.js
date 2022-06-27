@@ -266,7 +266,7 @@ new Vue({
         .filter(a => !a.isChange)
         .sort((a, b) => (!a.height ? -1 : b.height - a.height))
     },
-    createTransaction: async function () {
+    createPsbt: async function () {
       const wallet = this.g.user.wallets[0] // todo: find active wallet
       try {
         const tx = {
@@ -328,27 +328,6 @@ new Vue({
     },
 
     //################### UTXOs ###################
-    updateUtxosForAddress: function (addressData, utxos = []) {
-      const wallet =
-        this.walletAccounts.find(w => w.id === addressData.wallet) || {}
-
-      const newUtxos = utxos.map(utxo =>
-        mapToAddressUtxo(wallet, addressData, utxo)
-      )
-      this.utxos.data.push(...newUtxos)
-      if (utxos.length) {
-        this.utxos.data.sort((a, b) => b.sort - a.sort)
-        this.utxos.total = this.utxos.data.reduce(
-          (total, y) => (total += y?.amount || 0),
-          0
-        )
-      }
-      const addressTotal = utxos.reduce(
-        (total, y) => (total += y?.value || 0),
-        0
-      )
-      this.updateAmountForAddress(addressData, addressTotal)
-    },
     scanAllAddressUTXOs: async function () {
       await this.refreshAddresses()
       this.addresses.history = []
@@ -399,6 +378,27 @@ new Vue({
       } finally {
         this.scan.scanning = false
       }
+    },
+    updateUtxosForAddress: function (addressData, utxos = []) {
+      const wallet =
+        this.walletAccounts.find(w => w.id === addressData.wallet) || {}
+
+      const newUtxos = utxos.map(utxo =>
+        mapToAddressUtxo(wallet, addressData, utxo)
+      )
+      this.utxos.data.push(...newUtxos)
+      if (utxos.length) {
+        this.utxos.data.sort((a, b) => b.sort - a.sort)
+        this.utxos.total = this.utxos.data.reduce(
+          (total, y) => (total += y?.amount || 0),
+          0
+        )
+      }
+      const addressTotal = utxos.reduce(
+        (total, y) => (total += y?.value || 0),
+        0
+      )
+      this.updateAmountForAddress(addressData, addressTotal)
     },
     getTotalUtxoAmount: function () {
       const total = this.utxos.data.reduce((t, a) => t + (a.amount || 0), 0)
