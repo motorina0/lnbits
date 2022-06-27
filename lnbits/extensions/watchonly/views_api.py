@@ -100,25 +100,35 @@ async def api_fresh_address(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
     address = await get_fresh_address(wallet_id)
     return address.dict()
 
+
 @watchonly_ext.put("/api/v1/address/{id}")
-async def api_update_address(id:str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)):
+async def api_update_address(
+    id: str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)
+):
     body = await req.json()
     params = {}
-    #amout is only updated if the address has history
-    if 'amount' in body:
-        params['amount'] = int(body['amount'])
-        params['has_activity'] = True
-        
-    if 'note' in body:
-        params['note'] = str(body['note'])
+    # amout is only updated if the address has history
+    if "amount" in body:
+        params["amount"] = int(body["amount"])
+        params["has_activity"] = True
 
-    address = await update_address(**params, id = id)
+    if "note" in body:
+        params["note"] = str(body["note"])
 
-    wallet = await get_watch_wallet(address.wallet) if address.branch_index == 0 and address.amount != 0 else None
-    
+    address = await update_address(**params, id=id)
+
+    wallet = (
+        await get_watch_wallet(address.wallet)
+        if address.branch_index == 0 and address.amount != 0
+        else None
+    )
+
     if wallet and wallet.address_no < address.address_index:
-        await update_watch_wallet(address.wallet, **{"address_no": address.address_index})
+        await update_watch_wallet(
+            address.wallet, **{"address_no": address.address_index}
+        )
     return address
+
 
 @watchonly_ext.get("/api/v1/addresses/{wallet_id}")
 async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)):
@@ -129,7 +139,7 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
         )
 
     addresses = await get_addresses(wallet_id)
-    
+
     if not addresses:
         await create_fresh_addresses(wallet_id, 0, RECEIVE_GAP_LIMIT)
         await create_fresh_addresses(wallet_id, 0, CHANGE_GAP_LIMIT, True)
@@ -138,23 +148,33 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
     receive_addresses = list(filter(lambda addr: addr.branch_index == 0, addresses))
     change_addresses = list(filter(lambda addr: addr.branch_index == 1, addresses))
 
-    last_receive_address = list(filter(lambda addr: addr.amount > 0, receive_addresses))[-1:]
-    last_change_address = list(filter(lambda addr: addr.amount > 0, change_addresses))[-1:]
+    last_receive_address = list(
+        filter(lambda addr: addr.amount > 0, receive_addresses)
+    )[-1:]
+    last_change_address = list(filter(lambda addr: addr.amount > 0, change_addresses))[
+        -1:
+    ]
 
     if last_receive_address:
         current_index = receive_addresses[-1].address_index
         address_index = last_receive_address[0].address_index
-        await create_fresh_addresses(wallet_id, current_index + 1, address_index + RECEIVE_GAP_LIMIT)
+        await create_fresh_addresses(
+            wallet_id, current_index + 1, address_index + RECEIVE_GAP_LIMIT
+        )
 
     if last_change_address:
         current_index = change_addresses[-1].address_index
         address_index = last_change_address[0].address_index
-        await create_fresh_addresses(wallet_id, current_index + 1, address_index + CHANGE_GAP_LIMIT, True)
+        await create_fresh_addresses(
+            wallet_id, current_index + 1, address_index + CHANGE_GAP_LIMIT, True
+        )
 
     addresses = await get_addresses(wallet_id)
     return [address.dict() for address in addresses]
 
+
 #############################PSBT##########################
+
 
 @watchonly_ext.post("/api/v1/psbt")
 async def api_psbt_create(
@@ -162,57 +182,76 @@ async def api_psbt_create(
 ):
     # todo: reeeefactor
     try:
-        print('### data 1', data.outputs)
-        vin = [TransactionInput(bytes.fromhex(inp.txid), inp.vout) for inp in data.inputs]
-        print('### data.outputs', data.outputs[0].address)
-        print('### address_to_scriptpubkey', script.address_to_scriptpubkey(data.outputs[0].address))
-        vout = [TransactionOutput(out.amount, script.address_to_scriptpubkey(out.address)) for out in data.outputs]
-        print('### p50')
+        print("### data 1", data.outputs)
+        vin = [
+            TransactionInput(bytes.fromhex(inp.txid), inp.vout) for inp in data.inputs
+        ]
+        print("### data.outputs", data.outputs[0].address)
+        print(
+            "### address_to_scriptpubkey",
+            script.address_to_scriptpubkey(data.outputs[0].address),
+        )
+        vout = [
+            TransactionOutput(out.amount, script.address_to_scriptpubkey(out.address))
+            for out in data.outputs
+        ]
+        print("### p50")
         # temp
         k1 = Key.from_string(data.masterpubs[0])
-        descriptorStr = "wpkh([%s/84h/1h/0h]%s/{0,1}/*)" % (k1.fingerprint.hex(), data.masterpubs[0])
+        descriptorStr = "wpkh([%s/84h/1h/0h]%s/{0,1}/*)" % (
+            k1.fingerprint.hex(),
+            data.masterpubs[0],
+        )
         desc = Descriptor.from_string(descriptorStr)
 
-
-        print('### p100')
+        print("### p100")
         inputs_extra = []
-        bip32_derivations = {}  
+        bip32_derivations = {}
         for i, inp in enumerate(data.inputs):
             d = desc.derive(inp.address_index, inp.branch_index)
             for k in d.keys:
-                bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(k.origin.fingerprint, k.origin.derivation)
-            inputs_extra.append({
-                'bip32_derivations': bip32_derivations,
-                'non_witness_utxo': Transaction.from_string(inp.tx_hex),
-            })
+                bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(
+                    k.origin.fingerprint, k.origin.derivation
+                )
+            inputs_extra.append(
+                {
+                    "bip32_derivations": bip32_derivations,
+                    "non_witness_utxo": Transaction.from_string(inp.tx_hex),
+                }
+            )
 
-        print('### p200')
+        print("### p200")
         tx = Transaction(vin=vin, vout=vout)
         psbt = PSBT(tx)
 
         for i, inp in enumerate(inputs_extra):
-            print('### i', i, inp)
+            print("### i", i, inp)
             psbt.inputs[i].bip32_derivations = inp["bip32_derivations"]
-            psbt.inputs[i].witness_utxo = inp.get("witness_utxo", None) #todo
+            psbt.inputs[i].witness_utxo = inp.get("witness_utxo", None)  # todo
             psbt.inputs[i].non_witness_utxo = inp.get("non_witness_utxo", None)
 
-        print('### p300')
+        print("### p300")
         bip32_derivations = {}
         for _, out in enumerate(data.outputs):
-            if 'branch_index' in out and  out['branch_index'] == 1:
-                d = desc.derive(out['address_index'], out['branch_index'])
+            if "branch_index" in out and out["branch_index"] == 1:
+                d = desc.derive(out["address_index"], out["branch_index"])
                 for k in d.keys:
-                    bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(k.origin.fingerprint, k.origin.derivation)
-                out['bip32_derivations'] = bip32_derivations
+                    bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(
+                        k.origin.fingerprint, k.origin.derivation
+                    )
+                out["bip32_derivations"] = bip32_derivations
 
         for i, out in enumerate(data.outputs):
-            psbt.outputs[i].bip32_derivations = out['bip32_derivations'] if 'bip32_derivations' in out else []
+            psbt.outputs[i].bip32_derivations = (
+                out["bip32_derivations"] if "bip32_derivations" in out else []
+            )
 
         return psbt.to_string()
 
     except Exception as e:
-        print('### e', e)
+        print("### e", e)
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
+
 
 #############################MEMPOOL##########################
 

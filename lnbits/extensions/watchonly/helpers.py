@@ -64,7 +64,6 @@ def parse_key(masterpub: str):
     return desc, network
 
 
-
-async def derive_address(masterpub: str, num: int, branch_index = 0):
+async def derive_address(masterpub: str, num: int, branch_index=0):
     desc, network = parse_key(masterpub)
     return desc.derive(num, branch_index).address(network=network)

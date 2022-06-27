@@ -10,14 +10,15 @@ from .helpers import parse_key, derive_address
 
 ##########################WALLETS####################
 
+
 async def create_watch_wallet(user: str, masterpub: str, title: str) -> Wallets:
     # check the masterpub is fine, it will raise an exception if not
     (descriptor, _) = parse_key(masterpub)
-   
+
     type = descriptor.scriptpubkey_type()
     fingerprint = descriptor.keys[0].fingerprint.hex()
     wallet_id = urlsafe_short_hash()
-    
+
     await db.execute(
         """
         INSERT INTO watchonly.wallets (
@@ -70,6 +71,7 @@ async def delete_watch_wallet(wallet_id: str) -> None:
 
     ########################ADDRESSES#######################
 
+
 async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
     wallet = await get_watch_wallet(wallet_id)
 
@@ -78,14 +80,26 @@ async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
 
     # todo: filter on DB side
     wallet_addresses = await get_addresses(wallet_id)
-    receive_addresses = list(filter(lambda addr: addr.branch_index == 0 and addr.amount != 0, wallet_addresses))
-    last_receive_index = receive_addresses.pop().address_index if receive_addresses else -1
-    address_index = last_receive_index if last_receive_index > wallet.address_no else  wallet.address_no
+    receive_addresses = list(
+        filter(
+            lambda addr: addr.branch_index == 0 and addr.amount != 0, wallet_addresses
+        )
+    )
+    last_receive_index = (
+        receive_addresses.pop().address_index if receive_addresses else -1
+    )
+    address_index = (
+        last_receive_index
+        if last_receive_index > wallet.address_no
+        else wallet.address_no
+    )
 
     address = await get_address_at_index(wallet_id, 0, address_index + 1)
 
     if not address:
-        addresses = await create_fresh_addresses(wallet_id, address_index + 1, address_index + 2)
+        addresses = await create_fresh_addresses(
+            wallet_id, address_index + 1, address_index + 2
+        )
         address = addresses.pop()
 
     await update_watch_wallet(wallet_id, **{"address_no": address_index + 1})
@@ -93,8 +107,13 @@ async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
     return address
 
 
-async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_address_index: int, change_address = False) -> List[Addresses]:
-    if (start_address_index > end_address_index):
+async def create_fresh_addresses(
+    wallet_id: str,
+    start_address_index: int,
+    end_address_index: int,
+    change_address=False,
+) -> List[Addresses]:
+    if start_address_index > end_address_index:
         return None
 
     wallet = await get_watch_wallet(wallet_id)
@@ -106,9 +125,9 @@ async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_a
     # todo: use batch insert (?)
     for address_index in range(start_address_index, end_address_index):
         address = await derive_address(wallet.masterpub, address_index, branch_index)
-        
+
         await db.execute(
-        """
+            """
         INSERT INTO watchonly.addresses (
             id,
             address,
@@ -119,8 +138,8 @@ async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_a
         )
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (urlsafe_short_hash(), address, wallet_id, 0, branch_index, address_index),
-    )
+            (urlsafe_short_hash(), address, wallet_id, 0, branch_index, address_index),
+        )
 
     # return fresh addresses
     rows = await db.fetchall(
@@ -129,10 +148,11 @@ async def create_fresh_addresses(wallet_id: str, start_address_index: int, end_a
             WHERE wallet = ? AND branch_index = ? AND address_index >= ? AND address_index < ?
             ORDER BY branch_index, address_index
         """,
-        (wallet_id, branch_index, start_address_index, end_address_index)
+        (wallet_id, branch_index, start_address_index, end_address_index),
     )
 
     return [Addresses(**row) for row in rows]
+
 
 async def get_address(address: str) -> Optional[Addresses]:
     row = await db.fetchone(
@@ -140,15 +160,23 @@ async def get_address(address: str) -> Optional[Addresses]:
     )
     return Addresses.from_row(row) if row else None
 
-async def get_address_at_index(wallet_id: str, branch_index: int, address_index: int) -> Optional[Addresses]:
+
+async def get_address_at_index(
+    wallet_id: str, branch_index: int, address_index: int
+) -> Optional[Addresses]:
     row = await db.fetchone(
         """
             SELECT * FROM watchonly.addresses 
             WHERE wallet = ? AND branch_index = ? AND address_index = ?
-        """, 
-        (wallet_id, branch_index, address_index,)
+        """,
+        (
+            wallet_id,
+            branch_index,
+            address_index,
+        ),
     )
     return Addresses.from_row(row) if row else None
+
 
 async def get_addresses(wallet_id: str) -> List[Addresses]:
     rows = await db.fetchall(
@@ -156,10 +184,11 @@ async def get_addresses(wallet_id: str) -> List[Addresses]:
             SELECT * FROM watchonly.addresses WHERE wallet = ?
             ORDER BY branch_index, address_index
         """,
-        (wallet_id,)
+        (wallet_id,),
     )
 
     return [Addresses(**row) for row in rows]
+
 
 async def update_address(id: str, **kwargs) -> Optional[Addresses]:
     q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
@@ -168,13 +197,13 @@ async def update_address(id: str, **kwargs) -> Optional[Addresses]:
         f"""UPDATE watchonly.addresses SET {q} WHERE id = ? """,
         (*kwargs.values(), id),
     )
-    row = await db.fetchone(
-        "SELECT * FROM watchonly.addresses WHERE id = ?", (id)
-    )
+    row = await db.fetchone("SELECT * FROM watchonly.addresses WHERE id = ?", (id))
     return Addresses.from_row(row) if row else None
+
 
 async def delete_addresses_for_wallet(wallet_id: str) -> None:
     await db.execute("DELETE FROM watchonly.addresses WHERE wallet = ?", (wallet_id,))
+
 
 ######################MEMPOOL#######################
 
@@ -197,7 +226,7 @@ async def update_mempool(user: str, **kwargs) -> Optional[Mempool]:
     q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
 
     await db.execute(
-        f"""UPDATE watchonly.mempool SET {q} WHERE "user" = ?""", #todo: sql injection risk?
+        f"""UPDATE watchonly.mempool SET {q} WHERE "user" = ?""",  # todo: sql injection risk?
         (*kwargs.values(), user),
     )
     row = await db.fetchone(

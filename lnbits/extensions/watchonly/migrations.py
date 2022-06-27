@@ -35,15 +35,24 @@ async def m001_initial(db):
     """
     )
 
+
 async def m002_xxx(db):
     """
     xxxx.
     """
-    
-    await db.execute("ALTER TABLE watchonly.addresses ADD COLUMN branch_index INTEGER NOT NULL DEFAULT 0;")
-    await db.execute("ALTER TABLE watchonly.addresses ADD COLUMN address_index INTEGER NOT NULL DEFAULT 0;")
+
+    await db.execute(
+        "ALTER TABLE watchonly.addresses ADD COLUMN branch_index INTEGER NOT NULL DEFAULT 0;"
+    )
+    await db.execute(
+        "ALTER TABLE watchonly.addresses ADD COLUMN address_index INTEGER NOT NULL DEFAULT 0;"
+    )
     await db.execute("ALTER TABLE watchonly.addresses ADD COLUMN note TEXT;")
-    await db.execute("ALTER TABLE watchonly.addresses ADD COLUMN has_activity BOOLEAN DEFAULT false;")
+    await db.execute(
+        "ALTER TABLE watchonly.addresses ADD COLUMN has_activity BOOLEAN DEFAULT false;"
+    )
 
     await db.execute("ALTER TABLE watchonly.wallets ADD COLUMN type TEXT;")
-    await db.execute("ALTER TABLE watchonly.wallets ADD COLUMN fingerprint TEXT NOT NULL;")
+    await db.execute(
+        "ALTER TABLE watchonly.wallets ADD COLUMN fingerprint TEXT NOT NULL;"
+    )

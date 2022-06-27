@@ -11,7 +11,7 @@ class CreateWallet(BaseModel):
     title: str = Query("")
 
 
-class Wallets(BaseModel): # todo: why plural
+class Wallets(BaseModel):  # todo: why plural
     id: str
     user: str
     masterpub: str
@@ -19,7 +19,7 @@ class Wallets(BaseModel): # todo: why plural
     title: str
     address_no: int
     balance: int
-    type: str = ''
+    type: str = ""
 
     @classmethod
     def from_row(cls, row: Row) -> "Wallets":
@@ -35,7 +35,7 @@ class Mempool(BaseModel):
         return cls(**dict(row))
 
 
-class Addresses(BaseModel): # todo: why plural
+class Addresses(BaseModel):  # todo: why plural
     id: str
     address: str
     wallet: str
@@ -49,6 +49,7 @@ class Addresses(BaseModel): # todo: why plural
     def from_row(cls, row: Row) -> "Addresses":
         return cls(**dict(row))
 
+
 class TransactionInput(BaseModel):
     txid: str
     vout: int
@@ -59,6 +60,7 @@ class TransactionInput(BaseModel):
     master_fingerprint: str
     tx_hex: str
 
+
 class TransactionOutput(BaseModel):
     amount: int
     address: str
@@ -66,7 +68,8 @@ class TransactionOutput(BaseModel):
     address_index: int = None
     master_fingerprint: str = None
 
-class CreatePsbt(BaseModel):    
+
+class CreatePsbt(BaseModel):
     masterpubs: List[str]
     inputs: List[TransactionInput]
     outputs: List[TransactionOutput]
