@@ -51,8 +51,8 @@
           dense
           :data="walletAccounts"
           row-key="id"
-          :columns="WalletsTable.columns"
-          :pagination.sync="WalletsTable.pagination"
+          :columns="walletsTable.columns"
+          :pagination.sync="walletsTable.pagination"
           :filter="filter"
         >
           <template v-slot:header="props">
@@ -143,7 +143,7 @@
         <q-tabs v-model="tab" no-caps class="bg-dark text-white shadow-2">
           <q-tab name="addresses" label="Addresses"></q-tab>
           <q-tab name="history" label="History"></q-tab>
-          <q-tab name="coins" label="Coins"></q-tab>
+          <q-tab name="utxos" label="Coins"></q-tab>
         </q-tabs>
         <q-tab-panels v-model="tab">
           <!-- todo: why blak bacground? -->
@@ -179,7 +179,7 @@
                   borderless
                   dense
                   debounce="300"
-                  v-model="AddressesTable.filter"
+                  v-model="addressesTable.filter"
                   placeholder="Search"
                 >
                   <template v-slot:append>
@@ -195,9 +195,9 @@
               :data="getFilteredAddresses()"
               row-key="id"
               virtual-scroll
-              :columns="AddressesTable.columns"
-              :pagination.sync="AddressesTable.pagination"
-              :filter="AddressesTable.filter"
+              :columns="addressesTable.columns"
+              :pagination.sync="addressesTable.pagination"
+              :filter="addressesTable.filter"
             >
               <template v-slot:body="props">
                 <q-tr :props="props">
@@ -214,7 +214,13 @@
 
                   <q-td key="address" :props="props">
                     <div>
-                      {{props.row.address}}
+                      <a
+                        style="color: unset"
+                        :href="mempool.endpoint + '/address/' + props.row.address"
+                        target="_blank"
+                      >
+                        {{props.row.address}}</a
+                      >
                       <q-badge
                         v-if="props.row.branch_index === 1"
                         color="orange"
@@ -242,36 +248,42 @@
                 </q-tr>
                 <q-tr v-show="props.row.expanded" :props="props">
                   <q-td colspan="100%">
-                    <div class="row items-center q-mb-md">
-                      <div class="col-2 q-pr-lg">View Details On:</div>
-                      <div class="col-10 q-pr-lg">
-                        <q-btn
-                          v-if="props.row.amount"
-                          flat
-                          dense
-                          size="sm"
-                          icon="launch"
-                          type="a"
-                          :href="mempool.endpoint + '/address/' + props.row.address"
-                          target="_blank"
-                          Details
-                          >{{mempool.endpoint}}</q-btn
-                        >
-                      </div>
-                    </div>
-                    <div class="row items-center q-mb-md">
-                      <div class="col-2 q-pr-lg">QR Code:</div>
-                      <div class="col-10 q-pr-lg">
+                    <div class="row items-center q-mt-md q-mb-lg">
+                      <div class="col-2 q-pr-lg"></div>
+                      <div class="col-3 q-pr-lg">
                         <q-btn
                           unelevated
                           dense
-                          size="sm"
+                          size="md"
                           icon="qr_code"
                           :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
                           @click="openQrCodeDialog(props.row)"
-                        ></q-btn>
+                          >QR Code</q-btn
+                        >
+                      </div>
+                      <div class="col-3 q-pr-lg">
+                        <q-btn
+                          outline
+                          dense
+                          size="md"
+                          icon="history"
+                          color="grey"
+                          @click="searchInTab('history', props.row.address)"
+                          >View History</q-btn
+                        >
+                      </div>
+                      <div class="col-3 q-pr-lg">
+                        <q-btn
+                          outline
+                          dense
+                          size="md"
+                          color="grey"
+                          @click="searchInTab('utxos', props.row.address)"
+                          >View Coins</q-btn
+                        >
                       </div>
                     </div>
+
                     <div class="row items-center no-wrap q-mb-md">
                       <div class="col-2 q-pr-lg">Note:</div>
                       <div class="col-8 q-pr-lg">
@@ -294,7 +306,6 @@
                         >
                       </div>
                     </div>
-                    <!-- todo: link to coins -->
                   </q-td>
                 </q-tr>
               </template>
@@ -309,7 +320,7 @@
                   borderless
                   dense
                   debounce="300"
-                  v-model="HistoryTable.filter"
+                  v-model="historyTable.filter"
                   placeholder="Search"
                 >
                   <template v-slot:append>
@@ -325,9 +336,9 @@
               :data="getFilteredAddressesHistory()"
               row-key="id"
               virtual-scroll
-              :columns="HistoryTable.columns"
-              :pagination.sync="HistoryTable.pagination"
-              :filter="HistoryTable.filter"
+              :columns="historyTable.columns"
+              :pagination.sync="historyTable.pagination"
+              :filter="historyTable.filter"
             >
               <template v-slot:body="props">
                 <q-tr :props="props">
@@ -366,7 +377,13 @@
                     <div>{{satBtc(props.row.amount)}}</div>
                   </q-td>
                   <q-td key="address" :props="props">
-                    {{ props.row.address }}
+                    <a
+                      style="color: unset"
+                      :href="mempool.endpoint + '/address/' + props.row.address"
+                      target="_blank"
+                    >
+                      {{props.row.address}}</a
+                    >
                   </q-td>
                   <q-td key="date" :props="props"> {{ props.row.date }} </q-td>
                 </q-tr>
@@ -374,18 +391,30 @@
                   <q-td colspan="100%">
                     <div class="row items-center no-wrap q-mb-md">
                       <div class="col-2 q-pr-lg">Transaction Id</div>
-                      <div class="col-10 q-pr-lg">{{props.row.txId}}</div>
+                      <div class="col-10 q-pr-lg">
+                        <a
+                          style="color: unset"
+                          :href="mempool.endpoint + '/tx/' + props.row.txId"
+                          target="_blank"
+                        >
+                          {{props.row.txId}}</a
+                        >
+                      </div>
                     </div>
                     <div class="row items-center no-wrap q-mb-md">
                       <div class="col-2 q-pr-lg">Fee</div>
                       <div class="col-4 q-pr-lg">{{satBtc(props.row.fee)}}</div>
+                    </div>
+                    <div class="row items-center no-wrap q-mb-md">
+                      <div class="col-2 q-pr-lg">Block Height</div>
+                      <div class="col-4 q-pr-lg">{{props.row.height}}</div>
                     </div>
                   </q-td>
                 </q-tr>
               </template>
             </q-table>
           </q-tab-panel>
-          <q-tab-panel name="coins">
+          <q-tab-panel name="utxos">
             <div class="row items-center no-wrap q-mb-md">
               <div class="col">UTXOs</div>
               <div class="col-auto">
@@ -393,7 +422,7 @@
                   borderless
                   dense
                   debounce="300"
-                  v-model="UtxoTable.filter"
+                  v-model="utxosTable.filter"
                   placeholder="Search"
                 >
                   <template v-slot:append>
@@ -407,9 +436,9 @@
               dense
               :data="utxos.data"
               row-key="id"
-              :columns="UtxoTable.columns"
-              :pagination.sync="UtxoTable.pagination"
-              :filter="UtxoTable.filter"
+              :columns="utxosTable.columns"
+              :pagination.sync="utxosTable.pagination"
+              :filter="utxosTable.filter"
             >
               <template v-slot:body="props">
                 <q-tr :props="props">
@@ -449,7 +478,13 @@
                   </q-td>
                   <q-td key="address" :props="props">
                     <div>
-                      {{props.row.address}}
+                      <a
+                        style="color: unset"
+                        :href="mempool.endpoint + '/address/' + props.row.address"
+                        target="_blank"
+                      >
+                        {{props.row.address}}</a
+                      >
                       <q-badge
                         v-if="props.row.isChange"
                         color="orange"
@@ -477,7 +512,15 @@
                   <q-td colspan="100%">
                     <div class="row items-center q-mb-md">
                       <div class="col-2 q-pr-lg">Transaction Id</div>
-                      <div class="col-10 q-pr-lg">{{ props.row.txId }}</div>
+                      <div class="col-10 q-pr-lg">
+                        <a
+                          style="color: unset"
+                          :href="mempool.endpoint + '/tx/' + props.row.txId"
+                          target="_blank"
+                        >
+                          {{props.row.txId}}</a
+                        >
+                      </div>
                     </div>
                   </q-td>
                 </q-tr>
@@ -515,8 +558,8 @@
                     flat
                     dense
                     :data="payment.data"
-                    :columns="PaymentTable.columns"
-                    :pagination.sync="PaymentTable.pagination"
+                    :columns="paymentTable.columns"
+                    :pagination.sync="paymentTable.pagination"
                   >
                     <template v-slot:body="props">
                       <q-tr :props="props">
@@ -785,6 +828,7 @@
   </q-dialog>
   {% endraw %}
 </div>
+
 {% endblock %} {% block scripts %} {{ window_vars(user) }}
 <script type="text/javascript" src="https://mempool.space/mempool.js"></script>
 

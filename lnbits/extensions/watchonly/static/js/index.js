@@ -407,6 +407,10 @@ new Vue({
       this.addresses.note = address.note || ''
       this.addresses.show = true
     },
+    searchInTab: function (tab, value) {
+      this.tab = tab
+      this[`${tab}Table`].filter = value
+    },
     sendFormData: function () {
       const wallet = this.g.user.wallets[0]
       const data = _.omit(this.formDialog.data, 'wallet')

@@ -1,5 +1,5 @@
 const tables = {
-  WalletsTable: {
+  walletsTable: {
     columns: [
       {
         name: 'title',
@@ -26,7 +26,7 @@ const tables = {
     },
     filter: ''
   },
-  UtxoTable: {
+  utxosTable: {
     columns: [
       {
         name: 'expand',
@@ -78,7 +78,7 @@ const tables = {
     },
     filter: ''
   },
-  PaymentTable: {
+  paymentTable: {
     columns: [
       {
         name: 'data',
@@ -90,7 +90,7 @@ const tables = {
     },
     filter: ''
   },
-  AddressesTable: {
+  addressesTable: {
     columns: [
       {
         name: 'actions',
@@ -134,7 +134,7 @@ const tables = {
     },
     filter: ''
   },
-  HistoryTable: {
+  historyTable: {
     columns: [
       {
         name: 'expand',
