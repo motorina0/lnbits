@@ -518,14 +518,15 @@ new Vue({
     },
 
     openGetFreshAddressDialog: async function (walletId) {
-      const {data} = await LNbits.api.request(
+      const {data: addressData} = await LNbits.api.request(
         'GET',
         `/watchonly/api/v1/address/${walletId}`,
         this.g.user.wallets[0].inkey
       )
-      // todo: refresh address list
-      console.log('### data', data)
-      this.openQrCodeDialog(data)
+      this.openQrCodeDialog(addressData)
+      const wallet = this.walletAccounts.find(w => w.id === walletId) || {}
+      wallet.address_no = addressData.address_index
+      await this.refreshAddresses()
     },
     getMempool: async function () {
       try {
