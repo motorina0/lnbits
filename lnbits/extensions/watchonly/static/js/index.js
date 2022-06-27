@@ -6,12 +6,6 @@ Vue.filter('reverse', function (value) {
   // slice to make a copy of array, then reverse the copy
   return value.slice().reverse()
 })
-const locationPath = [
-  window.location.protocol,
-  '//',
-  window.location.hostname,
-  window.location.pathname
-].join('')
 
 const mapWalletAccount = function (obj) {
   obj._data = _.clone(obj)
@@ -524,7 +518,6 @@ new Vue({
     },
 
     openGetFreshAddressDialog: async function (walletId) {
-      const wallet = this.g.user.wallets[0] // todo: find active wallet
       const {data} = await LNbits.api.request(
         'GET',
         `/watchonly/api/v1/address/${walletId}`,
@@ -548,7 +541,7 @@ new Vue({
     },
 
     updateMempool: async function () {
-      var wallet = this.g.user.wallets[0]
+      const wallet = this.g.user.wallets[0]
       try {
         const {data} = await LNbits.api.request(
           'PUT',
@@ -675,8 +668,8 @@ new Vue({
 
           this.scan.scanIndex++
         }
-      } catch (err) {
-        console.error(err) // todo: show UI error
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
       } finally {
         this.scan.scanning = false
       }
@@ -710,8 +703,8 @@ new Vue({
       this.addresses.show = true
     },
     sendFormData: function () {
-      var wallet = this.g.user.wallets[0]
-      var data = _.omit(this.formDialog.data, 'wallet')
+      const wallet = this.g.user.wallets[0]
+      const data = _.omit(this.formDialog.data, 'wallet')
       this.createWalletAccount(wallet, data)
     },
     createWalletAccount: async function (wallet, data) {
@@ -730,8 +723,6 @@ new Vue({
       }
     },
     deleteWalletAccount: function (linkId) {
-      var self = this
-      var link = _.findWhere(this.walletAccounts, {id: linkId})
       LNbits.utils
         .confirmDialog(
           'Are you sure you want to delete this watch only wallet?'
@@ -749,13 +740,13 @@ new Vue({
             await this.refreshWalletAccounts()
             await this.refreshAddresses()
             await this.scanAddressWithAmountUTXOs()
-          } catch (err) {
+          } catch (error) {
             LNbits.utils.notifyApiError(error)
           }
         })
     },
     exportCSV: function () {
-      LNbits.utils.exportCSV(this.paywallsTable.columns, this.paywalls)
+      LNbits.utils.exportCSV(this.paywallsTable.columns, this.paywalls) // todo: paywallsTable??
     },
     satBtc(val) {
       return this.utxos.sats
