@@ -13,7 +13,7 @@ const locationPath = [
   window.location.pathname
 ].join('')
 
-const mapWalletLink = function (obj) {
+const mapWalletAccount = function (obj) {
   obj._data = _.clone(obj)
   obj.date = obj.time
     ? Quasar.utils.date.formatDate(
@@ -285,7 +285,7 @@ new Vue({
         scanIndex: 0
       },
 
-      walletLinks: [],
+      walletAccounts: [],
 
       currentAddress: null,
 
@@ -344,7 +344,7 @@ new Vue({
 
   methods: {
     getWalletName: function (walletId) {
-      const wallet = this.walletLinks.find(wl => wl.id === walletId)
+      const wallet = this.walletAccounts.find(wl => wl.id === walletId)
       return wallet ? wallet.title : 'unknown'
     },
     getFilteredAddresses: function () {
@@ -354,7 +354,7 @@ new Vue({
       const includeGapAddrs = filter.includes('Show Gap Addresses')
       const excludeNoAmount = filter.includes('Only With Amount')
 
-      const walletsLimit = this.walletLinks.reduce((r, w) => {
+      const walletsLimit = this.walletAccounts.reduce((r, w) => {
         r[`_${w.id}`] = w.address_no
         return r
       }, {})
@@ -379,7 +379,7 @@ new Vue({
     initPaymentData: function () {
       if (!this.payment.show) return
 
-      this.payment.changeWallet = this.walletLinks[0]
+      this.payment.changeWallet = this.walletAccounts[0]
       // temp solution
       const changeAddress = this.addresses.data.filter(
         a => a.wallet === this.payment.changeWallet.id
@@ -403,7 +403,7 @@ new Vue({
       try {
         const tx = {
           fee_rate: this.payment.feeRate,
-          masterpubs: this.walletLinks.map(w => w.masterpub)
+          masterpubs: this.walletAccounts.map(w => w.masterpub)
         }
         tx.inputs = this.utxos.data
           .filter(utxo => utxo.selected)
@@ -487,7 +487,7 @@ new Vue({
         const wallet = this.g.user.wallets[0] // todo: find active wallet
         addressData.amount = amount
         if (addressData.branch_index === 0) {
-          const addressWallet = this.walletLinks.find(
+          const addressWallet = this.walletAccounts.find(
             w => w.id === addressData.wallet
           )
           if (
@@ -558,7 +558,7 @@ new Vue({
         )
 
         this.mempool.endpoint = data.endpoint
-        this.walletLinks.push(mapwalletLink(data))
+        this.walletAccounts.push(mapWalletAccount(data))
       } catch (error) {
         LNbits.utils.notifyApiError(error)
       }
@@ -611,7 +611,7 @@ new Vue({
     },
     updateUtxosForAddress: function (addressData, utxos = []) {
       const wallet =
-        this.walletLinks.find(w => w.id === addressData.wallet) || {}
+        this.walletAccounts.find(w => w.id === addressData.wallet) || {}
 
       const newUtxos = utxos.map(utxo =>
         mapToAddressUtxo(wallet, addressData, utxo)
@@ -690,10 +690,10 @@ new Vue({
       )
       return data
     },
-    refreshWalletLinks: async function () {
+    refreshWalletAccounts: async function () {
       try {
         const wallets = await this.getWatchOnlyWallets()
-        this.walletLinks = wallets.map(w => mapWalletLink(w))
+        this.walletAccounts = wallets.map(w => mapWalletAccount(w))
       } catch (err) {
         LNbits.utils.notifyApiError(err)
       }
@@ -712,9 +712,9 @@ new Vue({
     sendFormData: function () {
       var wallet = this.g.user.wallets[0]
       var data = _.omit(this.formDialog.data, 'wallet')
-      this.createWalletLink(wallet, data)
+      this.createWalletAccount(wallet, data)
     },
-    createWalletLink: async function (wallet, data) {
+    createWalletAccount: async function (wallet, data) {
       try {
         const response = await LNbits.api.request(
           'POST',
@@ -722,16 +722,16 @@ new Vue({
           wallet.adminkey,
           data
         )
-        this.walletLinks.push(mapWalletLink(response.data))
+        this.walletAccounts.push(mapWalletAccount(response.data))
         this.formDialog.show = false
-        await this.refreshWalletLinks()
+        await this.refreshWalletAccounts()
       } catch (error) {
         LNbits.utils.notifyApiError(error)
       }
     },
-    deleteWalletLink: function (linkId) {
+    deleteWalletAccount: function (linkId) {
       var self = this
-      var link = _.findWhere(this.walletLinks, {id: linkId})
+      var link = _.findWhere(this.walletAccounts, {id: linkId})
       LNbits.utils
         .confirmDialog(
           'Are you sure you want to delete this watch only wallet?'
@@ -743,10 +743,10 @@ new Vue({
               '/watchonly/api/v1/wallet/' + linkId,
               this.g.user.wallets[0].adminkey
             )
-            this.walletLinks = _.reject(this.walletLinks, function (obj) {
+            this.walletAccounts = _.reject(this.walletAccounts, function (obj) {
               return obj.id === linkId
             })
-            await this.refreshWalletLinks()
+            await this.refreshWalletAccounts()
             await this.refreshAddresses()
             await this.scanAddressWithAmountUTXOs()
           } catch (err) {
@@ -768,7 +768,7 @@ new Vue({
   created: async function () {
     if (this.g.user.wallets.length) {
       this.getMempool()
-      await this.refreshWalletLinks()
+      await this.refreshWalletAccounts()
       await this.refreshAddresses()
       await this.scanAddressWithAmountUTXOs()
     }

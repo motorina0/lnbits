@@ -49,7 +49,7 @@
         <q-table
           flat
           dense
-          :data="walletLinks"
+          :data="walletAccounts"
           row-key="id"
           :columns="WalletsTable.columns"
           :pagination.sync="WalletsTable.pagination"
@@ -76,7 +76,7 @@
                   flat
                   dense
                   size="xs"
-                  @click="deleteWalletLink(props.row.id)"
+                  @click="deleteWalletAccount(props.row.id)"
                   icon="cancel"
                   color="pink"
                 ></q-btn>
@@ -157,7 +157,7 @@
                   dense
                   emit-value
                   v-model="addresses.selectedWallet"
-                  :options="walletLinks"
+                  :options="walletAccounts"
                   label="Wallet Account"
                 ></q-select>
               </div>
@@ -170,7 +170,7 @@
                   multiple
                   :options="addresses.filterOptions"
                   v-model="addresses.filterValues"
-                  :options="walletLinks"
+                  :options="walletAccounts"
                   label="Filter"
                 ></q-select>
               </div>
@@ -598,7 +598,7 @@
                     dense
                     emit-value
                     v-model="payment.changeWallet"
-                    :options="walletLinks"
+                    :options="walletAccounts"
                     :rules="[val => !!val || 'Field is required']"
                     label="Wallet Account"
                   ></q-select>
