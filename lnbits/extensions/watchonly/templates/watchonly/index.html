@@ -3,36 +3,46 @@
 <div class="row q-col-gutter-md">
   <div class="col-12 col-md-7 q-gutter-y-md">
     <q-card>
-      <q-card-section>
-        {% raw %}
-        <q-btn unelevated color="primary" @click="formDialog.show = true"
-          >Add Wallet Account
-        </q-btn>
-        <q-btn unelevated color="primary" icon="edit">
-          <div class="cursor-pointer">
-            <q-tooltip> Point to another Mempool </q-tooltip>
-            {{ this.mempool.endpoint }}
-            <q-popup-edit v-model="mempool.endpoint">
-              <q-input color="accent" v-model="mempool.endpoint"> </q-input>
-              <center>
-                <q-btn flat dense @click="updateMempool()" v-close-popup
-                  >set</q-btn
-                >
-                <q-btn flat dense v-close-popup>cancel</q-btn>
-              </center>
-            </q-popup-edit>
+      {% raw %}
+      <div class="row items-center no-wrap q-mb-md">
+        <div class="col">
+          <div class="row justify-center q-gutter-x-md items-center">
+            <div class="text-h3 q-pa-sm">{{satBtc(utxos.total)}}</div>
+            <q-btn outline color="grey" @click="utxos.sats = !utxos.sats">
+              {{utxos.sats ? ' sats' : ' BTC'}}</q-btn
+            >
           </div>
-        </q-btn>
-      </q-card-section>
+        </div>
+      </div>
     </q-card>
 
     <q-card>
       <q-card-section>
         <div class="row items-center no-wrap q-mb-md">
           <div class="col">
-            <h5 class="text-subtitle1 q-my-none">Wallet Accounts</h5>
+            <q-btn unelevated color="primary" @click="formDialog.show = true"
+              >Add Wallet Account
+            </q-btn>
           </div>
-          <div class="col-auto">
+
+          <div class="col-auto q-pr-lg">
+            <q-btn unelevated color="primary" icon="settings">
+              <div class="cursor-pointer">
+                <q-tooltip> Point to another Mempool </q-tooltip>
+
+                <q-popup-edit v-model="mempool.endpoint">
+                  <q-input color="accent" v-model="mempool.endpoint"> </q-input>
+                  <center>
+                    <q-btn flat dense @click="updateMempool()" v-close-popup
+                      >set</q-btn
+                    >
+                    <q-btn flat dense v-close-popup>cancel</q-btn>
+                  </center>
+                </q-popup-edit>
+              </div>
+            </q-btn>
+          </div>
+          <div class="col-auto q-pl-lg">
             <q-input
               borderless
               dense
@@ -135,6 +145,20 @@
                   </div>
                   <div class="col-2 q-pr-lg"></div>
                 </div>
+                <div class="row items-center q-mt-md q-mb-lg">
+                  <div class="col-2 q-pr-lg"></div>
+                  <div class="col-4 q-pr-lg">
+                    <q-btn
+                      unelevated
+                      color="pink"
+                      icon="cancel"
+                      @click="deleteWalletAccount(props.row.id)"
+                      >Delete</q-btn
+                    >
+                  </div>
+                  <div class="col-4"></div>
+                  <div class="col-2 q-pr-lg"></div>
+                </div>
               </q-td>
             </q-tr>
           </template>
@@ -143,7 +167,7 @@
     </q-card>
 
     <q-card>
-      <div class="row items-center no-wrap q-mb-md">
+      <div class="row q-pt-sm q-pb-sm items-center no-wrap q-mb-md">
         <div class="col q-ml-lg">
           <q-btn
             unelevated
@@ -158,17 +182,18 @@
             size="2.55em"
           ></q-spinner>
         </div>
-        <div class="col">
-          <div class="row justify-center q-gutter-x-md items-center">
-            <div class="text-h3 q-pa-sm">{{satBtc(utxos.total)}}</div>
-            <q-btn flat @click="utxos.sats = !utxos.sats">
-              {{utxos.sats ? ' sats' : ' BTC'}}</q-btn
-            >
-          </div>
+        <div class="col-auto q-mr-md">
+          <q-btn
+            unelevated
+            color="secondary"
+            @click="scanAllAddressUTXOs"
+            :disabled="scan.scanning == true"
+            >Make Payment</q-btn
+          >
         </div>
       </div>
+
       <div v-if="scan.scanning == true">
-        <!-- todo: make height smaller -->
         <q-linear-progress
           :value="scan.scanIndex / scan.scanCount"
           size="10px"
