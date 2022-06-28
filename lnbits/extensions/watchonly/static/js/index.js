@@ -314,15 +314,13 @@ new Vue({
         this.payment.data.splice(index, 1)
       }
     },
-    initPaymentData: function () {
+    initPaymentData: async function () {
       if (!this.payment.show) return
-
+      await this.refreshAddresses()
+      
       this.payment.changeWallet = this.walletAccounts[0]
-      // temp solution
-      const changeAddress = this.addresses.data.filter(
-        a => a.wallet === this.payment.changeWallet.id
-      )
-      this.payment.changeAddress = changeAddress.pop().address
+      this.selectChangeAccount(this.payment.changeWallet)
+
       this.payment.showAdvanced = false
     },
     addPaymentAddress: function () {
@@ -332,10 +330,16 @@ new Vue({
       const total = this.payment.data.reduce((t, a) => t + (a.amount || 0), 0)
       return this.satBtc(total)
     },
-    goToPaymentView: function () {
+    selectChangeAccount: function (wallet) {
+      const changeAddress = this.addresses.data.filter(
+        a => a.wallet === wallet.id
+      )
+      this.payment.changeAddress = changeAddress.pop().address
+    },
+    goToPaymentView: async function () {
       this.payment.show = true
-      this.initPaymentData()
       this.tab = 'utxos'
+      await this.initPaymentData()
     },
 
     //################### UTXOs ###################

@@ -209,6 +209,7 @@ const tableData = {
     utxoSelectionModes: [
       'Manual',
       'Random',
+      'Select All',
       'Smaller Inputs First',
       'Larger Inputs First'
     ],

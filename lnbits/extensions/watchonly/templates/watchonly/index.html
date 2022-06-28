@@ -589,9 +589,9 @@
                     v-if="payment.show"
                     class="row items-center no-wrap q-mb-md"
                   >
-                  <div class="col-6 q-pl-lg">
-                    <!-- todo: fetch from mempool, show slider -->
-                  </div>
+                    <div class="col-6 q-pl-lg">
+                      <!-- todo: fetch from mempool, show slider -->
+                    </div>
                     <div class="col-3 q-pr-lg">UTXO Selection Mode:</div>
                     <div class="col-3 q-pr-lg">
                       <q-select
@@ -603,7 +603,6 @@
                         label="Selection Algorithm"
                       ></q-select>
                     </div>
-                    
                   </div>
 
                   <q-table
@@ -739,6 +738,7 @@
                         emit-value
                         v-model="payment.changeWallet"
                         :options="walletAccounts"
+                        @input="selectChangeAccount"
                         :rules="[val => !!val || 'Field is required']"
                         label="Wallet Account"
                       ></q-select>
