@@ -13,24 +13,16 @@ const txSize = tx => {
   const hasSegwit = !!tx.inputs.find(inp =>
     ['p2wsh', 'p2wpkh', 'p2tr'].includes(inp.account_type)
   )
-  console.log('### hasSegwit', hasSegwit)
   const segwitFlag = hasSegwit ? 0.5 : 0
   const overheadSize = nVersion + inCount + outCount + nlockTime + segwitFlag
-
-  console.log('### overheadSize', overheadSize)
 
   // inputs size
   const outpoint = 36 // txId plus vout index number
   const scriptSigLength = 1
   const nSequence = 4
   const inputsSize = tx.inputs.reduce((t, inp) => {
-    console.log('### inp.account_type', inp.account_type)
     const scriptSig =
-      inp.account_type === 'p2pkh'
-        ? 107
-        : inp.account_type === 'p2sh'
-        ? 254
-        : 0
+      inp.account_type === 'p2pkh' ? 107 : inp.account_type === 'p2sh' ? 254 : 0
     const witnessItemCount = hasSegwit ? 0.25 : 0
     const witnessItems =
       inp.account_type === 'p2wpkh'
@@ -50,15 +42,13 @@ const txSize = tx => {
     return t
   }, 0)
 
-  console.log('### inputsSize', inputsSize)
-
   // outputs size
   const nValue = 8
   const scriptPubKeyLength = 1
 
   const outputsSize = tx.outputs.reduce((t, out) => {
     const type = guessAddressType(out.address)
-    
+
     const scriptPubKey =
       type === 'p2pkh'
         ? 25
@@ -70,11 +60,8 @@ const txSize = tx => {
         ? 34
         : 34 // default to the largest size (p2tr included)
     t += nValue + scriptPubKeyLength + scriptPubKey
-    console.log('### type', type, scriptPubKey, out.address, out.address.length)
     return t
   }, 0)
-
-  console.log('### outputsSize', outputsSize)
 
   return overheadSize + inputsSize + outputsSize
 }

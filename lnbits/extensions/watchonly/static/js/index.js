@@ -283,9 +283,9 @@ new Vue({
     createTx: function () {
       const tx = {
         fee_rate: this.payment.feeRate,
+        tx_size: this.payment.txSize,
         masterpubs: this.walletAccounts.map(w => w.masterpub)
       }
-      console.log('### his.utxos.data', this.utxos.data)
       tx.inputs = this.utxos.data
         .filter(utxo => utxo.selected)
         .map(mapUtxoToTxInput)
@@ -293,9 +293,25 @@ new Vue({
         address: out.address,
         amount: out.amount
       }))
+
+      tx.outputs.push(this.createChangeOutput())
       return tx
     },
-    computeFee: function() {
+    createChangeOutput: function () {
+      const change = this.payment.changeAddress
+      const fee = this.payment.feeRate * this.payment.txSize
+      const inputAmount = this.getTotalSelectedUtxoAmount()
+      const payedAmount = this.getTotalPaymentAmount()
+
+      return {
+        address: change.address,
+        amount: inputAmount - payedAmount - fee,
+        branch_index: change.branch_index,
+        address_index: change.address_index,
+        master_fingerprint: change.master_fingerprint
+      }
+    },
+    computeFee: function () {
       const tx = this.createTx()
       this.payment.txSize = Math.round(txSize(tx))
       return this.payment.feeRate * this.payment.txSize
@@ -303,8 +319,8 @@ new Vue({
     createPsbt: async function () {
       const wallet = this.g.user.wallets[0] // todo: find active wallet
       try {
+        this.computeFee()
         const tx = this.createTx()
-        console.log('### txc', tx)
         txSize(tx)
         for (const input of tx.inputs) {
           input.tx_hex = await this.fetchTxHex(input.txid)
@@ -352,14 +368,13 @@ new Vue({
       this.payment.data.push({address: '', amount: undefined})
     },
     getTotalPaymentAmount: function () {
-      const total = this.payment.data.reduce((t, a) => t + (a.amount || 0), 0)
-      return this.satBtc(total)
+      return this.payment.data.reduce((t, a) => t + (a.amount || 0), 0)
     },
     selectChangeAccount: function (wallet) {
-      const changeAddress = this.addresses.data.filter(
-        a => a.wallet === wallet.id
-      )
-      this.payment.changeAddress = changeAddress.pop().address
+      this.payment.changeAddress =
+        this.addresses.data.find(
+          a => a.wallet === wallet.id && a.branch_index === 1 && !a.has_activity
+        ) || {}
     },
     goToPaymentView: async function () {
       this.payment.show = true
@@ -404,12 +419,10 @@ new Vue({
       try {
         for (addrData of addresses) {
           const addressHistory = await this.getAddressTxsDelayed(addrData)
-          console.log('### addressHistory', addressHistory)
           this.addresses.history.push(...addressHistory)
           if (addressHistory.length) {
             // only if it ever had any activity
             const utxos = await this.getAddressTxsUtxoDelayed(addrData.address)
-            console.log('### utxos', utxos)
             this.updateUtxosForAddress(addrData, utxos)
           }
 
@@ -446,7 +459,7 @@ new Vue({
       const total = this.utxos.data
         .filter(u => u.selected)
         .reduce((t, a) => t + (a.amount || 0), 0)
-      return this.satBtc(total)
+      return total
     },
 
     //################### MEMPOOL API ###################

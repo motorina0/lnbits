@@ -182,20 +182,13 @@ async def api_psbt_create(
 ):
     # todo: reeeefactor
     try:
-        print("### data 1", data.outputs)
         vin = [
             TransactionInput(bytes.fromhex(inp.txid), inp.vout) for inp in data.inputs
         ]
-        print("### data.outputs", data.outputs[0].address)
-        print(
-            "### address_to_scriptpubkey",
-            script.address_to_scriptpubkey(data.outputs[0].address),
-        )
         vout = [
             TransactionOutput(out.amount, script.address_to_scriptpubkey(out.address))
             for out in data.outputs
         ]
-        print("### p50")
         # temp
         k1 = Key.from_string(data.masterpubs[0])
         descriptorStr = "wpkh([%s/84h/1h/0h]%s/{0,1}/*)" % (
@@ -204,7 +197,6 @@ async def api_psbt_create(
         )
         desc = Descriptor.from_string(descriptorStr)
 
-        print("### p100")
         inputs_extra = []
         bip32_derivations = {}
         for i, inp in enumerate(data.inputs):
@@ -220,31 +212,27 @@ async def api_psbt_create(
                 }
             )
 
-        print("### p200")
         tx = Transaction(vin=vin, vout=vout)
         psbt = PSBT(tx)
 
         for i, inp in enumerate(inputs_extra):
-            print("### i", i, inp)
             psbt.inputs[i].bip32_derivations = inp["bip32_derivations"]
             psbt.inputs[i].witness_utxo = inp.get("witness_utxo", None)  # todo
             psbt.inputs[i].non_witness_utxo = inp.get("non_witness_utxo", None)
 
-        print("### p300")
+        outputs_extra = []
         bip32_derivations = {}
-        for _, out in enumerate(data.outputs):
-            if "branch_index" in out and out["branch_index"] == 1:
-                d = desc.derive(out["address_index"], out["branch_index"])
+        for i, out in enumerate(data.outputs):
+            if out.branch_index == 1:
+                d = desc.derive(out.address_index, out.branch_index)
                 for k in d.keys:
                     bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(
                         k.origin.fingerprint, k.origin.derivation
                     )
-                out["bip32_derivations"] = bip32_derivations
+                outputs_extra.append({"bip32_derivations": bip32_derivations})
 
-        for i, out in enumerate(data.outputs):
-            psbt.outputs[i].bip32_derivations = (
-                out["bip32_derivations"] if "bip32_derivations" in out else []
-            )
+        for i, out in enumerate(outputs_extra):
+            psbt.outputs[i].bip32_derivations = out["bip32_derivations"]
 
         return psbt.to_string()
 

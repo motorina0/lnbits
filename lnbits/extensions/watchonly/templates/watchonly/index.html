@@ -572,7 +572,7 @@
                                   </span>
                                 </div>
                                 <div class="col-3">
-                                  {{getTotalPaymentAmount()}}
+                                  {{satBtc(getTotalPaymentAmount())}}
                                 </div>
                                 <div class="col-2"></div>
                               </div>
@@ -709,7 +709,7 @@
                           <div class="row items-center no-wrap q-mb-md">
                             <div class="col-9 q-pr-lg"></div>
                             <div class="col-3">
-                              Total: {{getTotalSelectedUtxoAmount()}}
+                              Total: {{satBtc(getTotalSelectedUtxoAmount())}}
                             </div>
                           </div>
                         </q-td>
@@ -748,7 +748,7 @@
                         filled
                         dense
                         readonly
-                        v-model.trim="payment.changeAddress"
+                        v-model.trim="payment.changeAddress.address"
                         :rules="[val => !!val || 'Field is required']"
                         type="text"
                         label="Change Address"

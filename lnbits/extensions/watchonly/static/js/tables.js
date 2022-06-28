@@ -203,7 +203,7 @@ const tableData = {
   payment: {
     data: [{address: '', amount: undefined}],
     changeWallet: null,
-    changeAddress: '',
+    changeAddress: {},
 
     feeRate: 1,
     recommededFees: {

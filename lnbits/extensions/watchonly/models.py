@@ -74,3 +74,4 @@ class CreatePsbt(BaseModel):
     inputs: List[TransactionInput]
     outputs: List[TransactionOutput]
     fee_rate: int
+    tx_size: int
