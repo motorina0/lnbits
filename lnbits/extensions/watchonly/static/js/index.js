@@ -170,9 +170,12 @@ new Vue({
     refreshAddresses: async function () {
       const wallets = await this.getWatchOnlyWallets()
       this.addresses.data = []
-      for (const {id} of wallets) {
+      for (const {id, type} of wallets) {
         const addrs = await this.getAddressesForWallet(id)
-        addrs.forEach(a => (a.expanded = false))
+        addrs.forEach(a => {
+          a.expanded = false
+          a.accountType = type
+        })
         this.addresses.data.push(...addrs)
       }
     },
@@ -272,21 +275,37 @@ new Vue({
         .filter(a => !a.isChange)
         .sort((a, b) => (!a.height ? -1 : b.height - a.height))
     },
+    showAddressHistoryDetails: function (addressHistory) {
+      addressHistory.expanded = true
+    },
+
+    //################### PAYMENT ###################
+    createTx: function () {
+      const tx = {
+        fee_rate: this.payment.feeRate,
+        masterpubs: this.walletAccounts.map(w => w.masterpub)
+      }
+      console.log('### his.utxos.data', this.utxos.data)
+      tx.inputs = this.utxos.data
+        .filter(utxo => utxo.selected)
+        .map(mapUtxoToTxInput)
+      tx.outputs = this.payment.data.map(out => ({
+        address: out.address,
+        amount: out.amount
+      }))
+      return tx
+    },
+    computeFee: function() {
+      const tx = this.createTx()
+      this.payment.txSize = Math.round(txSize(tx))
+      return this.payment.feeRate * this.payment.txSize
+    },
     createPsbt: async function () {
       const wallet = this.g.user.wallets[0] // todo: find active wallet
       try {
-        const tx = {
-          fee_rate: this.payment.feeRate,
-          masterpubs: this.walletAccounts.map(w => w.masterpub)
-        }
-        tx.inputs = this.utxos.data
-          .filter(utxo => utxo.selected)
-          .map(mapUtxoToTxInput)
-        tx.outputs = this.payment.data.map(out => ({
-          address: out.address,
-          amount: out.amount
-        }))
-
+        const tx = this.createTx()
+        console.log('### txc', tx)
+        txSize(tx)
         for (const input of tx.inputs) {
           input.tx_hex = await this.fetchTxHex(input.txid)
         }
@@ -303,11 +322,6 @@ new Vue({
         console.log('### err', err)
       }
     },
-    showAddressHistoryDetails: function (addressHistory) {
-      addressHistory.expanded = true
-    },
-
-    //################### PAYMENT ###################
     deletePaymentAddress: function (v) {
       const index = this.payment.data.indexOf(v)
       if (index !== -1) {
@@ -390,10 +404,12 @@ new Vue({
       try {
         for (addrData of addresses) {
           const addressHistory = await this.getAddressTxsDelayed(addrData)
+          console.log('### addressHistory', addressHistory)
           this.addresses.history.push(...addressHistory)
           if (addressHistory.length) {
             // only if it ever had any activity
             const utxos = await this.getAddressTxsUtxoDelayed(addrData.address)
+            console.log('### utxos', utxos)
             this.updateUtxosForAddress(addrData, utxos)
           }
 

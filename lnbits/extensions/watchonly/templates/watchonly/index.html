@@ -727,7 +727,7 @@
                   ></q-toggle>
                 </div>
               </div>
-              <q-card v-if="payment.show && payment.showAdvanced"
+              <q-card v-show="payment.show && payment.showAdvanced"
                 ><q-card-section>
                   <div class="row items-center no-wrap q-mb-md">
                     <div class="col-2 q-pr-lg">Change Account:</div>
@@ -783,7 +783,7 @@
                   </div>
                   <div class="row items-center no-wrap q-mb-md">
                     <div class="col-2 q-pr-lg">Fee:</div>
-                    <div class="col-3 q-pr-lg">-.-</div>
+                    <div class="col-3 q-pr-lg">{{computeFee()}} sats</div>
                     <div class="col-7 q-pr-lg">
                       <q-badge
                         v-if="payment.feeRate < payment.recommededFees.hourFee"

@@ -43,6 +43,7 @@ const mapUtxoToTxInput = utxo => ({
   branch_index: utxo.branch_index,
   address_index: utxo.address_index,
   master_fingerprint: utxo.master_fingerprint,
+  account_type: utxo.accountType,
   txHex: ''
 })
 
@@ -53,7 +54,8 @@ const mapToAddressUtxo = (wallet, addressData, utxo) => ({
   address_index: addressData.address_index,
   branch_index: addressData.branch_index,
   wallet: addressData.wallet,
-  master_fingerprint: wallet.fingerprint,
+  accountType: addressData.accountType,
+  master_fingerprint: wallet.fingerprint, // todo: why not camelCase?
   txId: utxo.txid,
   vout: utxo.vout,
   confirmed: utxo.status.confirmed,

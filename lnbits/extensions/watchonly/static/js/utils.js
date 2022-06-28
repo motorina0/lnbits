@@ -3,6 +3,89 @@ const blockTimeToDate = blockTime =>
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
+const txSize = tx => {
+  // https://bitcoinops.org/en/tools/calc-size/
+  // overhead size
+  const nVersion = 4
+  const inCount = 1
+  const outCount = 1
+  const nlockTime = 4
+  const hasSegwit = !!tx.inputs.find(inp =>
+    ['p2wsh', 'p2wpkh', 'p2tr'].includes(inp.account_type)
+  )
+  console.log('### hasSegwit', hasSegwit)
+  const segwitFlag = hasSegwit ? 0.5 : 0
+  const overheadSize = nVersion + inCount + outCount + nlockTime + segwitFlag
+
+  console.log('### overheadSize', overheadSize)
+
+  // inputs size
+  const outpoint = 36 // txId plus vout index number
+  const scriptSigLength = 1
+  const nSequence = 4
+  const inputsSize = tx.inputs.reduce((t, inp) => {
+    console.log('### inp.account_type', inp.account_type)
+    const scriptSig =
+      inp.account_type === 'p2pkh'
+        ? 107
+        : inp.account_type === 'p2sh'
+        ? 254
+        : 0
+    const witnessItemCount = hasSegwit ? 0.25 : 0
+    const witnessItems =
+      inp.account_type === 'p2wpkh'
+        ? 27
+        : inp.account_type === 'p2wsh'
+        ? 63.5
+        : inp.account_type === 'p2tr'
+        ? 16.5
+        : 0
+    t +=
+      outpoint +
+      scriptSigLength +
+      nSequence +
+      scriptSig +
+      witnessItemCount +
+      witnessItems
+    return t
+  }, 0)
+
+  console.log('### inputsSize', inputsSize)
+
+  // outputs size
+  const nValue = 8
+  const scriptPubKeyLength = 1
+
+  const outputsSize = tx.outputs.reduce((t, out) => {
+    const type = guessAddressType(out.address)
+    
+    const scriptPubKey =
+      type === 'p2pkh'
+        ? 25
+        : type === 'p2wpkh'
+        ? 22
+        : type === 'p2sh'
+        ? 23
+        : type === 'p2wsh'
+        ? 34
+        : 34 // default to the largest size (p2tr included)
+    t += nValue + scriptPubKeyLength + scriptPubKey
+    console.log('### type', type, scriptPubKey, out.address, out.address.length)
+    return t
+  }, 0)
+
+  console.log('### outputsSize', outputsSize)
+
+  return overheadSize + inputsSize + outputsSize
+}
+const guessAddressType = (a = '') => {
+  if (a.startsWith('1') || a.startsWith('n')) return 'p2pkh'
+  if (a.startsWith('3') || a.startsWith('2')) return 'p2sh'
+  if (a.startsWith('bc1q') || a.startsWith('tb1q'))
+    return a.length === 42 ? 'p2wpkh' : 'p2wsh'
+  if (a.startsWith('bc1p') || a.startsWith('tb1p')) return 'p2tr'
+}
+// bc1qwpdwyaqweavs5fpa8rujqaxmrmt9lvmydmcnt7
 const ACCOUNT_TYPES = {
   p2tr: 'Taproot, BIP86, P2TR, Bech32m',
   p2wpkh: 'SegWit, BIP84, P2WPKH, Bech32',

@@ -204,6 +204,7 @@ const tableData = {
     data: [{address: '', amount: undefined}],
     changeWallet: null,
     changeAddress: '',
+
     feeRate: 1,
     recommededFees: {
       fastestFee: 1,
@@ -212,6 +213,8 @@ const tableData = {
       economyFee: 1,
       minimumFee: 1
     },
+    fee: 0,
+    txSize: 0,
     psbtBase64: '',
     utxoSelectionModes: [
       'Manual',
