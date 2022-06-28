@@ -205,6 +205,13 @@ const tableData = {
     changeWallet: null,
     changeAddress: '',
     feeRate: 1,
+    recommededFees: {
+      fastestFee: 1,
+      halfHourFee: 1,
+      hourFee: 1,
+      economyFee: 1,
+      minimumFee: 1
+    },
     psbtBase64: '',
     utxoSelectionModes: [
       'Manual',

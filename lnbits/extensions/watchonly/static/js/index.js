@@ -317,12 +317,23 @@ new Vue({
     initPaymentData: async function () {
       if (!this.payment.show) return
       await this.refreshAddresses()
-      
+
+      this.payment.showAdvanced = false
       this.payment.changeWallet = this.walletAccounts[0]
       this.selectChangeAccount(this.payment.changeWallet)
 
-      this.payment.showAdvanced = false
+      await this.refreshRecommendedFees()
+      this.payment.feeRate = this.payment.recommededFees.halfHourFee
     },
+    getFeeRateLabel: function (feeRate) {
+      const fees = this.payment.recommededFees
+      if (feeRate >= fees.fastestFee) return `High Priority (${feeRate} sat/vB)`
+      if (feeRate >= fees.halfHourFee)
+        return `Medium Priority (${feeRate} sat/vB)`
+      if (feeRate >= fees.hourFee) return `Low Priority (${feeRate} sat/vB)`
+      return `No Priority (${feeRate} sat/vB)`
+    },
+
     addPaymentAddress: function () {
       this.payment.data.push({address: '', amount: undefined})
     },
@@ -437,6 +448,19 @@ new Vue({
         if (retryCount > 10) throw err
         await sleep((retryCount + 1) * 1000)
         return this.getAddressTxsDelayed(addrData, retryCount + 1)
+      }
+    },
+    refreshRecommendedFees: async function (retryCount = 0) {
+      const {
+        bitcoin: {fees: feesAPI}
+      } = mempoolJS()
+      try {
+        await sleep(250)
+        this.payment.recommededFees = await feesAPI.getFeesRecommended()
+      } catch (err) {
+        if (retryCount > 10) throw err
+        await sleep((retryCount + 1) * 1000)
+        return this.refreshRecommendedFees(retryCount + 1)
       }
     },
     getAddressTxsUtxoDelayed: async function (address, retryCount = 0) {
