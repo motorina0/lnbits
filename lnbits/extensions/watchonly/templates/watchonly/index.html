@@ -505,206 +505,219 @@
             </div>
 
             <q-form @submit="createPsbt" class="q-gutter-md">
-              <div v-if="payment.show" class="row items-center no-wrap q-mb-md">
-                <div class="col">
+              <q-card v-if="payment.show">
+                <q-card-section>
+                  <div class="row items-center no-wrap q-mb-md">
+                    <div class="col">
+                      <q-table
+                        flat
+                        dense
+                        hide-header
+                        :data="payment.data"
+                        :columns="paymentTable.columns"
+                        :pagination.sync="paymentTable.pagination"
+                      >
+                        <template v-slot:body="props">
+                          <q-tr :props="props">
+                            <div class="row no-wrap">
+                              <div class="col-7 q-pr-lg">
+                                <q-input
+                                  filled
+                                  dense
+                                  v-model.trim="props.row.address"
+                                  type="text"
+                                  label="Address"
+                                  :rules="[val => !!val || 'Field is required']"
+                                ></q-input>
+                              </div>
+                              <div class="col-4 q-pr-lg">
+                                <q-input
+                                  filled
+                                  dense
+                                  v-model.number="props.row.amount"
+                                  type="number"
+                                  step="1"
+                                  label="Amount (sats)"
+                                  :rules="[val => !!val || 'Field is required']"
+                                ></q-input>
+                              </div>
+                              <div class="col-1">
+                                <q-btn
+                                  flat
+                                  dense
+                                  size="l"
+                                  @click="deletePaymentAddress(props.row)"
+                                  icon="cancel"
+                                  color="pink"
+                                ></q-btn>
+                              </div>
+                            </div>
+                          </q-tr>
+                        </template>
+                        <template v-slot:bottom-row>
+                          <q-tr>
+                            <q-td colspan="100%">
+                              <div class="row items-center no-wrap">
+                                <div class="col-3 q-pr-lg">
+                                  <q-btn
+                                    outline
+                                    color="grey"
+                                    @click="addPaymentAddress"
+                                    >Add Send Address</q-btn
+                                  >
+                                </div>
+                                <div class="col-4 q-pr-lg">
+                                  <span class="text-weight-bold float-right"
+                                    >Total Sent:
+                                  </span>
+                                </div>
+                                <div class="col-3">
+                                  {{getTotalPaymentAmount()}}
+                                </div>
+                                <div class="col-2"></div>
+                              </div>
+                            </q-td>
+                          </q-tr>
+                        </template>
+                      </q-table>
+                    </div></div
+                ></q-card-section>
+              </q-card>
+              <q-card>
+                <q-card-section>
+                  <div
+                    v-if="payment.show"
+                    class="row items-center no-wrap q-mb-md"
+                  >
+                    <div class="col-3 q-pr-lg">UTXO Selection Mode:</div>
+                    <div class="col-3 q-pr-lg">
+                      <q-select
+                        filled
+                        dense
+                        emit-value
+                        v-model="payment.utxoSelectionMode"
+                        :options="payment.utxoSelectionModes"
+                        label="Selection Algorithm"
+                      ></q-select>
+                    </div>
+                    <div class="col-6 q-pl-lg">
+                      <!-- todo: fetch from mempool, show slider -->
+                    </div>
+                  </div>
+
                   <q-table
                     flat
                     dense
-                    hide-header
-                    :data="payment.data"
-                    :columns="paymentTable.columns"
-                    :pagination.sync="paymentTable.pagination"
+                    :data="utxos.data"
+                    row-key="id"
+                    :columns="utxosTable.columns"
+                    :pagination.sync="utxosTable.pagination"
+                    :filter="utxosTable.filter"
                   >
                     <template v-slot:body="props">
                       <q-tr :props="props">
-                        <div class="row no-wrap">
-                          <div class="col-7 q-pr-lg">
-                            <q-input
-                              filled
-                              dense
-                              v-model.trim="props.row.address"
-                              type="text"
-                              label="Address"
-                              :rules="[val => !!val || 'Field is required']"
-                            ></q-input>
+                        <q-td auto-width>
+                          <q-btn
+                            size="sm"
+                            color="accent"
+                            round
+                            dense
+                            @click="props.row.expanded= !props.row.expanded"
+                            :icon="props.row.expanded? 'remove' : 'add'"
+                          />
+                        </q-td>
+
+                        <q-td key="selected" :props="props">
+                          <div>
+                            <q-checkbox
+                              v-model="props.row.selected"
+                            ></q-checkbox>
                           </div>
-                          <div class="col-4 q-pr-lg">
-                            <q-input
-                              filled
-                              dense
-                              v-model.number="props.row.amount"
-                              type="number"
-                              step="1"
-                              label="Amount (sats)"
-                              :rules="[val => !!val || 'Field is required']"
-                            ></q-input>
+                        </q-td>
+                        <q-td key="status" :props="props">
+                          <div>
+                            <q-badge
+                              v-if="props.row.confirmed"
+                              color="green"
+                              class="q-mr-md"
+                            >
+                              Confirmed
+                            </q-badge>
+                            <q-badge
+                              v-if="!props.row.confirmed"
+                              color="orange"
+                              class="q-mr-md"
+                            >
+                              Pending
+                            </q-badge>
                           </div>
-                          <div class="col-1">
-                            <q-btn
-                              flat
-                              dense
-                              size="l"
-                              @click="deletePaymentAddress(props.row)"
-                              icon="cancel"
-                              color="pink"
-                            ></q-btn>
+                        </q-td>
+                        <q-td key="address" :props="props">
+                          <div>
+                            <a
+                              style="color: unset"
+                              :href="mempool.endpoint + '/address/' + props.row.address"
+                              target="_blank"
+                            >
+                              {{props.row.address}}</a
+                            >
+                            <q-badge
+                              v-if="props.row.isChange"
+                              color="orange"
+                              class="q-mr-md"
+                            >
+                              change
+                            </q-badge>
                           </div>
-                        </div>
+                        </q-td>
+
+                        <q-td
+                          key="amount"
+                          :props="props"
+                          class="text-green-13 text-weight-bold"
+                        >
+                          <div>{{satBtc(props.row.amount)}}</div>
+                        </q-td>
+
+                        <q-td key="date" :props="props">
+                          {{ props.row.date }}
+                        </q-td>
+                        <q-td key="wallet" :props="props" :class="">
+                          <div>{{getWalletName(props.row.wallet)}}</div>
+                        </q-td>
+                      </q-tr>
+                      <q-tr v-show="props.row.expanded" :props="props">
+                        <q-td colspan="100%">
+                          <div class="row items-center q-mb-md">
+                            <div class="col-2 q-pr-lg">Transaction Id</div>
+                            <div class="col-10 q-pr-lg">
+                              <a
+                                style="color: unset"
+                                :href="mempool.endpoint + '/tx/' + props.row.txId"
+                                target="_blank"
+                              >
+                                {{props.row.txId}}</a
+                              >
+                            </div>
+                          </div>
+                        </q-td>
                       </q-tr>
                     </template>
                     <template v-slot:bottom-row>
                       <q-tr>
                         <q-td colspan="100%">
-                          <div class="row items-center no-wrap">
-                            <div class="col-3 q-pr-lg">
-                              <q-btn
-                                outline
-                                color="grey"
-                                @click="addPaymentAddress"
-                                >Add Send Address</q-btn
-                              >
+                          <div class="row items-center no-wrap q-mb-md">
+                            <div class="col-9 q-pr-lg"></div>
+                            <div class="col-3">
+                              Total: {{getTotalSelectedUtxoAmount()}}
                             </div>
-                            <div class="col-4 q-pr-lg">
-                              <span class="text-weight-bold float-right"
-                                >Total Sent:
-                              </span>
-                            </div>
-                            <div class="col-3">{{getTotalPaymentAmount()}}</div>
-                            <div class="col-2"></div>
                           </div>
                         </q-td>
                       </q-tr>
                     </template>
                   </q-table>
-                </div>
-              </div>
-              <div v-if="payment.show" class="row items-center no-wrap q-mb-md">
-                <div class="col-3 q-pr-lg">UTXO Selection Mode:</div>
-                <div class="col-3 q-pr-lg">
-                  <q-select
-                    filled
-                    dense
-                    emit-value
-                    v-model="payment.utxoSelectionMode"
-                    :options="payment.utxoSelectionModes"
-                    label="Selection Algorithm"
-                  ></q-select>
-                </div>
-                <div class="col-6 q-pl-lg">
-                  <!-- todo: fetch from mempool, show slider -->
-                </div>
-              </div>
-
-              <q-table
-                flat
-                dense
-                :data="utxos.data"
-                row-key="id"
-                :columns="utxosTable.columns"
-                :pagination.sync="utxosTable.pagination"
-                :filter="utxosTable.filter"
+                </q-card-section></q-card
               >
-                <template v-slot:body="props">
-                  <q-tr :props="props">
-                    <q-td auto-width>
-                      <q-btn
-                        size="sm"
-                        color="accent"
-                        round
-                        dense
-                        @click="props.row.expanded= !props.row.expanded"
-                        :icon="props.row.expanded? 'remove' : 'add'"
-                      />
-                    </q-td>
-
-                    <q-td key="selected" :props="props">
-                      <div>
-                        <q-checkbox v-model="props.row.selected"></q-checkbox>
-                      </div>
-                    </q-td>
-                    <q-td key="status" :props="props">
-                      <div>
-                        <q-badge
-                          v-if="props.row.confirmed"
-                          color="green"
-                          class="q-mr-md"
-                        >
-                          Confirmed
-                        </q-badge>
-                        <q-badge
-                          v-if="!props.row.confirmed"
-                          color="orange"
-                          class="q-mr-md"
-                        >
-                          Pending
-                        </q-badge>
-                      </div>
-                    </q-td>
-                    <q-td key="address" :props="props">
-                      <div>
-                        <a
-                          style="color: unset"
-                          :href="mempool.endpoint + '/address/' + props.row.address"
-                          target="_blank"
-                        >
-                          {{props.row.address}}</a
-                        >
-                        <q-badge
-                          v-if="props.row.isChange"
-                          color="orange"
-                          class="q-mr-md"
-                        >
-                          change
-                        </q-badge>
-                      </div>
-                    </q-td>
-
-                    <q-td
-                      key="amount"
-                      :props="props"
-                      class="text-green-13 text-weight-bold"
-                    >
-                      <div>{{satBtc(props.row.amount)}}</div>
-                    </q-td>
-
-                    <q-td key="date" :props="props">
-                      {{ props.row.date }}
-                    </q-td>
-                    <q-td key="wallet" :props="props" :class="">
-                      <div>{{getWalletName(props.row.wallet)}}</div>
-                    </q-td>
-                  </q-tr>
-                  <q-tr v-show="props.row.expanded" :props="props">
-                    <q-td colspan="100%">
-                      <div class="row items-center q-mb-md">
-                        <div class="col-2 q-pr-lg">Transaction Id</div>
-                        <div class="col-10 q-pr-lg">
-                          <a
-                            style="color: unset"
-                            :href="mempool.endpoint + '/tx/' + props.row.txId"
-                            target="_blank"
-                          >
-                            {{props.row.txId}}</a
-                          >
-                        </div>
-                      </div>
-                    </q-td>
-                  </q-tr>
-                </template>
-                <template v-slot:bottom-row>
-                  <q-tr>
-                    <q-td colspan="100%">
-                      <div class="row items-center no-wrap q-mb-md">
-                        <div class="col-9 q-pr-lg"></div>
-                        <div class="col-3">
-                          Total: {{getTotalSelectedUtxoAmount()}}
-                        </div>
-                      </div>
-                    </q-td>
-                  </q-tr>
-                </template>
-              </q-table>
-
               <div v-if="payment.show" class="row items-center no-wrap q-mb-md">
                 <div class="col">
                   <q-toggle
@@ -714,52 +727,52 @@
                   ></q-toggle>
                 </div>
               </div>
-              <div
-                v-if="payment.showAdvanced"
-                class="row items-center no-wrap q-mb-md"
+              <q-card v-if="payment.show && payment.showAdvanced"
+                ><q-card-section>
+                  <div class="row items-center no-wrap q-mb-md">
+                    <div class="col-3 q-pr-lg">Send Change To Account:</div>
+                    <div class="col-3 q-pr-lg">
+                      <q-select
+                        filled
+                        dense
+                        emit-value
+                        v-model="payment.changeWallet"
+                        :options="walletAccounts"
+                        :rules="[val => !!val || 'Field is required']"
+                        label="Wallet Account"
+                      ></q-select>
+                    </div>
+                    <div class="col-6 q-pl-lg">
+                      <q-input
+                        filled
+                        dense
+                        readonly
+                        v-model.trim="payment.changeAddress"
+                        type="text"
+                        label="Change Address"
+                      ></q-input>
+                    </div>
+                  </div>
+                  <div
+                    v-if="payment.showAdvanced"
+                    class="row items-center no-wrap q-mb-md"
+                  >
+                    <div class="col-3 q-pr-lg">Fee Rate:</div>
+                    <div class="col-3 q-pr-lg">
+                      <q-input
+                        filled
+                        dense
+                        v-model.trim="payment.feeRate"
+                        :rules="[val => !!val || 'Field is required']"
+                        type="number"
+                        label="sats/vbyte"
+                      ></q-input>
+                    </div>
+                    <div class="col-3 q-pr-lg">Fee:</div>
+                    <div class="col-3 q-pr-lg">-</div>
+                  </div>
+                </q-card-section></q-card
               >
-                <div class="col-3 q-pr-lg">Send Change To Account:</div>
-                <div class="col-3 q-pr-lg">
-                  <q-select
-                    filled
-                    dense
-                    emit-value
-                    v-model="payment.changeWallet"
-                    :options="walletAccounts"
-                    :rules="[val => !!val || 'Field is required']"
-                    label="Wallet Account"
-                  ></q-select>
-                </div>
-                <div class="col-6 q-pl-lg">
-                  <q-input
-                    filled
-                    dense
-                    readonly
-                    v-model.trim="payment.changeAddress"
-                    type="text"
-                    label="Change Address"
-                  ></q-input>
-                </div>
-              </div>
-              <div
-                v-if="payment.showAdvanced"
-                class="row items-center no-wrap q-mb-md"
-              >
-                <div class="col-3 q-pr-lg">Fee Rate:</div>
-                <div class="col-3 q-pr-lg">
-                  <q-input
-                    filled
-                    dense
-                    v-model.trim="payment.feeRate"
-                    :rules="[val => !!val || 'Field is required']"
-                    type="number"
-                    label="sats/vbyte"
-                  ></q-input>
-                </div>
-                <div class="col-3 q-pr-lg">Fee:</div>
-                <div class="col-3 q-pr-lg">-</div>
-              </div>
-
               <div v-if="payment.show" class="row items-center no-wrap q-mb-md">
                 <div class="col-4 q-pr-lg">
                   <q-btn unelevated color="secondary" type="submit"
