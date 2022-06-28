@@ -411,8 +411,10 @@ new Vue({
       )
       this.updateAmountForAddress(addressData, addressTotal)
     },
-    getTotalUtxoAmount: function () {
-      const total = this.utxos.data.reduce((t, a) => t + (a.amount || 0), 0)
+    getTotalSelectedUtxoAmount: function () {
+      const total = this.utxos.data
+        .filter(u => u.selected)
+        .reduce((t, a) => t + (a.amount || 0), 0)
       return this.satBtc(total)
     },
 

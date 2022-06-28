@@ -510,6 +510,7 @@
                   <q-table
                     flat
                     dense
+                    hide-header
                     :data="payment.data"
                     :columns="paymentTable.columns"
                     :pagination.sync="paymentTable.pagination"
@@ -564,12 +565,11 @@
                               >
                             </div>
                             <div class="col-4 q-pr-lg">
-                              <span class="text-weight-bold float-right">Total Sent: </span>
+                              <span class="text-weight-bold float-right"
+                                >Total Sent:
+                              </span>
                             </div>
-                            <div class="col-3">
-                              
-                              {{getTotalPaymentAmount()}}
-                            </div>
+                            <div class="col-3">{{getTotalPaymentAmount()}}</div>
                             <div class="col-2"></div>
                           </div>
                         </q-td>
@@ -696,7 +696,9 @@
                     <q-td colspan="100%">
                       <div class="row items-center no-wrap q-mb-md">
                         <div class="col-9 q-pr-lg"></div>
-                        <div class="col-3">Total: {{getTotalUtxoAmount()}}</div>
+                        <div class="col-3">
+                          Total: {{getTotalSelectedUtxoAmount()}}
+                        </div>
                       </div>
                     </q-td>
                   </q-tr>
