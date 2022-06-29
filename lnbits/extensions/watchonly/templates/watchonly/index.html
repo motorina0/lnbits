@@ -489,19 +489,7 @@
                   @input="initPaymentData()"
                 ></q-toggle>
               </div>
-              <div class="col-auto">
-                <q-input
-                  borderless
-                  dense
-                  debounce="300"
-                  v-model="utxosTable.filter"
-                  placeholder="Search"
-                >
-                  <template v-slot:append>
-                    <q-icon name="search"></q-icon>
-                  </template>
-                </q-input>
-              </div>
+              <div class="col-auto"></div>
             </div>
 
             <q-form @submit="createPsbt" class="q-gutter-md">
@@ -589,10 +577,6 @@
                     v-if="payment.show"
                     class="row items-center no-wrap q-mb-md"
                   >
-                    <div class="col-6 q-pl-lg">
-                      <!-- todo: fetch from mempool, show slider -->
-                    </div>
-                    <div class="col-3 q-pr-lg">UTXO Selection Mode:</div>
                     <div class="col-3 q-pr-lg">
                       <q-select
                         filled
@@ -600,8 +584,32 @@
                         emit-value
                         v-model="payment.utxoSelectionMode"
                         :options="payment.utxoSelectionModes"
-                        label="Selection Algorithm"
+                        label="Selection Mode"
+                        @input="applyUtxoSelectionMode"
                       ></q-select>
+                    </div>
+                    <div class="col-1 q-pr-lg">
+                      <q-btn
+                        outline
+                        icon="refresh"
+                        color="grey"
+                        @click="applyUtxoSelectionMode"
+                        class="q-ml-sm"
+                      ></q-btn>
+                    </div>
+                    <div class="col-5 q-pr-lg"></div>
+                    <div class="col-3 float-right">
+                      <q-input
+                        borderless
+                        dense
+                        debounce="300"
+                        v-model="utxosTable.filter"
+                        placeholder="Search"
+                      >
+                        <template v-slot:append>
+                          <q-icon name="search"></q-icon>
+                        </template>
+                      </q-input>
                     </div>
                   </div>
 

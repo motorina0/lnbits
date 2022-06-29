@@ -308,10 +308,9 @@ new Vue({
       }
 
       // Only sort by amount on UI level (no lib for address decode)
-      // Should sort by scriptPubKey (as byte array) on the API level
+      // Should sort by scriptPubKey (as byte array) on the backend
       tx.outputs.sort((a, b) => a.amount - b.amount)
 
-      console.log('### tx', tx)
       return tx
     },
     createChangeOutput: function () {
@@ -381,7 +380,6 @@ new Vue({
       if (feeRate >= fees.hourFee) return `Low Priority (${feeRate} sat/vB)`
       return `No Priority (${feeRate} sat/vB)`
     },
-
     addPaymentAddress: function () {
       this.payment.data.push({address: '', amount: undefined})
     },
@@ -478,6 +476,37 @@ new Vue({
         .filter(u => u.selected)
         .reduce((t, a) => t + (a.amount || 0), 0)
       return total
+    },
+    applyUtxoSelectionMode: function () {
+      const payedAmount = this.getTotalPaymentAmount()
+      const mode = this.payment.utxoSelectionMode
+      this.utxos.data.forEach(u => (u.selected = false))
+      const isManual = mode === 'Manual'
+      if (isManual || !payedAmount) return
+
+      const isSelectAll = mode === 'Select All'
+      if (isSelectAll || payedAmount >= this.utxos.total) {
+        this.utxos.data.forEach(u => (u.selected = true))
+        return
+      }
+      const isSmallerFirst = mode === 'Smaller Inputs First'
+      const isLargerFirst = mode === 'Larger Inputs First'
+
+      let selectedUtxos = this.utxos.data.slice()
+      if (isSmallerFirst || isLargerFirst) {
+        const sortFn = isSmallerFirst
+          ? (a, b) => a.amount - b.amount
+          : (a, b) => b.amount - a.amount
+        selectedUtxos.sort(sortFn)
+      } else {
+        // default to random order
+        selectedUtxos = _.shuffle(selectedUtxos)
+      }
+      selectedUtxos.reduce((total, utxo) => {
+        utxo.selected = total < payedAmount
+        total += utxo.amount
+        return total
+      }, 0)
     },
 
     //################### MEMPOOL API ###################
