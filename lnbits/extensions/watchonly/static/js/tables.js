@@ -94,6 +94,30 @@ const tables = {
     },
     filter: ''
   },
+  summaryTable: {
+    columns: [
+      {
+        name: 'totalInputs',
+        align: 'center',
+        label: 'Selected Amount'
+      },
+      {
+        name: 'totalOutputs',
+        align: 'center',
+        label: 'Payed Amount'
+      },
+      {
+        name: 'fees',
+        align: 'center',
+        label: 'Fees'
+      },
+      {
+        name: 'change',
+        align: 'center',
+        label: 'Change'
+      }
+    ]
+  },
   addressesTable: {
     columns: [
       {
@@ -204,6 +228,7 @@ const tableData = {
     data: [{address: '', amount: undefined}],
     changeWallet: null,
     changeAddress: {},
+    changeAmount: 0,
 
     feeRate: 1,
     recommededFees: {
@@ -226,5 +251,8 @@ const tableData = {
     utxoSelectionMode: 'Manual',
     show: false,
     showAdvanced: false
+  },
+  summary: {
+    data: [{totalInputs: 0, totalOutputs: 0, fees: 0, change: 0}]
   }
 }

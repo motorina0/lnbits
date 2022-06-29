@@ -303,6 +303,7 @@ new Vue({
       }))
 
       const change = this.createChangeOutput()
+      this.payment.changeAmount = change.amount
       if (change.amount >= this.DUST_LIMIT) {
         tx.outputs.push(change)
       }
