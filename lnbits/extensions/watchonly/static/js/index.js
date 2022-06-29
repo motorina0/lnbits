@@ -10,6 +10,7 @@ new Vue({
   mixins: [windowMixin],
   data: function () {
     return {
+      DUST_LIMIT: 546,
       filter: '',
       balance: null,
       scan: {
@@ -302,7 +303,7 @@ new Vue({
       }))
 
       const change = this.createChangeOutput()
-      if (change.amount >= DUST_LIMIT) {
+      if (change.amount >= this.DUST_LIMIT) {
         tx.outputs.push(change)
       }
 

@@ -538,7 +538,7 @@
                                   type="number"
                                   step="1"
                                   label="Amount (sats)"
-                                  :rules="[val => !!val || 'Field is required']"
+                                  :rules="[val => !!val || 'Field is required', val => +val > DUST_LIMIT || 'Amount to small (below dust limit)'] "
                                 ></q-input>
                               </div>
                               <div class="col-1">
