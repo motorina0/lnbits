@@ -291,13 +291,26 @@ new Vue({
       }
       tx.inputs = this.utxos.data
         .filter(utxo => utxo.selected)
-        .map(mapUtxoToTxInput)
+        .map(mapUtxoToPsbtInput)
+        .sort((a, b) =>
+          a.tx_id < b.tx_id ? -1 : a.tx_id > b.tx_id ? 1 : a.vout - b.vout
+        )
+
       tx.outputs = this.payment.data.map(out => ({
         address: out.address,
         amount: out.amount
       }))
 
-      tx.outputs.push(this.createChangeOutput())
+      const change = this.createChangeOutput()
+      if (change.amount >= DUST_LIMIT) {
+        tx.outputs.push(change)
+      }
+
+      // Only sort by amount on UI level (no lib for address decode)
+      // Should sort by scriptPubKey (as byte array) on the API level
+      tx.outputs.sort((a, b) => a.amount - b.amount)
+
+      console.log('### tx', tx)
       return tx
     },
     createChangeOutput: function () {
@@ -327,7 +340,7 @@ new Vue({
         const tx = this.createTx()
         txSize(tx)
         for (const input of tx.inputs) {
-          input.tx_hex = await this.fetchTxHex(input.txid)
+          input.tx_hex = await this.fetchTxHex(input.tx_id)
         }
 
         const {data} = await LNbits.api.request(

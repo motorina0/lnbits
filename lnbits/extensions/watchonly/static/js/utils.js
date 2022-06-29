@@ -1,3 +1,5 @@
+const DUST_LIMIT = 546
+
 const blockTimeToDate = blockTime =>
   blockTime ? moment(blockTime * 1000).format('LLL') : ''
 

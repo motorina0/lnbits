@@ -49,7 +49,7 @@ class Addresses(BaseModel):  # todo: why plural
 
 
 class TransactionInput(BaseModel):
-    txid: str
+    tx_id: str
     vout: int
     amount: int
     address: str

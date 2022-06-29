@@ -35,8 +35,8 @@ const mapOutputToReceiveHistory = (tx, addressData, vout) => ({
   expanded: false
 })
 
-const mapUtxoToTxInput = utxo => ({
-  txid: utxo.txId,
+const mapUtxoToPsbtInput = utxo => ({
+  tx_id: utxo.txId,
   vout: utxo.vout,
   amount: utxo.amount,
   address: utxo.address,

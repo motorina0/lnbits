@@ -186,7 +186,7 @@ async def api_psbt_create(
     print("### data", json.dumps(data.dict()))
     try:
         vin = [
-            TransactionInput(bytes.fromhex(inp.txid), inp.vout) for inp in data.inputs
+            TransactionInput(bytes.fromhex(inp.tx_id), inp.vout) for inp in data.inputs
         ]
         vout = [
             TransactionOutput(out.amount, script.address_to_scriptpubkey(out.address))
