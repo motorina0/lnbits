@@ -12,7 +12,7 @@ def detect_network(k):
             return net
 
 
-def parse_key(masterpub: str):
+def parse_key(masterpub: str) -> Descriptor:
     """Parses masterpub or descriptor and returns a tuple: (Descriptor, network)
     To create addresses use descriptor.derive(num).address(network=network)
     """

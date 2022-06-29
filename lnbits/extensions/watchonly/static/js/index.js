@@ -174,7 +174,7 @@ new Vue({
         const addrs = await this.getAddressesForWallet(id)
         addrs.forEach(a => {
           a.expanded = false
-          a.accountType = type
+          a.accountType = type // todo: is this needed?
         })
         this.addresses.data.push(...addrs)
       }
@@ -284,7 +284,10 @@ new Vue({
       const tx = {
         fee_rate: this.payment.feeRate,
         tx_size: this.payment.txSize,
-        masterpubs: this.walletAccounts.map(w => w.masterpub)
+        masterpubs: this.walletAccounts.map(w => ({
+          public_key: w.masterpub,
+          fingerprint: w.fingerprint
+        }))
       }
       tx.inputs = this.utxos.data
         .filter(utxo => utxo.selected)
@@ -302,13 +305,14 @@ new Vue({
       const fee = this.payment.feeRate * this.payment.txSize
       const inputAmount = this.getTotalSelectedUtxoAmount()
       const payedAmount = this.getTotalPaymentAmount()
-
+      const walletAcount =
+        this.walletAccounts.find(w => w.id === change.wallet) || {}
       return {
         address: change.address,
         amount: inputAmount - payedAmount - fee,
         branch_index: change.branch_index,
         address_index: change.address_index,
-        master_fingerprint: change.master_fingerprint
+        master_fingerprint: walletAcount.fingerprint
       }
     },
     computeFee: function () {
@@ -474,7 +478,7 @@ new Vue({
         })
         return this.addressHistoryFromTxs(addrData, addressTxs)
       } catch (err) {
-        if (retryCount > 10) throw err
+        if (retryCount > 100) throw err
         await sleep((retryCount + 1) * 1000)
         return this.getAddressTxsDelayed(addrData, retryCount + 1)
       }
@@ -487,7 +491,7 @@ new Vue({
         await sleep(250)
         this.payment.recommededFees = await feesAPI.getFeesRecommended()
       } catch (err) {
-        if (retryCount > 10) throw err
+        if (retryCount > 100) throw err
         await sleep((retryCount + 1) * 1000)
         return this.refreshRecommendedFees(retryCount + 1)
       }
@@ -502,7 +506,7 @@ new Vue({
           address
         })
       } catch (err) {
-        if (retryCount > 10) throw err
+        if (retryCount > 100) throw err
         await sleep((retryCount + 1) * 1000)
         return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
       }
@@ -514,7 +518,7 @@ new Vue({
       try {
         return await transactionsAPI.getTxHex({txid: txId})
       } catch (err) {
-        if (retryCount > 10) throw err
+        if (retryCount > 100) throw err
         await sleep((retryCount + 1) * 1000)
         return this.fetchTxHex(txId, retryCount + 1)
       }

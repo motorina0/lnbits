@@ -1,4 +1,5 @@
 from http import HTTPStatus
+import json
 
 from fastapi import Query, Request
 from fastapi.params import Depends
@@ -29,6 +30,7 @@ from .crud import (
     update_watch_wallet,
 )
 from .models import CreateWallet, CreatePsbt
+from .helpers import parse_key
 
 RECEIVE_GAP_LIMIT = 20
 CHANGE_GAP_LIMIT = 5
@@ -181,6 +183,7 @@ async def api_psbt_create(
     data: CreatePsbt, wallet_id=None, w: WalletTypeInfo = Depends(require_admin_key)
 ):
     # todo: reeeefactor
+    print("### data", json.dumps(data.dict()))
     try:
         vin = [
             TransactionInput(bytes.fromhex(inp.txid), inp.vout) for inp in data.inputs
@@ -189,18 +192,16 @@ async def api_psbt_create(
             TransactionOutput(out.amount, script.address_to_scriptpubkey(out.address))
             for out in data.outputs
         ]
-        # temp
-        k1 = Key.from_string(data.masterpubs[0])
-        descriptorStr = "wpkh([%s/84h/1h/0h]%s/{0,1}/*)" % (
-            k1.fingerprint.hex(),
-            data.masterpubs[0],
-        )
-        desc = Descriptor.from_string(descriptorStr)
+
+        descriptors = {}
+        for _, masterpub in enumerate(data.masterpubs):
+            descriptors[masterpub.fingerprint] = parse_key(masterpub.public_key)
 
         inputs_extra = []
         bip32_derivations = {}
         for i, inp in enumerate(data.inputs):
-            d = desc.derive(inp.address_index, inp.branch_index)
+            descriptor = descriptors[inp.master_fingerprint][0]
+            d = descriptor.derive(inp.address_index, inp.branch_index)
             for k in d.keys:
                 bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(
                     k.origin.fingerprint, k.origin.derivation
@@ -224,7 +225,8 @@ async def api_psbt_create(
         bip32_derivations = {}
         for i, out in enumerate(data.outputs):
             if out.branch_index == 1:
-                d = desc.derive(out.address_index, out.branch_index)
+                descriptor = descriptors[out.master_fingerprint][0]
+                d = descriptor.derive(out.address_index, out.branch_index)
                 for k in d.keys:
                     bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(
                         k.origin.fingerprint, k.origin.derivation
@@ -237,7 +239,6 @@ async def api_psbt_create(
         return psbt.to_string()
 
     except Exception as e:
-        print("### e", e)
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
 

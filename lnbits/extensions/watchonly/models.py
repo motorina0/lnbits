@@ -3,8 +3,6 @@ from typing import List
 from fastapi.param_functions import Query
 from pydantic import BaseModel
 
-from .helpers import parse_key
-
 
 class CreateWallet(BaseModel):
     masterpub: str = Query("")
@@ -69,8 +67,13 @@ class TransactionOutput(BaseModel):
     master_fingerprint: str = None
 
 
+class MasterPublicKey(BaseModel):
+    public_key: str
+    fingerprint: str
+
+
 class CreatePsbt(BaseModel):
-    masterpubs: List[str]
+    masterpubs: List[MasterPublicKey]
     inputs: List[TransactionInput]
     outputs: List[TransactionOutput]
     fee_rate: int
