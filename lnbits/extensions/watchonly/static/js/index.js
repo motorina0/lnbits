@@ -161,8 +161,8 @@ new Vue({
       return []
     },
     refreshWalletAccounts: async function () {
-        const wallets = await this.getWatchOnlyWallets()
-        this.walletAccounts = wallets.map(w => mapWalletAccount(w))
+      const wallets = await this.getWatchOnlyWallets()
+      this.walletAccounts = wallets.map(w => mapWalletAccount(w))
     },
     getAmmountForWallet: function (walletId) {
       const amount = this.addresses.data
@@ -441,7 +441,7 @@ new Vue({
       this.utxos.data = []
       await this.updateUtxosForAddresses(addresses)
     },
-    scanAddress: async function(addressData) {
+    scanAddress: async function (addressData) {
       this.updateUtxosForAddresses([addressData])
       this.$q.notify({
         type: 'positive',
@@ -456,7 +456,9 @@ new Vue({
         for (addrData of addresses) {
           const addressHistory = await this.getAddressTxsDelayed(addrData)
           // remove old entries
-          this.addresses.history = this.addresses.history.filter(h => h.address !== addrData.address)
+          this.addresses.history = this.addresses.history.filter(
+            h => h.address !== addrData.address
+          )
           // add new entrie
           this.addresses.history.push(...addressHistory)
 
@@ -486,7 +488,9 @@ new Vue({
         mapAddressDataToUtxo(wallet, addressData, utxo)
       )
       // remove old utxos
-      this.utxos.data = this.utxos.data.filter(u => u.address !== addressData.address)
+      this.utxos.data = this.utxos.data.filter(
+        u => u.address !== addressData.address
+      )
       // add new utxos
       this.utxos.data.push(...newUtxos)
       if (utxos.length) {
@@ -590,7 +594,6 @@ new Vue({
         })
         throw error
       }
-      
     },
 
     //################### OTHER ###################
