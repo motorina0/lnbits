@@ -315,7 +315,7 @@
                   <q-td colspan="100%">
                     <div class="row items-center q-mt-md q-mb-lg">
                       <div class="col-2 q-pr-lg"></div>
-                      <div class="col-3 q-pr-lg">
+                      <div class="col-4 q-pr-lg">
                         <q-btn
                           unelevated
                           dense
@@ -326,7 +326,18 @@
                           >QR Code</q-btn
                         >
                       </div>
-                      <div class="col-3 q-pr-lg">
+                      <div class="col-2 q-pr-lg">
+                        <q-btn
+                          outline
+                          dense
+                          size="md"
+                          icon="refresh"
+                          color="grey"
+                          @click="searchInTab('history', props.row.address)"
+                          >Rescan</q-btn
+                        >
+                      </div>
+                      <div class="col-2 q-pr-lg">
                         <q-btn
                           outline
                           dense
@@ -334,10 +345,10 @@
                           icon="history"
                           color="grey"
                           @click="searchInTab('history', props.row.address)"
-                          >View History</q-btn
+                          >History</q-btn
                         >
                       </div>
-                      <div class="col-3 q-pr-lg">
+                      <div class="col-2 q-pr-lg">
                         <q-btn
                           outline
                           dense
@@ -363,12 +374,20 @@
                       <div class="col-2 q-pr-lg">
                         <q-btn
                           outline
-                          v-close-popup
                           color="grey"
                           @click="updateNoteForAddress(props.row, props.row.note)"
-                          class="q-ml-sm"
                           >Update</q-btn
                         >
+                      </div>
+                    </div>
+
+                    <div
+                      v-if="props.row.error"
+                      class="row items-center no-wrap q-mb-md"
+                    >
+                      <div class="col-2 q-pr-lg"></div>
+                      <div class="col-10 q-pr-lg">
+                        <q-badge color="red">{{props.row.error}}</q-badge>
                       </div>
                     </div>
                   </q-td>

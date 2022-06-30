@@ -116,7 +116,11 @@ new Vue({
             await this.refreshAddresses()
             await this.scanAddressWithAmountUTXOs()
           } catch (error) {
-            LNbits.utils.notifyApiError(error)
+            this.$q.notify({
+              type: 'warning',
+              message: 'Error while deleting wallet account. Please try again.',
+              timeout: 10000
+            })
           }
         })
     },
@@ -129,24 +133,36 @@ new Vue({
         )
         return data
       } catch (err) {
+        this.$q.notify({
+          type: 'warning',
+          message: `Failed to fetch addresses for wallet with id ${walletId}.`,
+          timeout: 10000
+        })
         LNbits.utils.notifyApiError(err)
       }
+      return []
     },
     getWatchOnlyWallets: async function () {
-      const {data} = await LNbits.api.request(
-        'GET',
-        '/watchonly/api/v1/wallet',
-        this.g.user.wallets[0].inkey
-      )
-      return data
+      try {
+        const {data} = await LNbits.api.request(
+          'GET',
+          '/watchonly/api/v1/wallet',
+          this.g.user.wallets[0].inkey
+        )
+        return data
+      } catch (error) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Failed to fetch wallets.',
+          timeout: 10000
+        })
+        LNbits.utils.notifyApiError(error)
+      }
+      return []
     },
     refreshWalletAccounts: async function () {
-      try {
         const wallets = await this.getWatchOnlyWallets()
         this.walletAccounts = wallets.map(w => mapWalletAccount(w))
-      } catch (err) {
-        LNbits.utils.notifyApiError(err)
-      }
     },
     getAmmountForWallet: function (walletId) {
       const amount = this.addresses.data
@@ -156,18 +172,7 @@ new Vue({
     },
 
     //################### ADDRESSES ###################
-    getAddressDetails: async function (address) {
-      try {
-        const {data} = await LNbits.api.request(
-          'GET',
-          '/watchonly/api/v1/mempool/' + address,
-          this.g.user.wallets[0].inkey
-        )
-        return data
-      } catch (error) {
-        LNbits.utils.notifyApiError(error)
-      }
-    },
+
     refreshAddresses: async function () {
       const wallets = await this.getWatchOnlyWallets()
       this.addresses.data = []
@@ -203,6 +208,12 @@ new Vue({
           {amount}
         )
       } catch (err) {
+        addressData.error = 'Failed to refresh amount for address'
+        this.$q.notify({
+          type: 'warning',
+          message: `Failed to refresh amount for address ${addressData.address}`,
+          timeout: 10000
+        })
         LNbits.utils.notifyApiError(err)
       }
     },
@@ -353,7 +364,7 @@ new Vue({
 
         this.payment.psbtBase64 = data
       } catch (err) {
-        console.log('### err', err)
+        LNbits.utils.notifyApiError(err)
       }
     },
     deletePaymentAddress: function (v) {
@@ -446,8 +457,11 @@ new Vue({
           this.scan.scanIndex++
         }
       } catch (error) {
-        console.log('### error', error)
-        // LNbits.utils.notifyApiError(error)
+        this.$q.notify({
+          type: 'warning',
+          message: 'Failed to scan utxos for addresses',
+          timeout: 10000
+        })
       } finally {
         this.scan.scanning = false
       }
@@ -549,8 +563,19 @@ new Vue({
         bitcoin: {transactions: transactionsAPI}
       } = mempoolJS()
 
-      const fn = async () => transactionsAPI.getTxHex({txid: txId})
-      return retryWithDelay(fn)
+      try {
+        const response = await transactionsAPI.getTxHex({txid: txId})
+        return response
+      } catch (error) {
+        console.log('### error', error)
+        this.$q.notify({
+          type: 'warning',
+          message: `Failed to fetch transaction details for tx id: '${txId}'`,
+          timeout: 10000
+        })
+        throw error
+      }
+      
     },
 
     //################### OTHER ###################
