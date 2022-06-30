@@ -114,7 +114,7 @@ new Vue({
             })
             await this.refreshWalletAccounts()
             await this.refreshAddresses()
-            await this.scanAddressWithAmountUTXOs()
+            await this.scanAddressWithAmount()
           } catch (error) {
             this.$q.notify({
               type: 'warning',
@@ -174,15 +174,20 @@ new Vue({
     //################### ADDRESSES ###################
 
     refreshAddresses: async function () {
+      
       const wallets = await this.getWatchOnlyWallets()
       this.addresses.data = []
       for (const {id, type} of wallets) {
-        const addrs = await this.getAddressesForWallet(id)
-        addrs.forEach(a => {
+        const newAddresses = await this.getAddressesForWallet(id)
+        const uniqueAddresses = newAddresses.filter(
+          newAddr =>
+            !this.addresses.data.find(a => a.address === newAddr.address)
+        )
+        uniqueAddresses.forEach(a => {
           a.expanded = false
           a.accountType = type // todo: is this needed?
         })
-        this.addresses.data.push(...addrs)
+        this.addresses.data.push(...uniqueAddresses)
       }
     },
     updateAmountForAddress: async function (addressData, amount = 0) {
@@ -226,9 +231,8 @@ new Vue({
           wallet.adminkey,
           {note: addressData.note}
         )
-        const updatedAddress = this.addresses.data.find(
-          a => a.id === addressData.id
-        ) || {}
+        const updatedAddress =
+          this.addresses.data.find(a => a.id === addressData.id) || {}
         updatedAddress.note = note
       } catch (err) {
         LNbits.utils.notifyApiError(err)
@@ -416,7 +420,7 @@ new Vue({
     },
 
     //################### UTXOs ###################
-    scanAllAddressUTXOs: async function () {
+    scanAllAddresses: async function () {
       await this.refreshAddresses()
       this.addresses.history = []
       let addresses = this.addresses.data
@@ -441,8 +445,8 @@ new Vue({
         }
       }
     },
-    scanAddressWithAmountUTXOs: async function () {
-      const addresses = this.addresses.data.filter(a => a.has_activity) // todo: remove duplicates
+    scanAddressWithAmount: async function () {
+      const addresses = this.addresses.data.filter(a => a.has_activity)
       this.utxos.data = []
       await this.updateUtxosForAddresses(addresses)
     },
@@ -635,7 +639,7 @@ new Vue({
       this.getMempool()
       await this.refreshWalletAccounts()
       await this.refreshAddresses()
-      await this.scanAddressWithAmountUTXOs()
+      await this.scanAddressWithAmount()
     }
   }
 })
