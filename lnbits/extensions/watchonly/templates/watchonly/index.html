@@ -598,11 +598,8 @@
               </q-card>
               <q-card>
                 <q-card-section>
-                  <div
-                    v-if="payment.show"
-                    class="row items-center no-wrap q-mb-md"
-                  >
-                    <div class="col-3 q-pr-lg">
+                  <div class="row items-center no-wrap q-mb-md">
+                    <div v-if="payment.show" class="col-3 q-pr-lg">
                       <q-select
                         filled
                         dense
@@ -613,7 +610,7 @@
                         @input="applyUtxoSelectionMode"
                       ></q-select>
                     </div>
-                    <div class="col-1 q-pr-lg">
+                    <div v-if="payment.show" class="col-1 q-pr-lg">
                       <q-btn
                         outline
                         icon="refresh"
@@ -622,7 +619,8 @@
                         class="q-ml-sm"
                       ></q-btn>
                     </div>
-                    <div class="col-5 q-pr-lg"></div>
+                    <div v-if="payment.show" class="col-5 q-pr-lg"></div>
+                    <div v-if="!payment.show" class="col-9 q-pr-lg"></div>
                     <div class="col-3 float-right">
                       <q-input
                         borderless
