@@ -221,8 +221,7 @@ const tableData = {
   },
   utxos: {
     data: [],
-    total: 0,
-    sats: true
+    total: 0
   },
   payment: {
     data: [{address: '', amount: undefined}],

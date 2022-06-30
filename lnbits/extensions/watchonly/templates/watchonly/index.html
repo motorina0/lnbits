@@ -5,13 +5,19 @@
     <q-card>
       {% raw %}
       <div class="row items-center no-wrap q-mb-md">
-        <div class="col">
+        <div class="col-11">
           <div class="row justify-center q-gutter-x-md items-center">
             <div class="text-h3 q-pa-sm">{{satBtc(utxos.total)}}</div>
-            <q-btn outline color="grey" @click="utxos.sats = !utxos.sats">
-              {{utxos.sats ? ' sats' : ' BTC'}}</q-btn
-            >
           </div>
+        </div>
+        <div class="col-1">
+          <q-btn
+            unelevated
+            @click="config.show = true"
+            color="primary"
+            icon="settings"
+          >
+          </q-btn>
         </div>
       </div>
     </q-card>
@@ -25,15 +31,7 @@
             </q-btn>
           </div>
 
-          <div class="col-auto q-pr-lg">
-            <q-btn
-              unelevated
-              @click="config.show = true"
-              color="primary"
-              icon="settings"
-            >
-            </q-btn>
-          </div>
+          <div class="col-auto q-pr-lg"></div>
           <div class="col-auto q-pl-lg">
             <q-input
               borderless
@@ -1016,6 +1014,12 @@
           min="0"
           label="Change Gap Limit"
         ></q-input>
+
+        <q-toggle
+          :label="config.data.sats_denominated ? 'sats denominated' : 'BTC denominated'"
+          color="secodary"
+          v-model="config.data.sats_denominated"
+        ></q-toggle>
 
         <div class="row q-mt-lg">
           <q-btn

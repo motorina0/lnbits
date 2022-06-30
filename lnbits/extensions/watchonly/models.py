@@ -85,3 +85,4 @@ class Config(BaseModel):
     mempool_endpoint = "https://mempool.space"
     receive_gap_limit = 20
     change_gap_limit = 5
+    sats_denominated = True

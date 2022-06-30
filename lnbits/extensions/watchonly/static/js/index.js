@@ -625,12 +625,14 @@ new Vue({
     exportCSV: function () {
       LNbits.utils.exportCSV(this.paywallsTable.columns, this.paywalls) // todo: paywallsTable??
     },
-    satBtc(val) {
-      return this.utxos.sats
+    satBtc(val, showUnit = true) {
+      const value = this.config.data.sats_denominated
         ? LNbits.utils.formatSat(val)
         : val == 0
         ? 0.0
         : (val / 100000000).toFixed(8)
+      if (!showUnit) return value
+      return this.config.data.sats_denominated ? value + ' sat' : value + ' BTC'
     },
     getAccountDescription: function (accountType) {
       return getAccountDescription(accountType)
