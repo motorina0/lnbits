@@ -145,6 +145,21 @@
                   </div>
                   <div class="col-2 q-pr-lg"></div>
                 </div>
+                <div class="row items-center no-wrap q-mb-md">
+                  <div class="col-2 q-pr-lg">Last Address Index:</div>
+                  <div class="col-8">
+                    <span v-if="props.row.address_no >= 0">{{props.row.address_no}}</span>
+                    <span v-if="props.row.address_no < 0">none</span>
+                  </div>
+                  <div class="col-2 q-pr-lg"></div>
+                </div>
+                <div class="row items-center no-wrap q-mb-md">
+                  <div class="col-2 q-pr-lg">Fingerprint:</div>
+                  <div class="col-8">
+                    {{props.row.fingerprint}}
+                  </div>
+                  <div class="col-2 q-pr-lg"></div>
+                </div>
                 <div class="row items-center q-mt-md q-mb-lg">
                   <div class="col-2 q-pr-lg"></div>
                   <div class="col-4 q-pr-lg">
