@@ -24,6 +24,7 @@ class Wallets(BaseModel):  # todo: why plural
         return cls(**dict(row))
 
 
+### TODO: fix statspay dependcy and remove
 class Mempool(BaseModel):
     user: str
     endpoint: str
@@ -78,3 +79,9 @@ class CreatePsbt(BaseModel):
     outputs: List[TransactionOutput]
     fee_rate: int
     tx_size: int
+
+
+class Config(BaseModel):
+    mempool_endpoint = "https://mempool.space"
+    receive_gap_limit = 20
+    change_gap_limit = 5

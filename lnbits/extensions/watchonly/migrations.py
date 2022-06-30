@@ -56,3 +56,15 @@ async def m002_xxx(db):
     await db.execute(
         "ALTER TABLE watchonly.wallets ADD COLUMN fingerprint TEXT NOT NULL;"
     )
+
+    ### TODO: fix statspay dependcy and drop
+    # await db.execute(
+    #     "DROP TABLE watchonly.wallets;"
+    # )
+
+    await db.execute(
+        """CREATE TABLE watchonly.config (
+            "user" TEXT NOT NULL,
+            json_data TEXT NOT NULL 
+        );"""
+    )

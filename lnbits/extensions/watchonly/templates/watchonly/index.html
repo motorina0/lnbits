@@ -26,20 +26,12 @@
           </div>
 
           <div class="col-auto q-pr-lg">
-            <q-btn unelevated color="primary" icon="settings">
-              <div class="cursor-pointer">
-                <q-tooltip> Point to another Mempool </q-tooltip>
-
-                <q-popup-edit v-model="mempool.endpoint">
-                  <q-input color="accent" v-model="mempool.endpoint"> </q-input>
-                  <center>
-                    <q-btn flat dense @click="updateMempool()" v-close-popup
-                      >set</q-btn
-                    >
-                    <q-btn flat dense v-close-popup>cancel</q-btn>
-                  </center>
-                </q-popup-edit>
-              </div>
+            <q-btn
+              unelevated
+              @click="config.show = true"
+              color="primary"
+              icon="settings"
+            >
             </q-btn>
           </div>
           <div class="col-auto q-pl-lg">
@@ -148,16 +140,16 @@
                 <div class="row items-center no-wrap q-mb-md">
                   <div class="col-2 q-pr-lg">Last Address Index:</div>
                   <div class="col-8">
-                    <span v-if="props.row.address_no >= 0">{{props.row.address_no}}</span>
+                    <span v-if="props.row.address_no >= 0"
+                      >{{props.row.address_no}}</span
+                    >
                     <span v-if="props.row.address_no < 0">none</span>
                   </div>
                   <div class="col-2 q-pr-lg"></div>
                 </div>
                 <div class="row items-center no-wrap q-mb-md">
                   <div class="col-2 q-pr-lg">Fingerprint:</div>
-                  <div class="col-8">
-                    {{props.row.fingerprint}}
-                  </div>
+                  <div class="col-8">{{props.row.fingerprint}}</div>
                   <div class="col-2 q-pr-lg"></div>
                 </div>
                 <div class="row items-center q-mt-md q-mb-lg">
@@ -296,7 +288,7 @@
                     <div>
                       <a
                         style="color: unset"
-                        :href="mempool.endpoint + '/address/' + props.row.address"
+                        :href="config.data.mempool_endpoint + '/address/' + props.row.address"
                         target="_blank"
                       >
                         {{props.row.address}}</a
@@ -478,7 +470,7 @@
                   <q-td key="address" :props="props">
                     <a
                       style="color: unset"
-                      :href="mempool.endpoint + '/address/' + props.row.address"
+                      :href="config.data.mempool_endpoint + '/address/' + props.row.address"
                       target="_blank"
                     >
                       {{props.row.address}}</a
@@ -493,7 +485,7 @@
                       <div class="col-10 q-pr-lg">
                         <a
                           style="color: unset"
-                          :href="mempool.endpoint + '/tx/' + props.row.txId"
+                          :href="config.data.mempool_endpoint + '/tx/' + props.row.txId"
                           target="_blank"
                         >
                           {{props.row.txId}}</a
@@ -702,7 +694,7 @@
                           <div>
                             <a
                               style="color: unset"
-                              :href="mempool.endpoint + '/address/' + props.row.address"
+                              :href="config.data.mempool_endpoint + '/address/' + props.row.address"
                               target="_blank"
                             >
                               {{props.row.address}}</a
@@ -739,7 +731,7 @@
                             <div class="col-10 q-pr-lg">
                               <a
                                 style="color: unset"
-                                :href="mempool.endpoint + '/tx/' + props.row.txId"
+                                :href="config.data.mempool_endpoint + '/tx/' + props.row.txId"
                                 target="_blank"
                               >
                                 {{props.row.txId}}</a
@@ -987,7 +979,52 @@
                 formDialog.data.masterpub == null ||
                 formDialog.data.title == null"
             type="submit"
-            >Add Watch-only Account</q-btn
+            >Add Watch-Only Account</q-btn
+          >
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+  <q-dialog v-model="config.show" position="top">
+    <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
+      <q-form @submit="updateConfig" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          v-model.trim="config.data.mempool_endpoint"
+          type="text"
+          label="Mempool Endpoint"
+        ></q-input>
+
+        <q-input
+          filled
+          dense
+          v-model.number="config.data.receive_gap_limit"
+          type="number"
+          min="0"
+          label="Receive Gap Limit"
+        ></q-input>
+
+        <q-input
+          filled
+          dense
+          v-model.number="config.data.change_gap_limit"
+          type="number"
+          min="0"
+          label="Change Gap Limit"
+        ></q-input>
+
+        <div class="row q-mt-lg">
+          <q-btn
+            unelevated
+            color="primary"
+            :disable="
+            !config.data.mempool_endpoint "
+            type="submit"
+            >Update</q-btn
           >
           <q-btn v-close-popup flat color="grey" class="q-ml-auto"
             >Cancel</q-btn
@@ -1020,7 +1057,7 @@
           size="ms"
           icon="launch"
           type="a"
-          :href="mempool.endpoint + '/address/' + currentAddress.address"
+          :href="config.mempool_endpoint + '/address/' + currentAddress.address"
           target="_blank"
         ></q-btn>
       </p>

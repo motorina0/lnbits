@@ -1,10 +1,11 @@
+import json
 from typing import List, Optional
 
 
 from lnbits.helpers import urlsafe_short_hash
 
 from . import db
-from .models import Addresses, Mempool, Wallets
+from .models import Addresses, Config, Mempool, Wallets
 from .helpers import parse_key, derive_address
 
 
@@ -205,9 +206,42 @@ async def delete_addresses_for_wallet(wallet_id: str) -> None:
     await db.execute("DELETE FROM watchonly.addresses WHERE wallet = ?", (wallet_id,))
 
 
+######################CONFIG#######################
+async def create_config(user: str) -> Config:
+    config = Config()
+    await db.execute(
+        """
+        INSERT INTO watchonly.config ("user", json_data)
+        VALUES (?, ?)
+        """,
+        (user, json.dumps(config.dict())),
+    )
+    row = await db.fetchone(
+        """SELECT json_data FROM watchonly.config WHERE "user" = ?""", (user,)
+    )
+    return json.loads(row[0], object_hook=lambda d: Config(**d))
+
+
+async def update_config(config: Config, user: str) -> Optional[Config]:
+    await db.execute(
+        f"""UPDATE watchonly.config SET json_data = ? WHERE "user" = ?""",
+        (json.dumps(config.dict()), user),
+    )
+    row = await db.fetchone(
+        """SELECT json_data FROM watchonly.config WHERE "user" = ?""", (user,)
+    )
+    return json.loads(row[0], object_hook=lambda d: Config(**d))
+
+
+async def get_config(user: str) -> Optional[Config]:
+    row = await db.fetchone(
+        """SELECT json_data FROM watchonly.config WHERE "user" = ?""", (user,)
+    )
+    return json.loads(row[0], object_hook=lambda d: Config(**d))
+
+
 ######################MEMPOOL#######################
-
-
+### TODO: fix statspay dependcy and remove
 async def create_mempool(user: str) -> Optional[Mempool]:
     await db.execute(
         """
@@ -222,11 +256,12 @@ async def create_mempool(user: str) -> Optional[Mempool]:
     return Mempool.from_row(row) if row else None
 
 
+### TODO: fix statspay dependcy and remove
 async def update_mempool(user: str, **kwargs) -> Optional[Mempool]:
     q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
 
     await db.execute(
-        f"""UPDATE watchonly.mempool SET {q} WHERE "user" = ?""",  # todo: sql injection risk?
+        f"""UPDATE watchonly.mempool SET {q} WHERE "user" = ?""",
         (*kwargs.values(), user),
     )
     row = await db.fetchone(
@@ -235,6 +270,7 @@ async def update_mempool(user: str, **kwargs) -> Optional[Mempool]:
     return Mempool.from_row(row) if row else None
 
 
+### TODO: fix statspay dependcy and remove
 async def get_mempool(user: str) -> Mempool:
     row = await db.fetchone(
         """SELECT * FROM watchonly.mempool WHERE "user" = ?""", (user,)

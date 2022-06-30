@@ -23,8 +23,13 @@ new Vue({
 
       tab: 'addresses',
 
-      mempool: {
-        endpoint: ''
+      config: {
+        data: {
+          mempool_endpoint: 'https://mempool.space',
+          receive_gap_limit: 20,
+          change_gap_limit: 5
+        },
+        show: false
       },
 
       formDialog: {
@@ -42,31 +47,29 @@ new Vue({
   },
 
   methods: {
-    //################### MEMPOOL ###################
-    getMempool: async function () {
+    //################### CONFIG ###################
+    getConfig: async function () {
       try {
         const {data} = await LNbits.api.request(
           'GET',
-          '/watchonly/api/v1/mempool',
+          '/watchonly/api/v1/config',
           this.g.user.wallets[0].adminkey
         )
-        this.mempool.endpoint = data.endpoint
+        this.config.data = data
       } catch (error) {
         LNbits.utils.notifyApiError(error)
       }
     },
-    updateMempool: async function () {
+    updateConfig: async function () {
       const wallet = this.g.user.wallets[0]
       try {
-        const {data} = await LNbits.api.request(
+        await LNbits.api.request(
           'PUT',
-          '/watchonly/api/v1/mempool',
+          '/watchonly/api/v1/config',
           wallet.adminkey,
-          this.mempool
+          this.config.data
         )
-
-        this.mempool.endpoint = data.endpoint
-        this.walletAccounts.push(mapWalletAccount(data))
+        this.config.show = false
       } catch (error) {
         LNbits.utils.notifyApiError(error)
       }
@@ -635,7 +638,7 @@ new Vue({
   },
   created: async function () {
     if (this.g.user.wallets.length) {
-      this.getMempool()
+      await this.getConfig()
       await this.refreshWalletAccounts()
       await this.refreshAddresses()
       await this.scanAddressWithAmount()

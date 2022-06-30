@@ -1,5 +1,4 @@
 from http import HTTPStatus
-import json
 
 from fastapi import Query, Request
 from fastapi.params import Depends
@@ -28,12 +27,13 @@ from .crud import (
     get_watch_wallets,
     update_mempool,
     update_watch_wallet,
+    create_config,
+    get_config,
+    update_config,
 )
-from .models import CreateWallet, CreatePsbt
+from .models import CreateWallet, CreatePsbt, Config
 from .helpers import parse_key
 
-RECEIVE_GAP_LIMIT = 20
-CHANGE_GAP_LIMIT = 5
 
 ###################WALLETS#############################
 
@@ -69,13 +69,13 @@ async def api_wallet_create_or_update(
         wallet = await create_watch_wallet(
             user=w.wallet.user, masterpub=data.masterpub, title=data.title
         )
-        await api_get_addresses(wallet.id)
+        await api_get_addresses(wallet.id, w)
     except Exception as e:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
-    mempool = await get_mempool(w.wallet.user)
-    if not mempool:
-        create_mempool(user=w.wallet.user)
+    config = await get_config(w.wallet.user)
+    if not config:
+        await create_config(user=w.wallet.user)
     return wallet.dict()
 
 
@@ -141,10 +141,11 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
         )
 
     addresses = await get_addresses(wallet_id)
+    config = await get_config(w.wallet.user)
 
     if not addresses:
-        await create_fresh_addresses(wallet_id, 0, RECEIVE_GAP_LIMIT)
-        await create_fresh_addresses(wallet_id, 0, CHANGE_GAP_LIMIT, True)
+        await create_fresh_addresses(wallet_id, 0, config.receive_gap_limit)
+        await create_fresh_addresses(wallet_id, 0, config.change_gap_limit, True)
         addresses = await get_addresses(wallet_id)
 
     receive_addresses = list(filter(lambda addr: addr.branch_index == 0, addresses))
@@ -161,14 +162,17 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
         current_index = receive_addresses[-1].address_index
         address_index = last_receive_address[0].address_index
         await create_fresh_addresses(
-            wallet_id, current_index + 1, address_index + RECEIVE_GAP_LIMIT + 1
+            wallet_id, current_index + 1, address_index + config.receive_gap_limit + 1
         )
 
     if last_change_address:
         current_index = change_addresses[-1].address_index
         address_index = last_change_address[0].address_index
         await create_fresh_addresses(
-            wallet_id, current_index + 1, address_index + CHANGE_GAP_LIMIT + 1, True
+            wallet_id,
+            current_index + 1,
+            address_index + config.change_gap_limit + 1,
+            True,
         )
 
     addresses = await get_addresses(wallet_id)
@@ -183,7 +187,6 @@ async def api_psbt_create(
     data: CreatePsbt, wallet_id=None, w: WalletTypeInfo = Depends(require_admin_key)
 ):
     # todo: reeeefactor
-    print("### data", json.dumps(data.dict()))
     try:
         vin = [
             TransactionInput(bytes.fromhex(inp.tx_id), inp.vout) for inp in data.inputs
@@ -242,9 +245,28 @@ async def api_psbt_create(
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
 
+#############################CONFIG##########################
+
+
+@watchonly_ext.put("/api/v1/config")
+async def api_update_config(
+    data: Config, w: WalletTypeInfo = Depends(require_admin_key)
+):
+    config = await update_config(data, user=w.wallet.user)
+    return config.dict()
+
+
+@watchonly_ext.get("/api/v1/config")
+async def api_get_config(w: WalletTypeInfo = Depends(get_key_type)):
+    config = await get_config(w.wallet.user)
+    if not config:
+        config = await create_config(user=w.wallet.user)
+    return config.dict()
+
+
 #############################MEMPOOL##########################
 
-
+### TODO: fix statspay dependcy and remove
 @watchonly_ext.put("/api/v1/mempool")
 async def api_update_mempool(
     endpoint: str = Query(...), w: WalletTypeInfo = Depends(require_admin_key)
@@ -253,6 +275,7 @@ async def api_update_mempool(
     return mempool.dict()
 
 
+### TODO: fix statspay dependcy and remove
 @watchonly_ext.get("/api/v1/mempool")
 async def api_get_mempool(w: WalletTypeInfo = Depends(require_admin_key)):
     mempool = await get_mempool(w.wallet.user)
