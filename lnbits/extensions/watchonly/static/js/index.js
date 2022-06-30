@@ -446,7 +446,8 @@ new Vue({
           this.scan.scanIndex++
         }
       } catch (error) {
-        LNbits.utils.notifyApiError(error)
+        console.log('### error', error)
+        // LNbits.utils.notifyApiError(error)
       } finally {
         this.scan.scanning = false
       }
@@ -511,61 +512,45 @@ new Vue({
     },
 
     //################### MEMPOOL API ###################
-    getAddressTxsDelayed: async function (addrData, retryCount = 0) {
+    getAddressTxsDelayed: async function (addrData) {
       const {
         bitcoin: {addresses: addressesAPI}
       } = mempoolJS()
-      try {
-        await sleep(250)
-        const addressTxs = await addressesAPI.getAddressTxs({
+
+      const fn = async () =>
+        addressesAPI.getAddressTxs({
           address: addrData.address
         })
-        return this.addressHistoryFromTxs(addrData, addressTxs)
-      } catch (err) {
-        if (retryCount > 100) throw err
-        await sleep((retryCount + 1) * 1000)
-        return this.getAddressTxsDelayed(addrData, retryCount + 1)
-      }
+      const addressTxs = await retryWithDelay(fn)
+      return this.addressHistoryFromTxs(addrData, addressTxs)
     },
-    refreshRecommendedFees: async function (retryCount = 0) {
+
+    refreshRecommendedFees: async function () {
       const {
         bitcoin: {fees: feesAPI}
       } = mempoolJS()
-      try {
-        await sleep(250)
-        this.payment.recommededFees = await feesAPI.getFeesRecommended()
-      } catch (err) {
-        if (retryCount > 100) throw err
-        await sleep((retryCount + 1) * 1000)
-        return this.refreshRecommendedFees(retryCount + 1)
-      }
+
+      const fn = async () => feesAPI.getFeesRecommended()
+      this.payment.recommededFees = await retryWithDelay(fn)
     },
-    getAddressTxsUtxoDelayed: async function (address, retryCount = 0) {
+    getAddressTxsUtxoDelayed: async function (address) {
       const {
         bitcoin: {addresses: addressesAPI}
       } = mempoolJS()
-      try {
-        await sleep(250)
-        return await addressesAPI.getAddressTxsUtxo({
+
+      const fn = async () =>
+        addressesAPI.getAddressTxsUtxo({
           address
         })
-      } catch (err) {
-        if (retryCount > 100) throw err
-        await sleep((retryCount + 1) * 1000)
-        return this.getAddressTxsUtxoDelayed(address, retryCount + 1)
-      }
+      return retryWithDelay(fn)
     },
-    fetchTxHex: async function (txId, retryCount = 0) {
+    fetchTxHex: async function (txId) {
       const {
         bitcoin: {transactions: transactionsAPI}
       } = mempoolJS()
-      try {
-        return await transactionsAPI.getTxHex({txid: txId})
-      } catch (err) {
-        if (retryCount > 100) throw err
-        await sleep((retryCount + 1) * 1000)
-        return this.fetchTxHex(txId, retryCount + 1)
-      }
+
+      const fn = async () => transactionsAPI.getTxHex({txid: txId})
+      return retryWithDelay(fn)
     },
 
     //################### OTHER ###################
