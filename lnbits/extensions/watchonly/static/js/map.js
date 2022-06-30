@@ -42,8 +42,8 @@ const mapUtxoToPsbtInput = utxo => ({
   address: utxo.address,
   branch_index: utxo.branch_index,
   address_index: utxo.address_index,
-  master_fingerprint: utxo.master_fingerprint,
-  account_type: utxo.accountType,
+  masterpub_fingerprint: utxo.masterpubFingerprint,
+  accountType: utxo.accountType,
   txHex: ''
 })
 
@@ -55,7 +55,7 @@ const mapAddressDataToUtxo = (wallet, addressData, utxo) => ({
   branch_index: addressData.branch_index,
   wallet: addressData.wallet,
   accountType: addressData.accountType,
-  master_fingerprint: wallet.fingerprint, // todo: why not camelCase?
+  masterpubFingerprint: wallet.fingerprint, // todo: why not camelCase?
   txId: utxo.txid,
   vout: utxo.vout,
   confirmed: utxo.status.confirmed,

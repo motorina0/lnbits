@@ -200,7 +200,7 @@ async def api_psbt_create(
         inputs_extra = []
         bip32_derivations = {}
         for i, inp in enumerate(data.inputs):
-            descriptor = descriptors[inp.master_fingerprint][0]
+            descriptor = descriptors[inp.masterpub_fingerprint][0]
             d = descriptor.derive(inp.address_index, inp.branch_index)
             for k in d.keys:
                 bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(
@@ -225,7 +225,7 @@ async def api_psbt_create(
         bip32_derivations = {}
         for i, out in enumerate(data.outputs):
             if out.branch_index == 1:
-                descriptor = descriptors[out.master_fingerprint][0]
+                descriptor = descriptors[out.masterpub_fingerprint][0]
                 d = descriptor.derive(out.address_index, out.branch_index)
                 for k in d.keys:
                     bip32_derivations[PublicKey.parse(k.sec())] = DerivationPath(

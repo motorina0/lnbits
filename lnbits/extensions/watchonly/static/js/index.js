@@ -174,7 +174,6 @@ new Vue({
     //################### ADDRESSES ###################
 
     refreshAddresses: async function () {
-      
       const wallets = await this.getWatchOnlyWallets()
       this.addresses.data = []
       for (const {id, type} of wallets) {
@@ -185,7 +184,7 @@ new Vue({
         )
         uniqueAddresses.forEach(a => {
           a.expanded = false
-          a.accountType = type // todo: is this needed?
+          a.accountType = type
         })
         this.addresses.data.push(...uniqueAddresses)
       }
@@ -346,7 +345,7 @@ new Vue({
         amount: inputAmount - payedAmount - fee,
         branch_index: change.branch_index,
         address_index: change.address_index,
-        master_fingerprint: walletAcount.fingerprint
+        masterpub_fingerprint: walletAcount.fingerprint
       }
     },
     computeFee: function () {

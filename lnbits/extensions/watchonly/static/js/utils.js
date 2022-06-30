@@ -27,7 +27,7 @@ const txSize = tx => {
   const outCount = 1
   const nlockTime = 4
   const hasSegwit = !!tx.inputs.find(inp =>
-    ['p2wsh', 'p2wpkh', 'p2tr'].includes(inp.account_type)
+    ['p2wsh', 'p2wpkh', 'p2tr'].includes(inp.accountType)
   )
   const segwitFlag = hasSegwit ? 0.5 : 0
   const overheadSize = nVersion + inCount + outCount + nlockTime + segwitFlag
@@ -38,14 +38,14 @@ const txSize = tx => {
   const nSequence = 4
   const inputsSize = tx.inputs.reduce((t, inp) => {
     const scriptSig =
-      inp.account_type === 'p2pkh' ? 107 : inp.account_type === 'p2sh' ? 254 : 0
+      inp.accountType === 'p2pkh' ? 107 : inp.accountType === 'p2sh' ? 254 : 0
     const witnessItemCount = hasSegwit ? 0.25 : 0
     const witnessItems =
-      inp.account_type === 'p2wpkh'
+      inp.accountType === 'p2wpkh'
         ? 27
-        : inp.account_type === 'p2wsh'
+        : inp.accountType === 'p2wsh'
         ? 63.5
-        : inp.account_type === 'p2tr'
+        : inp.accountType === 'p2tr'
         ? 16.5
         : 0
     t +=
