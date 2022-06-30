@@ -47,7 +47,7 @@ const mapUtxoToPsbtInput = utxo => ({
   txHex: ''
 })
 
-const mapToAddressUtxo = (wallet, addressData, utxo) => ({
+const mapAddressDataToUtxo = (wallet, addressData, utxo) => ({
   id: addressData.id,
   address: addressData.address,
   isChange: addressData.branch_index === 1,

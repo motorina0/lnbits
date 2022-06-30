@@ -77,10 +77,10 @@ new Vue({
       const wallet = this.walletAccounts.find(wl => wl.id === walletId)
       return wallet ? wallet.title : 'unknown'
     },
-    addWalletAccount: function () {
+    addWalletAccount: async function () {
       const wallet = this.g.user.wallets[0]
       const data = _.omit(this.formDialog.data, 'wallet')
-      this.createWalletAccount(wallet, data)
+      await this.createWalletAccount(wallet, data)
     },
     createWalletAccount: async function (wallet, data) {
       try {
@@ -441,13 +441,25 @@ new Vue({
       this.utxos.data = []
       await this.updateUtxosForAddresses(addresses)
     },
+    scanAddress: async function(addressData) {
+      this.updateUtxosForAddresses([addressData])
+      this.$q.notify({
+        type: 'positive',
+        message: 'Address Rescanned',
+        timeout: 10000
+      })
+    },
     updateUtxosForAddresses: async function (addresses = []) {
       this.scan = {scanning: true, scanCount: addresses.length, scanIndex: 0}
 
       try {
         for (addrData of addresses) {
           const addressHistory = await this.getAddressTxsDelayed(addrData)
+          // remove old entries
+          this.addresses.history = this.addresses.history.filter(h => h.address !== addrData.address)
+          // add new entrie
           this.addresses.history.push(...addressHistory)
+
           if (addressHistory.length) {
             // only if it ever had any activity
             const utxos = await this.getAddressTxsUtxoDelayed(addrData.address)
@@ -459,7 +471,7 @@ new Vue({
       } catch (error) {
         this.$q.notify({
           type: 'warning',
-          message: 'Failed to scan utxos for addresses',
+          message: 'Failed to scan addresses',
           timeout: 10000
         })
       } finally {
@@ -471,8 +483,11 @@ new Vue({
         this.walletAccounts.find(w => w.id === addressData.wallet) || {}
 
       const newUtxos = utxos.map(utxo =>
-        mapToAddressUtxo(wallet, addressData, utxo)
+        mapAddressDataToUtxo(wallet, addressData, utxo)
       )
+      // remove old utxos
+      this.utxos.data = this.utxos.data.filter(u => u.address !== addressData.address)
+      // add new utxos
       this.utxos.data.push(...newUtxos)
       if (utxos.length) {
         this.utxos.data.sort((a, b) => b.sort - a.sort)
