@@ -220,13 +220,16 @@ new Vue({
     updateNoteForAddress: async function (addressData, note) {
       try {
         const wallet = this.g.user.wallets[0] // todo: find active wallet
-        addressData.note = note
         await LNbits.api.request(
           'PUT',
           `/watchonly/api/v1/address/${addressData.id}`,
           wallet.adminkey,
           {note: addressData.note}
         )
+        const updatedAddress = this.addresses.data.find(
+          a => a.id === addressData.id
+        ) || {}
+        updatedAddress.note = note
       } catch (err) {
         LNbits.utils.notifyApiError(err)
       }
@@ -260,6 +263,8 @@ new Vue({
         `/watchonly/api/v1/address/${walletId}`,
         this.g.user.wallets[0].inkey
       )
+
+      addressData.note = `Shared on ${currentDateTime()}`
       this.openQrCodeDialog(addressData)
       const wallet = this.walletAccounts.find(w => w.id === walletId) || {}
       wallet.address_no = addressData.address_index
@@ -586,12 +591,12 @@ new Vue({
         const response = await transactionsAPI.getTxHex({txid: txId})
         return response
       } catch (error) {
-        console.log('### error', error)
         this.$q.notify({
           type: 'warning',
           message: `Failed to fetch transaction details for tx id: '${txId}'`,
           timeout: 10000
         })
+        LNbits.utils.notifyApiError(error)
         throw error
       }
     },
@@ -602,9 +607,9 @@ new Vue({
         is_unique: false
       }
     },
-    openQrCodeDialog: function (address) {
-      this.currentAddress = address
-      this.addresses.note = address.note || ''
+    openQrCodeDialog: function (addressData) {
+      this.currentAddress = addressData
+      this.addresses.note = addressData.note || ''
       this.addresses.show = true
     },
     searchInTab: function (tab, value) {
