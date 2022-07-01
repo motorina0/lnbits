@@ -29,6 +29,7 @@ new Vue({
           receive_gap_limit: 20,
           change_gap_limit: 5
         },
+        DEFAULT_RECEIVE_GAP_LIMIT: 20,
         show: false
       },
 
@@ -185,9 +186,21 @@ new Vue({
           newAddr =>
             !this.addresses.data.find(a => a.address === newAddr.address)
         )
+        // todo: has_activity camel case?
+        // todo: extract somewhere
+        const lastAcctiveAddress =
+          uniqueAddresses
+            .filter(a => a.branch_index === 0 && a.has_activity)
+            .pop() || {}
+
         uniqueAddresses.forEach(a => {
           a.expanded = false
           a.accountType = type
+          a.gapLimitExceeded =
+            a.branch_index === 0 &&
+            a.address_index >
+              lastAcctiveAddress.address_index +
+                this.config.DEFAULT_RECEIVE_GAP_LIMIT
         })
         this.addresses.data.push(...uniqueAddresses)
       }
@@ -271,6 +284,21 @@ new Vue({
       )
 
       addressData.note = `Shared on ${currentDateTime()}`
+      const lastAcctiveAddress =
+        this.addresses.data
+          .filter(
+            a =>
+              a.wallet === addressData.wallet &&
+              a.branch_index === 0 &&
+              a.has_activity
+          )
+          .pop() || {}
+      addressData.gapLimitExceeded =
+        addressData.branch_index === 0 &&
+        addressData.address_index >
+          lastAcctiveAddress.address_index +
+            this.config.DEFAULT_RECEIVE_GAP_LIMIT
+
       this.openQrCodeDialog(addressData)
       const wallet = this.walletAccounts.find(w => w.id === walletId) || {}
       wallet.address_no = addressData.address_index
