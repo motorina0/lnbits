@@ -855,10 +855,12 @@
                       />
                     </div>
                   </div>
-                  <div class="row items-center no-wrap q-mb-md">
-                    <div class="col-2 q-pr-lg">Fee:</div>
-                    <div class="col-3 q-pr-lg">{{computeFee()}} sats</div>
-                    <div class="col-7 q-pr-lg">
+                  <div
+                    v-if="payment.feeRate < payment.recommededFees.hourFee || payment.feeRate > payment.recommededFees.fastestFee"
+                    class="row items-center no-wrap q-mb-md"
+                  >
+                    <div class="col-2 q-pr-lg"></div>
+                    <div class="col-10 q-pr-lg">
                       <q-badge
                         v-if="payment.feeRate < payment.recommededFees.hourFee"
                         color="pink"
@@ -874,6 +876,22 @@
                         Warning! The fee is too high. You might be overpaying
                         for this transaction.
                       </q-badge>
+                    </div>
+                  </div>
+
+                  <div class="row items-center no-wrap q-mb-md">
+                    <div class="col-2 q-pr-lg">Fee:</div>
+                    <div class="col-3 q-pr-lg">{{computeFee()}} sats</div>
+                    <div class="col-7 q-pr-lg">
+                      <q-btn
+                        outline
+                        dense
+                        size="md"
+                        icon="refresh"
+                        color="grey"
+                        @click="refreshRecommendedFees()"
+                        >Refresh Fee Rates</q-btn
+                      >
                     </div>
                   </div>
                 </q-card-section></q-card
@@ -937,7 +955,7 @@
                         color="yellow"
                         text-color="black"
                       >
-                        Payed amount is higher than the selected amount!
+                        The payed amount is higher than the selected amount!
                       </q-badge>
                     </div>
                   </div>
