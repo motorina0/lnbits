@@ -197,8 +197,6 @@ const tables = {
     ],
     pagination: {
       rowsPerPage: 0,
-      sortBy: 'date',
-      descending: true
     },
     filter: ''
   }

@@ -314,6 +314,7 @@ new Vue({
             vin => vin.prevout.scriptpubkey_address === addressData.address
           )
           .map(vin => mapInputToSentHistory(tx, addressData, vin))
+
         const received = tx.vout
           .filter(vout => vout.scriptpubkey_address === addressData.address)
           .map(vout => mapOutputToReceiveHistory(tx, addressData, vout))
@@ -322,9 +323,24 @@ new Vue({
       return addressHistory
     },
     getFilteredAddressesHistory: function () {
-      return this.addresses.history
-        .filter(a => !a.isChange)
-        .sort((a, b) => (!a.height ? -1 : b.height - a.height))
+      return this.addresses.history.filter(a => !a.isChange && !a.isSubItem)
+    },
+    markSameTxAddressHistory: function () {
+      this.addresses.history
+        .filter(s => s.sent)
+        .forEach((el, i, arr) => {
+          if (el.isSubItem) return
+
+          const sameTxItems = arr.slice(i + 1).filter(e => e.txId === el.txId)
+          if (!sameTxItems.length) return
+          sameTxItems.forEach(e => {
+            e.isSubItem = true
+          })
+
+          el.totalAmount =
+            el.amount + sameTxItems.reduce((t, e) => (t += e.amount || 0), 0)
+          el.sameTxItems = sameTxItems
+        })
     },
     showAddressHistoryDetails: function (addressHistory) {
       addressHistory.expanded = true
@@ -489,8 +505,9 @@ new Vue({
       }
     },
     scanAddressWithAmount: async function () {
-      const addresses = this.addresses.data.filter(a => a.has_activity)
       this.utxos.data = []
+      this.addresses.history = []
+      const addresses = this.addresses.data.filter(a => a.has_activity)
       await this.updateUtxosForAddresses(addresses)
     },
     scanAddress: async function (addressData) {
@@ -511,11 +528,16 @@ new Vue({
           this.addresses.history = this.addresses.history.filter(
             h => h.address !== addrData.address
           )
+
           // add new entrie
           this.addresses.history.push(...addressHistory)
+          this.addresses.history.sort((a, b) =>
+            !a.height ? -1 : b.height - a.height
+          )
+          this.markSameTxAddressHistory()
 
           if (addressHistory.length) {
-            // only if it ever had any activity
+            // search only if it ever had any activity
             const utxos = await this.getAddressTxsUtxoDelayed(addrData.address)
             this.updateUtxosForAddress(addrData, utxos)
           }
@@ -523,6 +545,7 @@ new Vue({
           this.scan.scanIndex++
         }
       } catch (error) {
+        console.error(error)
         this.$q.notify({
           type: 'warning',
           message: 'Failed to scan addresses',
