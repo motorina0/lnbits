@@ -63,7 +63,7 @@ async def api_wallet_retrieve(
 
 @watchonly_ext.post("/api/v1/wallet")
 async def api_wallet_create_or_update(
-    data: CreateWallet, wallet_id=None, w: WalletTypeInfo = Depends(require_admin_key)
+    data: CreateWallet, w: WalletTypeInfo = Depends(require_admin_key)
 ):
     try:
         wallet = await create_watch_wallet(

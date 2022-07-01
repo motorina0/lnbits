@@ -20,6 +20,11 @@ async def create_watch_wallet(user: str, masterpub: str, title: str) -> Wallets:
     fingerprint = descriptor.keys[0].fingerprint.hex()
     wallet_id = urlsafe_short_hash()
 
+    wallets = await get_watch_wallets(user)
+    w = next((w for w in wallets if w.fingerprint == fingerprint), None)
+    if w:
+        raise ValueError("Account '{}' has the same master pulic key".format(w.title))
+
     await db.execute(
         """
         INSERT INTO watchonly.wallets (
@@ -237,7 +242,7 @@ async def get_config(user: str) -> Optional[Config]:
     row = await db.fetchone(
         """SELECT json_data FROM watchonly.config WHERE "user" = ?""", (user,)
     )
-    return json.loads(row[0], object_hook=lambda d: Config(**d))
+    return json.loads(row[0], object_hook=lambda d: Config(**d)) if row else Config()
 
 
 ######################MEMPOOL#######################
