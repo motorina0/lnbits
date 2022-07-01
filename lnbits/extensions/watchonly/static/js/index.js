@@ -331,7 +331,7 @@ new Vue({
     },
 
     //################### PAYMENT ###################
-    createTx: function () {
+    createTx: function (excludeChange = false) {
       const tx = {
         fee_rate: this.payment.feeRate,
         tx_size: this.payment.txSize,
@@ -352,12 +352,15 @@ new Vue({
         amount: out.amount
       }))
 
-      const change = this.createChangeOutput()
-      this.payment.changeAmount = change.amount
-      if (change.amount >= this.DUST_LIMIT) {
-        tx.outputs.push(change)
+      if (excludeChange) {
+        this.payment.changeAmount = 0
+      } else {
+        const change = this.createChangeOutput()
+        this.payment.changeAmount = change.amount
+        if (change.amount >= this.DUST_LIMIT) {
+          tx.outputs.push(change)
+        }
       }
-
       // Only sort by amount on UI level (no lib for address decode)
       // Should sort by scriptPubKey (as byte array) on the backend
       tx.outputs.sort((a, b) => a.amount - b.amount)
@@ -371,6 +374,7 @@ new Vue({
       const payedAmount = this.getTotalPaymentAmount()
       const walletAcount =
         this.walletAccounts.find(w => w.id === change.wallet) || {}
+
       return {
         address: change.address,
         amount: inputAmount - payedAmount - fee,
@@ -447,6 +451,15 @@ new Vue({
       this.payment.show = true
       this.tab = 'utxos'
       await this.initPaymentData()
+    },
+    sendAllToAddress: function (paymentAddress = {}) {
+      paymentAddress.amount = 0
+      const tx = this.createTx(true)
+      this.payment.txSize = Math.round(txSize(tx))
+      const fee = this.payment.feeRate * this.payment.txSize
+      const inputAmount = this.getTotalSelectedUtxoAmount()
+      const payedAmount = this.getTotalPaymentAmount()
+      paymentAddress.amount = Math.max(0, inputAmount - payedAmount - fee)
     },
 
     //################### UTXOs ###################

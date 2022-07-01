@@ -558,6 +558,17 @@
                         <template v-slot:body="props">
                           <q-tr :props="props">
                             <div class="row no-wrap">
+                              <div class="col-1">
+                                <q-btn
+                                  flat
+                                  dense
+                                  size="l"
+                                  @click="deletePaymentAddress(props.row)"
+                                  icon="cancel"
+                                  color="pink"
+                                  class="q-mt-sm"
+                                ></q-btn>
+                              </div>
                               <div class="col-7 q-pr-lg">
                                 <q-input
                                   filled
@@ -568,7 +579,7 @@
                                   :rules="[val => !!val || 'Field is required']"
                                 ></q-input>
                               </div>
-                              <div class="col-4 q-pr-lg">
+                              <div class="col-3 q-pr-lg">
                                 <q-input
                                   filled
                                   dense
@@ -581,13 +592,11 @@
                               </div>
                               <div class="col-1">
                                 <q-btn
-                                  flat
-                                  dense
-                                  size="l"
-                                  @click="deletePaymentAddress(props.row)"
-                                  icon="cancel"
-                                  color="pink"
-                                ></q-btn>
+                                  outline
+                                  color="grey"
+                                  @click="sendAllToAddress(props.row)"
+                                  >Fill</q-btn
+                                >
                               </div>
                             </div>
                           </q-tr>
@@ -924,11 +933,12 @@
                             </q-td>
                             <q-td key="change" :props="props">
                               <q-badge
-                                v-if="payment.changeAmount > 0"
+                                v-if="payment.changeAmount >= 0"
                                 class="text-subtitle2"
                                 color="green"
                               >
-                                {{payment.changeAmount}}
+                                {{payment.changeAmount ? payment.changeAmount:
+                                'no change'}}
                               </q-badge>
                               <q-badge
                                 v-if="payment.changeAmount > 0 && payment.changeAmount < DUST_LIMIT"
@@ -987,7 +997,7 @@
     <q-card>
       <q-card-section>
         <h6 class="text-subtitle1 q-my-none">
-          {{SITE_TITLE}} Watch Only Extension
+          {{SITE_TITLE}} Bitcoin Wallet (watch-only) Extension
         </h6>
       </q-card-section>
       <q-card-section class="q-pa-none">

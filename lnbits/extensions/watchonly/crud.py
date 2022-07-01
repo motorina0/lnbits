@@ -242,7 +242,7 @@ async def get_config(user: str) -> Optional[Config]:
     row = await db.fetchone(
         """SELECT json_data FROM watchonly.config WHERE "user" = ?""", (user,)
     )
-    return json.loads(row[0], object_hook=lambda d: Config(**d)) if row else Config()
+    return json.loads(row[0], object_hook=lambda d: Config(**d)) if row else None
 
 
 ######################MEMPOOL#######################
