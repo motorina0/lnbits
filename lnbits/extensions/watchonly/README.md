@@ -1,4 +1,4 @@
-# Watch Only wallet
+# Bitcoin Wallet (watch-only)
 
 ## Monitor an onchain wallet and generate addresses for onchain payments
 
