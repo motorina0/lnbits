@@ -7,7 +7,7 @@ services:
   lnbits:
     build: .
     ports:
-      - "5000:5000"
+      - "80:5000"
     environment:
       LNBITS_DATABASE_URL: postgres://lnbits:secret@postgres-db:5432/lnbits_db
       LNBITS_BACKEND_WALLET_CLASS: FakeWallet
