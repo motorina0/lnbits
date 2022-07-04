@@ -1,4 +1,4 @@
-const mapAddressesData = (a) => ({
+const mapAddressesData = a => ({
   id: a.id,
   address: a.address,
   amount: a.amount,
@@ -7,7 +7,7 @@ const mapAddressesData = (a) => ({
 
   branchIndex: a.branch_index,
   addressIndex: a.address_index,
-  hasActivity: a.has_activity,
+  hasActivity: a.has_activity
 })
 
 const mapInputToSentHistory = (tx, addressData, vin) => ({
