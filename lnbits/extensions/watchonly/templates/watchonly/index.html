@@ -427,19 +427,32 @@
           <q-tab-panel name="history">
             <div class="row items-center no-wrap q-mb-md">
               <div class="col q-pr-lg"></div>
-              <div class="col q-pr-lg"></div>
-              <div class="col-auto">
+              <div class="col q-pr-lg">
                 <q-input
                   borderless
                   dense
                   debounce="300"
                   v-model="historyTable.filter"
                   placeholder="Search"
+                  class="float-right"
                 >
                   <template v-slot:append>
                     <q-icon name="search"></q-icon>
                   </template>
                 </q-input>
+              </div>
+              <div class="col-auto">
+                <q-btn outline color="grey" label="...">
+                  <q-menu auto-close>
+                    <q-list style="min-width: 100px">
+                      <q-item clickable>
+                        <q-item-section @click="exportHistoryToCSV"
+                          >Export to CSV</q-item-section
+                        >
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </q-btn>
               </div>
             </div>
             <q-table

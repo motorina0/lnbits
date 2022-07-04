@@ -195,8 +195,30 @@ const tables = {
         sortable: true
       }
     ],
+    exportColums: [
+      {
+        label: 'Action',
+        field: 'action'
+      },
+      {
+        label: 'Date&Time',
+        field: 'date'
+      },
+      {
+        label: 'Amount',
+        field: 'amount'
+      },
+      {
+        label: 'Fee',
+        field: 'fee'
+      },
+      {
+        label: 'Transaction Id',
+        field: 'txId'
+      }
+    ],
     pagination: {
-      rowsPerPage: 0,
+      rowsPerPage: 0
     },
     filter: ''
   }

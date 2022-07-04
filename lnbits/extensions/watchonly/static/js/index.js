@@ -323,7 +323,20 @@ new Vue({
       return addressHistory
     },
     getFilteredAddressesHistory: function () {
-      return this.addresses.history.filter(a => !a.isChange && !a.isSubItem)
+      return this.addresses.history.filter(
+        a => (!a.isChange || a.sent) && !a.isSubItem
+      )
+    },
+    exportHistoryToCSV: function () {
+      const history = this.getFilteredAddressesHistory().map(a => ({
+        ...a,
+        action: a.sent ? 'Sent' : 'Received'
+      }))
+      LNbits.utils.exportCSV(
+        this.historyTable.exportColums,
+        history,
+        'address-history'
+      )
     },
     markSameTxAddressHistory: function () {
       this.addresses.history
