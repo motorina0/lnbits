@@ -136,7 +136,7 @@ new Vue({
           '/watchonly/api/v1/addresses/' + walletId,
           this.g.user.wallets[0].inkey
         )
-        return data
+        return data.map(mapAddressesData)
       } catch (err) {
         this.$q.notify({
           type: 'warning',
@@ -190,16 +190,16 @@ new Vue({
 
         const lastAcctiveAddress =
           uniqueAddresses
-            .filter(a => a.branch_index === 0 && a.has_activity)
+            .filter(a => a.addressIndex === 0 && a.hasActivity)
             .pop() || {}
 
         uniqueAddresses.forEach(a => {
           a.expanded = false
           a.accountType = type
           a.gapLimitExceeded =
-            a.branch_index === 0 &&
-            a.address_index >
-              lastAcctiveAddress.address_index +
+            a.branchIndex === 0 &&
+            a.addressIndex >
+              lastAcctiveAddress.addressIndex +
                 this.config.DEFAULT_RECEIVE_GAP_LIMIT
         })
         this.addresses.data.push(...uniqueAddresses)
@@ -209,15 +209,15 @@ new Vue({
       try {
         const wallet = this.g.user.wallets[0]
         addressData.amount = amount
-        if (addressData.branch_index === 0) {
+        if (addressData.branchIndex === 0) {
           const addressWallet = this.walletAccounts.find(
             w => w.id === addressData.wallet
           )
           if (
             addressWallet &&
-            addressWallet.address_no < addressData.address_index
+            addressWallet.address_no < addressData.addressIndex
           ) {
-            addressWallet.address_no = addressData.address_index
+            addressWallet.address_no = addressData.addressIndex
           }
         }
 
@@ -267,10 +267,10 @@ new Vue({
 
       const addresses = this.addresses.data.filter(
         a =>
-          (includeChangeAddrs || a.branch_index === 0) &&
+          (includeChangeAddrs || a.addressIndex === 0) &&
           (includeGapAddrs ||
-            a.branch_index === 1 ||
-            a.address_index <= walletsLimit[`_${a.wallet}`]) &&
+            a.addressIndex === 1 ||
+            a.addressIndex <= walletsLimit[`_${a.wallet}`]) &&
           !(excludeNoAmount && a.amount === 0) &&
           (!selectedWalletId || a.wallet === selectedWalletId)
       )
@@ -289,19 +289,19 @@ new Vue({
           .filter(
             a =>
               a.wallet === addressData.wallet &&
-              a.branch_index === 0 &&
-              a.has_activity
+              a.addressIndex === 0 &&
+              a.hasActivity
           )
           .pop() || {}
       addressData.gapLimitExceeded =
-        addressData.branch_index === 0 &&
-        addressData.address_index >
-          lastAcctiveAddress.address_index +
+        addressData.addressIndex === 0 &&
+        addressData.addressIndex >
+          lastAcctiveAddress.addressIndex +
             this.config.DEFAULT_RECEIVE_GAP_LIMIT
 
       this.openQrCodeDialog(addressData)
       const wallet = this.walletAccounts.find(w => w.id === walletId) || {}
-      wallet.address_no = addressData.address_index
+      wallet.address_no = addressData.addressIndex
       await this.refreshAddresses()
     },
 
@@ -407,8 +407,8 @@ new Vue({
       return {
         address: change.address,
         amount: inputAmount - payedAmount - fee,
-        branch_index: change.branch_index,
-        address_index: change.address_index,
+        addressIndex: change.addressIndex,
+        addressIndex: change.addressIndex,
         masterpub_fingerprint: walletAcount.fingerprint
       }
     },
@@ -473,7 +473,7 @@ new Vue({
     selectChangeAccount: function (wallet) {
       this.payment.changeAddress =
         this.addresses.data.find(
-          a => a.wallet === wallet.id && a.branch_index === 1 && !a.has_activity
+          a => a.wallet === wallet.id && a.addressIndex === 1 && !a.hasActivity
         ) || {}
     },
     goToPaymentView: async function () {
@@ -522,7 +522,7 @@ new Vue({
       this.utxos.data = []
       this.utxos.total = 0
       this.addresses.history = []
-      const addresses = this.addresses.data.filter(a => a.has_activity)
+      const addresses = this.addresses.data.filter(a => a.hasActivity)
       await this.updateUtxosForAddresses(addresses)
     },
     scanAddress: async function (addressData) {

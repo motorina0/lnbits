@@ -1,19 +1,20 @@
-const mapAddresses = function (obj) {
-  obj._data = _.clone(obj)
-  obj.date = obj.time
-    ? Quasar.utils.date.formatDate(
-        new Date(obj.time * 1000),
-        'YYYY-MM-DD HH:mm'
-      )
-    : ''
-  return obj
-}
+const mapAddressesData = (a) => ({
+  id: a.id,
+  address: a.address,
+  amount: a.amount,
+  wallet: a.wallet,
+  note: a.note,
+
+  branchIndex: a.branch_index,
+  addressIndex: a.address_index,
+  hasActivity: a.has_activity,
+})
 
 const mapInputToSentHistory = (tx, addressData, vin) => ({
   sent: true,
   txId: tx.txid,
   address: addressData.address,
-  isChange: addressData.branch_index === 1,
+  isChange: addressData.branchIndex === 1,
   amount: vin.prevout.value,
   date: blockTimeToDate(tx.status.block_time),
   height: tx.status.block_height,
@@ -26,7 +27,7 @@ const mapOutputToReceiveHistory = (tx, addressData, vout) => ({
   received: true,
   txId: tx.txid,
   address: addressData.address,
-  isChange: addressData.branch_index === 1,
+  isChange: addressData.branchIndex === 1,
   amount: vout.value,
   date: blockTimeToDate(tx.status.block_time),
   height: tx.status.block_height,
@@ -40,8 +41,8 @@ const mapUtxoToPsbtInput = utxo => ({
   vout: utxo.vout,
   amount: utxo.amount,
   address: utxo.address,
-  branch_index: utxo.branch_index,
-  address_index: utxo.address_index,
+  branch_index: utxo.branchIndex,
+  address_index: utxo.addressIndex,
   masterpub_fingerprint: utxo.masterpubFingerprint,
   accountType: utxo.accountType,
   txHex: ''
@@ -50,12 +51,12 @@ const mapUtxoToPsbtInput = utxo => ({
 const mapAddressDataToUtxo = (wallet, addressData, utxo) => ({
   id: addressData.id,
   address: addressData.address,
-  isChange: addressData.branch_index === 1,
-  address_index: addressData.address_index,
-  branch_index: addressData.branch_index,
+  isChange: addressData.branchIndex === 1,
+  addressIndex: addressData.addressIndex,
+  branchIndex: addressData.branchIndex,
   wallet: addressData.wallet,
   accountType: addressData.accountType,
-  masterpubFingerprint: wallet.fingerprint, // todo: why not camelCase?
+  masterpubFingerprint: wallet.fingerprint,
   txId: utxo.txid,
   vout: utxo.vout,
   confirmed: utxo.status.confirmed,
