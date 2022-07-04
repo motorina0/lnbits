@@ -468,7 +468,7 @@ new Vue({
       this.tab = 'utxos'
       await this.initPaymentData()
     },
-    sendAllToAddress: function (paymentAddress = {}) {
+    sendMaxToAddress: function (paymentAddress = {}) {
       paymentAddress.amount = 0
       const tx = this.createTx(true)
       this.payment.txSize = Math.round(txSize(tx))
