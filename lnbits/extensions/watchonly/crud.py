@@ -5,14 +5,14 @@ from typing import List, Optional
 from lnbits.helpers import urlsafe_short_hash
 
 from . import db
-from .models import Addresses, Config, Mempool, Wallets
+from .models import Address, Config, Mempool, WalletAccount
 from .helpers import parse_key, derive_address
 
 
 ##########################WALLETS####################
 
 
-async def create_watch_wallet(user: str, masterpub: str, title: str) -> Wallets:
+async def create_watch_wallet(user: str, masterpub: str, title: str) -> WalletAccount:
     # check the masterpub is fine, it will raise an exception if not
     (descriptor, _) = parse_key(masterpub)
 
@@ -46,21 +46,21 @@ async def create_watch_wallet(user: str, masterpub: str, title: str) -> Wallets:
     return await get_watch_wallet(wallet_id)
 
 
-async def get_watch_wallet(wallet_id: str) -> Optional[Wallets]:
+async def get_watch_wallet(wallet_id: str) -> Optional[WalletAccount]:
     row = await db.fetchone(
         "SELECT * FROM watchonly.wallets WHERE id = ?", (wallet_id,)
     )
-    return Wallets.from_row(row) if row else None
+    return WalletAccount.from_row(row) if row else None
 
 
-async def get_watch_wallets(user: str) -> List[Wallets]:
+async def get_watch_wallets(user: str) -> List[WalletAccount]:
     rows = await db.fetchall(
         """SELECT * FROM watchonly.wallets WHERE "user" = ?""", (user,)
     )
-    return [Wallets(**row) for row in rows]
+    return [WalletAccount(**row) for row in rows]
 
 
-async def update_watch_wallet(wallet_id: str, **kwargs) -> Optional[Wallets]:
+async def update_watch_wallet(wallet_id: str, **kwargs) -> Optional[WalletAccount]:
     q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
 
     await db.execute(
@@ -69,7 +69,7 @@ async def update_watch_wallet(wallet_id: str, **kwargs) -> Optional[Wallets]:
     row = await db.fetchone(
         "SELECT * FROM watchonly.wallets WHERE id = ?", (wallet_id,)
     )
-    return Wallets.from_row(row) if row else None
+    return WalletAccount.from_row(row) if row else None
 
 
 async def delete_watch_wallet(wallet_id: str) -> None:
@@ -78,13 +78,12 @@ async def delete_watch_wallet(wallet_id: str) -> None:
     ########################ADDRESSES#######################
 
 
-async def get_fresh_address(wallet_id: str) -> Optional[Addresses]:
+async def get_fresh_address(wallet_id: str) -> Optional[Address]:
     wallet = await get_watch_wallet(wallet_id)
 
     if not wallet:
         return None
 
-    # todo: filter on DB side
     wallet_addresses = await get_addresses(wallet_id)
     receive_addresses = list(
         filter(
@@ -118,7 +117,7 @@ async def create_fresh_addresses(
     start_address_index: int,
     end_address_index: int,
     change_address=False,
-) -> List[Addresses]:
+) -> List[Address]:
     if start_address_index > end_address_index:
         return None
 
@@ -128,7 +127,6 @@ async def create_fresh_addresses(
 
     branch_index = 1 if change_address else 0
 
-    # todo: use batch insert (?)
     for address_index in range(start_address_index, end_address_index):
         address = await derive_address(wallet.masterpub, address_index, branch_index)
 
@@ -157,19 +155,19 @@ async def create_fresh_addresses(
         (wallet_id, branch_index, start_address_index, end_address_index),
     )
 
-    return [Addresses(**row) for row in rows]
+    return [Address(**row) for row in rows]
 
 
-async def get_address(address: str) -> Optional[Addresses]:
+async def get_address(address: str) -> Optional[Address]:
     row = await db.fetchone(
         "SELECT * FROM watchonly.addresses WHERE address = ?", (address,)
     )
-    return Addresses.from_row(row) if row else None
+    return Address.from_row(row) if row else None
 
 
 async def get_address_at_index(
     wallet_id: str, branch_index: int, address_index: int
-) -> Optional[Addresses]:
+) -> Optional[Address]:
     row = await db.fetchone(
         """
             SELECT * FROM watchonly.addresses 
@@ -181,10 +179,10 @@ async def get_address_at_index(
             address_index,
         ),
     )
-    return Addresses.from_row(row) if row else None
+    return Address.from_row(row) if row else None
 
 
-async def get_addresses(wallet_id: str) -> List[Addresses]:
+async def get_addresses(wallet_id: str) -> List[Address]:
     rows = await db.fetchall(
         """
             SELECT * FROM watchonly.addresses WHERE wallet = ?
@@ -193,10 +191,10 @@ async def get_addresses(wallet_id: str) -> List[Addresses]:
         (wallet_id,),
     )
 
-    return [Addresses(**row) for row in rows]
+    return [Address(**row) for row in rows]
 
 
-async def update_address(id: str, **kwargs) -> Optional[Addresses]:
+async def update_address(id: str, **kwargs) -> Optional[Address]:
     q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
 
     await db.execute(
@@ -204,7 +202,7 @@ async def update_address(id: str, **kwargs) -> Optional[Addresses]:
         (*kwargs.values(), id),
     )
     row = await db.fetchone("SELECT * FROM watchonly.addresses WHERE id = ?", (id))
-    return Addresses.from_row(row) if row else None
+    return Address.from_row(row) if row else None
 
 
 async def delete_addresses_for_wallet(wallet_id: str) -> None:

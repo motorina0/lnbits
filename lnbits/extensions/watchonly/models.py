@@ -9,7 +9,7 @@ class CreateWallet(BaseModel):
     title: str = Query("")
 
 
-class Wallets(BaseModel):  # todo: why plural
+class WalletAccount(BaseModel):
     id: str
     user: str
     masterpub: str
@@ -20,7 +20,7 @@ class Wallets(BaseModel):  # todo: why plural
     type: str = ""
 
     @classmethod
-    def from_row(cls, row: Row) -> "Wallets":
+    def from_row(cls, row: Row) -> "WalletAccount":
         return cls(**dict(row))
 
 
@@ -34,7 +34,7 @@ class Mempool(BaseModel):
         return cls(**dict(row))
 
 
-class Addresses(BaseModel):  # todo: why plural
+class Address(BaseModel):
     id: str
     address: str
     wallet: str
@@ -45,7 +45,7 @@ class Addresses(BaseModel):  # todo: why plural
     has_activity: bool = False
 
     @classmethod
-    def from_row(cls, row: Row) -> "Addresses":
+    def from_row(cls, row: Row) -> "Address":
         return cls(**dict(row))
 
 

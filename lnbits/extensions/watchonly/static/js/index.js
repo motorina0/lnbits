@@ -12,7 +12,7 @@ new Vue({
     return {
       DUST_LIMIT: 546,
       filter: '',
-      balance: null,
+
       scan: {
         scanning: false,
         scanCount: 0,
@@ -118,6 +118,7 @@ new Vue({
             })
             await this.refreshWalletAccounts()
             await this.refreshAddresses()
+            console.log('### 111')
             await this.scanAddressWithAmount()
           } catch (error) {
             this.$q.notify({
@@ -186,8 +187,7 @@ new Vue({
           newAddr =>
             !this.addresses.data.find(a => a.address === newAddr.address)
         )
-        // todo: has_activity camel case?
-        // todo: extract somewhere
+
         const lastAcctiveAddress =
           uniqueAddresses
             .filter(a => a.branch_index === 0 && a.has_activity)
@@ -207,7 +207,7 @@ new Vue({
     },
     updateAmountForAddress: async function (addressData, amount = 0) {
       try {
-        const wallet = this.g.user.wallets[0] // todo: find active wallet
+        const wallet = this.g.user.wallets[0]
         addressData.amount = amount
         if (addressData.branch_index === 0) {
           const addressWallet = this.walletAccounts.find(
@@ -239,7 +239,7 @@ new Vue({
     },
     updateNoteForAddress: async function (addressData, note) {
       try {
-        const wallet = this.g.user.wallets[0] // todo: find active wallet
+        const wallet = this.g.user.wallets[0]
         await LNbits.api.request(
           'PUT',
           `/watchonly/api/v1/address/${addressData.id}`,
@@ -418,7 +418,7 @@ new Vue({
       return this.payment.feeRate * this.payment.txSize
     },
     createPsbt: async function () {
-      const wallet = this.g.user.wallets[0] // todo: find active wallet
+      const wallet = this.g.user.wallets[0]
       try {
         this.computeFee()
         const tx = this.createTx()
@@ -497,6 +497,7 @@ new Vue({
       this.addresses.history = []
       let addresses = this.addresses.data
       this.utxos.data = []
+      this.utxos.total = 0
       // Loop while new funds are found on the gap adresses.
       // Use 1000 limit as a safety check (scan 20 000 addresses max)
       for (let i = 0; i < 1000 && addresses.length; i++) {
@@ -519,6 +520,7 @@ new Vue({
     },
     scanAddressWithAmount: async function () {
       this.utxos.data = []
+      this.utxos.total = 0
       this.addresses.history = []
       const addresses = this.addresses.data.filter(a => a.has_activity)
       await this.updateUtxosForAddresses(addresses)
@@ -699,9 +701,7 @@ new Vue({
       this.tab = tab
       this[`${tab}Table`].filter = value
     },
-    exportCSV: function () {
-      LNbits.utils.exportCSV(this.paywallsTable.columns, this.paywalls) // todo: paywallsTable??
-    },
+
     satBtc(val, showUnit = true) {
       const value = this.config.data.sats_denominated
         ? LNbits.utils.formatSat(val)

@@ -184,9 +184,8 @@ async def api_get_addresses(wallet_id, w: WalletTypeInfo = Depends(get_key_type)
 
 @watchonly_ext.post("/api/v1/psbt")
 async def api_psbt_create(
-    data: CreatePsbt, wallet_id=None, w: WalletTypeInfo = Depends(require_admin_key)
+    data: CreatePsbt, w: WalletTypeInfo = Depends(require_admin_key)
 ):
-    # todo: reeeefactor
     try:
         vin = [
             TransactionInput(bytes.fromhex(inp.tx_id), inp.vout) for inp in data.inputs
@@ -221,7 +220,6 @@ async def api_psbt_create(
 
         for i, inp in enumerate(inputs_extra):
             psbt.inputs[i].bip32_derivations = inp["bip32_derivations"]
-            psbt.inputs[i].witness_utxo = inp.get("witness_utxo", None)  # todo
             psbt.inputs[i].non_witness_utxo = inp.get("non_witness_utxo", None)
 
         outputs_extra = []
