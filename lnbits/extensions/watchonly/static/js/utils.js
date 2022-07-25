@@ -13,6 +13,8 @@ const COMMAND_XPUB = '/xpub'
 
 const DEFAULT_RECEIVE_GAP_LIMIT = 20
 
+const DEFAULT_RECEIVE_GAP_LIMIT = 20
+
 const blockTimeToDate = blockTime =>
   blockTime ? moment(blockTime * 1000).format('LLL') : ''
 
