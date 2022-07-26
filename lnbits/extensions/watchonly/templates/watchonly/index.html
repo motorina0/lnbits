@@ -493,6 +493,16 @@
         </q-tab-panels>
       </q-card-section>
     </q-card>
+    <div class="q-mt-lg">
+      <payment
+        v-show="showPayment"
+        :accounts="walletAccounts"
+        :addresses="addresses"
+        :utxos="utxos.data"
+        :adminkey="g.user.wallets[0].adminkey"
+      ></payment>
+      <!-- todo: no more utxos.data -->
+    </div>
   </div>
 
   {% endraw %}
