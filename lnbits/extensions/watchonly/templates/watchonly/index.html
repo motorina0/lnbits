@@ -13,6 +13,7 @@
       :inkey="g.user.wallets[0].inkey"
       :sats-denominated="config.data.sats_denominated"
       :addresses="addresses"
+      :serial-signer-ref="$refs.serialSigner"
       @accounts-update="updateAccounts"
       @new-receive-address="showAddressDetails"
     >
