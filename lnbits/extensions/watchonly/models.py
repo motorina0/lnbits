@@ -19,6 +19,7 @@ class WalletAccount(BaseModel):
     address_no: int
     balance: int
     type: str = ""
+    network: str = "Mainnet"
 
     @classmethod
     def from_row(cls, row: Row) -> "WalletAccount":
@@ -87,3 +88,4 @@ class Config(BaseModel):
     receive_gap_limit = 20
     change_gap_limit = 5
     sats_denominated = True
+    network = "Mainnet"
