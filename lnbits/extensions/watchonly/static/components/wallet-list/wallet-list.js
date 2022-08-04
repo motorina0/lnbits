@@ -127,7 +127,6 @@ async function walletList(path) {
             } else {
               data.masterpub = `${outputType}([${fingerprint}/${path}]${xpub}/{0,1}/*)`
             }
-            console.log('###  data.masterpub', data.masterpub)
           }
           const response = await LNbits.api.request(
             'POST',
