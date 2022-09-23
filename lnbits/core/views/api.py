@@ -12,14 +12,14 @@ from urllib.parse import ParseResult, parse_qs, urlencode, urlparse, urlunparse
 import async_timeout
 import httpx
 import pyqrcode
-from fastapi import Depends, Header, Query, Request
+from fastapi import Depends, Header, Query, Request, Path
 from fastapi.exceptions import HTTPException
 from fastapi.params import Body
 from loguru import logger
 from pydantic import BaseModel
 from pydantic.fields import Field
-from sse_starlette.sse import EventSourceResponse, ServerSentEvent
-from starlette.responses import HTMLResponse, StreamingResponse
+from sse_starlette.sse import EventSourceResponse
+from starlette.responses import JSONResponse, StreamingResponse
 
 from lnbits import bolt11, lnurl
 from lnbits.core.models import Payment, Wallet
@@ -36,6 +36,9 @@ from lnbits.utils.exchange_rates import (
     fiat_amount_as_satoshis,
     satoshis_amount_as_fiat,
 )
+
+from lnbits.decorators import check_user_exists
+from lnbits.core.models import User
 
 from .. import core_app, db
 from ..crud import (
@@ -56,6 +59,7 @@ from ..services import (
     create_invoice,
     pay_invoice,
     perform_lnurlauth,
+    install_extension,
 )
 from ..tasks import api_invoice_listeners
 
@@ -697,3 +701,15 @@ async def api_auditor(wallet: WalletTypeInfo = Depends(get_key_type)):
         "delta_msats": delta,
         "timestamp": int(time.time()),
     }
+@core_app.get(
+    "/api/v1/extensions/install/{extension_id}",
+    name="core.api.v1.extensions.install",
+    response_class=JSONResponse,
+)
+async def extensions(
+    request: Request,
+    user: User = Depends(check_user_exists),  # type: ignore
+    extension_id: str = Path(..., description="Name of the extension to install"),  # type: ignore
+):
+    asyncio.create_task(install_extension(extension_id))
+    return {"success": True}
