@@ -6,13 +6,13 @@ import time
 import uuid
 from http import HTTPStatus
 from io import BytesIO
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 from urllib.parse import ParseResult, parse_qs, urlencode, urlparse, urlunparse
 
 import async_timeout
 import httpx
 import pyqrcode
-from fastapi import Depends, Header, Query, Request, Path
+from fastapi import Depends, Header, Path, Query, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.params import Body
 from loguru import logger
@@ -22,9 +22,10 @@ from sse_starlette.sse import EventSourceResponse
 from starlette.responses import JSONResponse, StreamingResponse
 
 from lnbits import bolt11, lnurl
-from lnbits.core.models import Payment, Wallet
+from lnbits.core.models import Payment, User, Wallet
 from lnbits.decorators import (
     WalletTypeInfo,
+    check_user_exists,
     get_key_type,
     require_admin_key,
     require_invoice_key,
@@ -36,9 +37,6 @@ from lnbits.utils.exchange_rates import (
     fiat_amount_as_satoshis,
     satoshis_amount_as_fiat,
 )
-
-from lnbits.decorators import check_user_exists
-from lnbits.core.models import User
 
 from .. import core_app, db
 from ..crud import (
@@ -57,9 +55,9 @@ from ..services import (
     PaymentFailure,
     check_transaction_status,
     create_invoice,
+    install_extension,
     pay_invoice,
     perform_lnurlauth,
-    install_extension,
 )
 from ..tasks import api_invoice_listeners
 
@@ -711,5 +709,14 @@ async def extensions(
     user: User = Depends(check_user_exists),  # type: ignore
     extension_id: str = Path(..., description="Name of the extension to install"),  # type: ignore
 ):
-    asyncio.create_task(install_extension(extension_id))
-    return {"success": True}
+    try:
+        await install_extension(extension_id)
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": f"Failed to install extension: {e}"},
+        )
+
+    # TODO: implement a SSE endpoint to stream the installation progress
+    # asyncio.create_task(install_extension(extension_id))
