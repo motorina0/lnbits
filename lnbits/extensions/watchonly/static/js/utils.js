@@ -137,7 +137,9 @@ const readFromSerialPort = reader => {
   let fulliness = []
 
   const readStringUntil = async (separator = '\n') => {
-    if (fulliness.length) return fulliness.shift().trim()
+    if (fulliness.length) {
+      return {value: fulliness.shift().trim(), done: false}
+    }
     const chunks = []
     if (partialChunk) {
       // leftovers from previous read

@@ -30,7 +30,6 @@ const watchOnly = async () => {
         writer: null,
         serialDataValue: null,
 
-
         scan: {
           scanning: false,
           scanCount: 0,
@@ -215,8 +214,6 @@ const watchOnly = async () => {
           )
 
           this.writer = textEncoder.writable.getWriter()
-
-
         } catch (error) {
           this.selectedPort = null
           console.log('### Cannot open serial port!')
@@ -243,18 +240,18 @@ const watchOnly = async () => {
           try {
             while (true) {
               const {value, done} = await readStringUntil('\n')
-              console.log("### serialPortValue: ", value);
-              
+              console.log('### serialPortValue: ', value)
+
               if (done) return
             }
           } catch (error) {
-            console.log("### Serial port communication error!", error)
+            console.log('### Serial port communication error!', error)
           }
         }
       },
 
-      sendSerialData: async function() {
-        console.log("### sendSerialData:", this.serialDataValue)
+      sendSerialData: async function () {
+        console.log('### sendSerialData:', this.serialDataValue)
         await this.writer.write(this.serialDataValue + '\n')
       },
 

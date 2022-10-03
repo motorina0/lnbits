@@ -92,7 +92,7 @@
             size="30"
           />
         </form> -->
-        <input type="file" id="file-selector" multiple>
+        <input type="file" id="file-selector" multiple />
 
         <textarea
           class="form-control"
@@ -285,7 +285,7 @@
 <script>
   function handleFileSelect(evt) {
     let files = evt.target.files // FileList object
-    console.log("### files", files)
+    console.log('### files', files)
 
     // use the 1st file from the list
     let f = files[0]
@@ -308,10 +308,10 @@
   // document
   //   .getElementById('uploadConfigFile')
   //   .addEventListener('change', handleFileSelect, false)
-  const fileSelector = document.getElementById('file-selector');
-  fileSelector.addEventListener('change', (event) => {
-    const fileList = event.target.files;
-    console.log(fileList);
-  });
+  const fileSelector = document.getElementById('file-selector')
+  fileSelector.addEventListener('change', event => {
+    const fileList = event.target.files
+    console.log(fileList)
+  })
 </script>
 {% endblock %}
