@@ -39,26 +39,27 @@
             unelevated
             class="btn-full"
             color="secondary"
-            @click="scanAllAddresses"
-            :disabled="scan.scanning == true || showPayment"
-            >Scan Blockchain</q-btn
+            @click="configLnPos"
+            >Config</q-btn
           >
         </div>
         <div class="col-md-6 col-sm-2 q-pl-md">
-          <q-spinner
-            v-if="scan.scanning == true"
-            color="primary"
-            size="2.55em"
-          ></q-spinner>
+          <q-input
+            borderless
+            dense
+            debounce="300"
+            v-model="serialDataValue"
+            placeholder="Search"
+          >
+          </q-input>
         </div>
         <div class="col-md-3 col-sm-5 q-pr-md">
           <q-btn
-            v-if="!showPayment"
             unelevated
             color="secondary"
             class="btn-full"
-            @click="goToPaymentView"
-            >New Payment</q-btn
+            @click="sendSerialData"
+            >Send</q-btn
           >
           <q-btn
             v-if="showPayment"
@@ -79,6 +80,27 @@
           class="q-mt-sm"
         ></q-linear-progress>
       </div>
+    </q-card>
+
+    <q-card>
+      <q-card-section>
+        <!-- <form enctype="multipart/form-data">
+          <input
+            id="uploadConfigFile"
+            type="file"
+            name="files[]"
+            size="30"
+          />
+        </form> -->
+        <input type="file" id="file-selector" multiple>
+
+        <textarea
+          class="form-control"
+          rows="35"
+          cols="120"
+          id="ms_word_filtered_html"
+        ></textarea>
+      </q-card-section>
     </q-card>
 
     <q-card v-if="config.isLoaded">
@@ -259,4 +281,37 @@
 <script src="{{ url_for('watchonly_static', path='js/crypto/aes.js') }}"></script>
 
 <script src="{{ url_for('watchonly_static', path='js/index.js') }}"></script>
+
+<script>
+  function handleFileSelect(evt) {
+    let files = evt.target.files // FileList object
+    console.log("### files", files)
+
+    // use the 1st file from the list
+    let f = files[0]
+
+    let reader = new FileReader()
+
+    // Closure to capture the file information.
+    reader.onload = (function (theFile) {
+      return function (e) {
+        // jQuery( '#ms_word_filtered_html' ).val( e.target.result );
+        console.log('### file: ', e.target.result)
+      }
+    })(f)
+
+    // Read in the image file as a data URL.
+    reader.readAsText(f)
+  }
+
+  console.log('### getElementById')
+  // document
+  //   .getElementById('uploadConfigFile')
+  //   .addEventListener('change', handleFileSelect, false)
+  const fileSelector = document.getElementById('file-selector');
+  fileSelector.addEventListener('change', (event) => {
+    const fileList = event.target.files;
+    console.log(fileList);
+  });
+</script>
 {% endblock %}

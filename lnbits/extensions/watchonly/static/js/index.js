@@ -25,6 +25,12 @@ const watchOnly = async () => {
     mixins: [windowMixin],
     data: function () {
       return {
+        selectedPort: null,
+        writableStreamClosed: null,
+        writer: null,
+        serialDataValue: null,
+
+
         scan: {
           scanning: false,
           scanCount: 0,
@@ -171,6 +177,85 @@ const watchOnly = async () => {
 
       updateSignedPsbt: async function (psbtBase64) {
         this.$refs.paymentRef.updateSignedPsbt(psbtBase64)
+      },
+
+      configLnPos: async function () {
+        console.log('### configLnPos')
+        await this.openSerialPort()
+      },
+
+      openSerialPort: async function (config = {baudRate: 115200}) {
+        if (!this.checkSerialPortSupported()) return false
+        if (this.selectedPort) {
+          console.log('### Already connected. Disconnect first!')
+          return true
+        }
+
+        try {
+          this.selectedPort = await navigator.serial.requestPort()
+          this.selectedPort.addEventListener('connect', event => {
+            console.log('### Connected from Serial Port!')
+          })
+
+          this.selectedPort.addEventListener('disconnect', () => {
+            this.selectedPort = null
+            console.log('### Disconnected from Serial Port!')
+          })
+
+          // Wait for the serial port to open.
+          await this.selectedPort.open(config)
+          // do not await
+          this.startSerialPortReading2()
+          // wait to init
+          sleep(1000)
+
+          const textEncoder = new TextEncoderStream()
+          this.writableStreamClosed = textEncoder.readable.pipeTo(
+            this.selectedPort.writable
+          )
+
+          this.writer = textEncoder.writable.getWriter()
+
+
+        } catch (error) {
+          this.selectedPort = null
+          console.log('### Cannot open serial port!')
+        }
+      },
+
+      checkSerialPortSupported: function () {
+        if (!navigator.serial) {
+          console.log('### Serial port communication not supported!')
+          return false
+        }
+        return true
+      },
+
+      startSerialPortReading2: async function () {
+        const port = this.selectedPort
+
+        while (port && port.readable) {
+          const textDecoder = new TextDecoderStream()
+          this.readableStreamClosed = port.readable.pipeTo(textDecoder.writable)
+          this.reader = textDecoder.readable.getReader()
+          const readStringUntil = readFromSerialPort(this.reader)
+
+          try {
+            while (true) {
+              const {value, done} = await readStringUntil('\n')
+              console.log("### serialPortValue: ", value);
+              
+              if (done) return
+            }
+          } catch (error) {
+            console.log("### Serial port communication error!", error)
+          }
+        }
+      },
+
+      sendSerialData: async function() {
+        console.log("### sendSerialData:", this.serialDataValue)
+        await this.writer.write(this.serialDataValue + '\n')
       },
 
       //################### UTXOs ###################
