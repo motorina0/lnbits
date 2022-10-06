@@ -15,7 +15,7 @@ from lnbits.core.views.api import api_payment
 from lnbits.decorators import WalletTypeInfo, get_key_type, require_admin_key
 
 from . import cashu_ext
-from .ledger import get_pubkeys, request_mint, mint
+from .mint.business.ledger import get_pubkeys, request_mint, mint
 
 from .crud import (
     create_cashu, 

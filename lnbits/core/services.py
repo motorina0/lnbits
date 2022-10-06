@@ -91,7 +91,8 @@ async def create_invoice(
         conn=conn,
     )
 
-    return invoice.payment_hash, payment_request
+    # twmp: return checking_id
+    return invoice.payment_hash, payment_request, checking_id
 
 
 async def pay_invoice(
@@ -231,7 +232,8 @@ async def pay_invoice(
                 f"didn't receive checking_id from backend, payment may be stuck in database: {temp_id}"
             )
 
-    return invoice.payment_hash
+    # temp add payment.ok, payment.preimage
+    return invoice.payment_hash, payment.ok, payment.preimage
 
 
 async def redeem_lnurl_withdraw(
