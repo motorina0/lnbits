@@ -1,15 +1,16 @@
 import secrets
 from typing import Optional
 
-from .. import Invoice, Proof
-from .. import Connection, Database
+from ...models import Invoice, Proof
+# from .. import Connection, Database
+from lnbits.db import Database, Connection
 
 
 async def store_promise(
     amount: int,
     B_: str,
     C_: str,
-    db: Database,
+    # db: Database,
     conn: Optional[Connection] = None,
 ):
 

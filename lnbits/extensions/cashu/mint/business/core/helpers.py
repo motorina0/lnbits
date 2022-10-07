@@ -1,7 +1,11 @@
 import asyncio
 from functools import partial, wraps
 
-from .. import (LIGHTNING_FEE_PERCENT, LIGHTNING_RESERVE_FEE_MIN)
+# from .. import (LIGHTNING_FEE_PERCENT, LIGHTNING_RESERVE_FEE_MIN)
+
+# todo: env vars
+LIGHTNING_FEE_PERCENT=1.0 
+LIGHTNING_RESERVE_FEE_MIN=4000 
 
 
 def async_wrap(func):

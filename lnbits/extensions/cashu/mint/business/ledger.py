@@ -11,15 +11,15 @@ from lnbits.db import Database
 from lnbits.core.services import create_invoice, pay_invoice, check_transaction_status
 # from ...core.db import Database, Connection
 
-from core.business.b_dhke import (step2_bob, verify)
+from .core.b_dhke import (step2_bob, verify)
 
-from ...core.business.base import BlindedMessage, BlindedSignature, Invoice, Proof
+from .core.base import BlindedMessage, BlindedSignature, Invoice, Proof
 
-from ...core.business.helpers import fee_reserve
-from ...core.business.script import verify_script
-from ...core.business.secp import PrivateKey, PublicKey
+from .core.helpers import fee_reserve
+# from .core.script import verify_script
+from .core.secp import PrivateKey, PublicKey
 
-from ...core.business.split import amount_split
+from .core.split import amount_split
 from .crud import (
     get_lightning_invoice,
     get_proofs_used,
@@ -124,17 +124,18 @@ class Ledger:
                 # secret indicates no script, so treat script as valid
                 return True
         # execute and verify P2SH
-        txin_p2sh_address, valid = verify_script(
-            proof.script.script, proof.script.signature
-        )
-        if valid:
-            # check if secret commits to script address
-            # format: P2SH:<address>:<secret>
-            assert len(proof.secret.split(":")) == 3, "secret format wrong."
-            assert proof.secret.split(":")[1] == str(
-                txin_p2sh_address
-            ), f"secret does not contain correct P2SH address: {proof.secret.split(':')[1]}!={txin_p2sh_address}."
-        return valid
+        # txin_p2sh_address, valid = verify_script(
+        #     proof.script.script, proof.script.signature
+        # )
+        # if valid:
+        #     # check if secret commits to script address
+        #     # format: P2SH:<address>:<secret>
+        #     assert len(proof.secret.split(":")) == 3, "secret format wrong."
+        #     assert proof.secret.split(":")[1] == str(
+        #         txin_p2sh_address
+        #     ), f"secret does not contain correct P2SH address: {proof.secret.split(':')[1]}!={txin_p2sh_address}."
+        # return valid
+        return False
 
     def _verify_outputs(
         self, total: int, amount: int, output_data: List[BlindedMessage]
