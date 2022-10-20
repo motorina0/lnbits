@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://mempool.space/mempool.js"></script>
+    <script crossorigin="anonymous" src="http://localhost:8000/static/js/base.js"></script>
+
+    <!-- <script src="https://lnbits.link/static/js/base.js"></script> -->
+
+    
+    <script>
+        console.log('### window.LNbits', window.LNbits)
+    </script>
+
+    <script>
+      const init = async () => {
+        
+        const { bitcoin: { difficulty } } = mempoolJS({
+          hostname: 'mempool.space'
+        });
+
+        const difficultyAdjustment = await difficulty.getDifficultyAdjustment();
+
+        document.getElementById("result").textContent = JSON.stringify(difficultyAdjustment, undefined, 2);
+          
+      };
+      init();
+    </script>
+  </head>
+  <body>
+    <pre id="result"></pre>
+  </body>
+</html>
