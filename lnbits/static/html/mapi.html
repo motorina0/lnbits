@@ -7,20 +7,20 @@
   <script src="http://localhost:8000/static/js/api.js"></script>
   <script src="http://localhost:8000/watchonly/static/js/api.js"></script>
 
-  <!-- <script src="https://lnbits.link/static/js/base.js"></script> -->
 
 
   <script>
     async function test() {
-      console.log('### window.LNbits', window.LNbits)
       const wallet = { inkey: 'ae767cde5cb147d0bc42d4bc5c326e1a' }
+      // const wallet = { inkey: '56f0cadae94541c893aee82f7506da02' }
       
-      const { LNbits: {api}} = window
-      const invoice = await api.createInvoice(wallet, 125, 'money api')
-      console.log('### invoice', invoice)
-      const { LNbits: {watchonly: {api: watchonlyApi}}} = window
-      const accounts = await watchonlyApi.getAccounts(wallet)
-      console.log('### accounts', accounts)
+      const  {api}  = lnbitsJS({})
+      const resp = await api.createInvoice(wallet, 125, 'money api')
+      console.log('### invoice', resp.data)
+
+      const {api: watchonlyApi} = lnbitsWatchonlyJS({})
+      const resp2 = await watchonlyApi.getAccounts(wallet)
+      console.log('### accounts', resp2.data)
     }
     test()
   </script>

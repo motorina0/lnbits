@@ -1,12 +1,23 @@
-console.log('### WatchOnly')
-window.LNbits.watchonly = {
-  api: {
-    getAccounts: function (wallet, network = 'Mainnet') {
-      return window.LNbits.api.request(
-        'get',
-        `/watchonly/api/v1/wallet?network=${network}`,
-        wallet.inkey
-      )
+function lnbitsWatchonlyJS(op) {
+  return {
+    api: {
+      request: function (method, url, apiKey, data) {
+        return axios({
+          method: method,
+          url: url,
+          headers: {
+            'X-Api-Key': apiKey
+          },
+          data: data
+        })
+      },
+      getAccounts: function (wallet, network = 'Mainnet') {
+        return this.request(
+          'get',
+          `/watchonly/api/v1/wallet?network=${network}`,
+          wallet.inkey
+        )
+      }
     }
   }
 }
