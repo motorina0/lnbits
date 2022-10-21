@@ -15,13 +15,16 @@
 
   <script>
     async function test() {
-      const wallet = { inkey: '318664f5034549cc8b6191116e1a2091' }
+      // const wallet = { inkey: '318664f5034549cc8b6191116e1a2091' } // lnbits.link
       // const wallet = { inkey: 'ae767cde5cb147d0bc42d4bc5c326e1a' }
       // const wallet = { inkey: '56f0cadae94541c893aee82f7506da02' }
+
+      const wallet = { inkey: '2db48e4634d14ceba143d76ba52247bf' } // lnbits legend 
+      const hostname = 'legend.lnbits.com'
       
       const  api  = lnbitsApiJS()
       console.log('### api.hostname 1:', api.hostname)
-      api.hostname = 'lnbits.link'
+      api.hostname = hostname
       const resp = await api.createInvoice(wallet, 125, 'money api')
       console.log('### api.hostname 1:', api.hostname)
       console.log('### invoice', resp.data)
@@ -30,6 +33,7 @@
       console.log('### w', w)
 
       const watchonlyApi = watchonlyApiJS({hostname: 'lnbits.link'})
+      watchonlyApi.hostname = 'legend.lnbits.com'
       const resp2 = await watchonlyApi.getAccounts(wallet)
       console.log('### accounts', resp2.data)
     }
