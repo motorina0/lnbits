@@ -1,9 +1,14 @@
-function lnbitsApiJS(op) {
+function lnbitsApiJS(op = {}) {
+  function toFullUrl(url = '') {
+    if (!op.hostname) return url
+    if (op.hostname === 'localhost') return `http://${op.hostname}${url}`
+    return `https://${op.hostname}${url}`
+  }
   return {
     request: function (method, url, apiKey, data) {
       return axios({
         method: method,
-        url: url,
+        url: toFullUrl(url),
         headers: {
           'X-Api-Key': apiKey
         },
