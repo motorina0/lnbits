@@ -14,11 +14,11 @@
       const wallet = { inkey: 'ae767cde5cb147d0bc42d4bc5c326e1a' }
       // const wallet = { inkey: '56f0cadae94541c893aee82f7506da02' }
       
-      const  {api}  = lnbitsJS({})
+      const  api  = lnbitsApiJS({})
       const resp = await api.createInvoice(wallet, 125, 'money api')
       console.log('### invoice', resp.data)
 
-      const {api: watchonlyApi} = lnbitsWatchonlyJS({})
+      const watchonlyApi = watchonlyApiJS({})
       const resp2 = await watchonlyApi.getAccounts(wallet)
       console.log('### accounts', resp2.data)
     }
