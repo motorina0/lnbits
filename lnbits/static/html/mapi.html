@@ -3,22 +3,30 @@
 
 <head>
   <script src="https://mempool.space/mempool.js"></script>
+  <!-- 
+  <script src="https://lnbits.link/static/vendor/axios@0.20.0/axios.min.js"></script>
+  <script src="https://lnbits.link/static/js/api.js"></script>
+  <script src="https://lnbits.link/watchonly/static/js/api.js"></script> -->
+
   <script src="http://localhost:8000/static/vendor/axios@0.20.0/axios.min.js"></script>
   <script src="http://localhost:8000/static/js/api.js"></script>
   <script src="http://localhost:8000/watchonly/static/js/api.js"></script>
 
 
-
   <script>
     async function test() {
-      const wallet = { inkey: 'ae767cde5cb147d0bc42d4bc5c326e1a' }
+      const wallet = { inkey: '318664f5034549cc8b6191116e1a2091' }
+      // const wallet = { inkey: 'ae767cde5cb147d0bc42d4bc5c326e1a' }
       // const wallet = { inkey: '56f0cadae94541c893aee82f7506da02' }
       
-      const  api  = lnbitsApiJS({})
+      const  api  = lnbitsApiJS({hostname: 'lnbits.link'})
       const resp = await api.createInvoice(wallet, 125, 'money api')
       console.log('### invoice', resp.data)
 
-      const watchonlyApi = watchonlyApiJS({})
+      const w = await api.getWallet(wallet)
+      console.log('### w', w)
+
+      const watchonlyApi = watchonlyApiJS({hostname: 'lnbits.link'})
       const resp2 = await watchonlyApi.getAccounts(wallet)
       console.log('### accounts', resp2.data)
     }
