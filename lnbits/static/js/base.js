@@ -243,7 +243,7 @@ window.LNbits = {
     }
   }
 }
-window.LNbits.api = lnbitsJS()
+window.LNbits.api = lnbitsApiJS()
 
 window.windowMixin = {
   data: function () {
