@@ -1,14 +1,10 @@
 function lnbitsApiJS(op = {}) {
-  function toFullUrl(url = '') {
-    if (!op.hostname) return url
-    if (op.hostname === 'localhost') return `http://${op.hostname}${url}`
-    return `https://${op.hostname}${url}`
-  }
   return {
+    hostname: op.hostname,
     request: function (method, url, apiKey, data) {
       return axios({
         method: method,
-        url: toFullUrl(url),
+        url: toFullUrl(this.hostname, url),
         headers: {
           'X-Api-Key': apiKey
         },
@@ -70,5 +66,11 @@ function lnbitsApiJS(op = {}) {
         wallet.inkey
       )
     }
+  }
+
+  function toFullUrl(hostname = '', url = '') {
+    if (!hostname) return url
+    if (hostname === 'localhost') return `http://${hostname}${url}`
+    return `https://${hostname}${url}`
   }
 }
