@@ -1,5 +1,6 @@
 function watchonlyApiJS(op = {}) {
   return {
+    hostname: op.hostname,
     request: function (method, url, apiKey, data) {
       return axios({
         method: method,
