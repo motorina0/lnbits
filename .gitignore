@@ -17,6 +17,8 @@ htmlcov
 test-reports
 tests/data/*.sqlite3
 
+data
+
 *.swo
 *.swp
 *.pyo

@@ -17,6 +17,11 @@ satspay_static_files = [
         "path": "/satspay/static",
         "app": StaticFiles(directory="lnbits/extensions/satspay/static"),
         "name": "satspay_static",
+    },
+    {
+        "path": "/satspay/dist",
+        "app": StaticFiles(directory="lnbits/extensions/satspay/dist"),
+        "name": "satspay_dist",
     }
 ]
 
