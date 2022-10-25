@@ -1,0 +1,77 @@
+{% extends "base.html" %} {% from "macros.jinja" import window_vars with context
+%} {% block page %}
+<div class="row q-col-gutter-md">
+    <div class="col-12 col-md-7 q-gutter-y-md">
+        Wrapper
+    </div>
+    <div class="col-12 col-md-7 q-gutter-y-md">
+        
+        <!-- <iframe id="inlineFrame" onload="handleIframeLoad(this)" title="Inline Frame Example" width="100%" height="100%"
+            style="border:none;" src="/watchonly-angular/index.html">
+        </iframe> -->
+        <iframe id="inlineFrame" title="Inline Frame Example" width="100%" height="100%"
+            style="border:none;" >
+        </iframe>
+    </div>
+</div>
+{% endblock %} {% block scripts %} {{ window_vars(user) }}
+<script>
+
+    function handleIframeLoad(iframe){
+        console.log('### handleIframeLoad')
+        resizeIframe(iframe)
+        // playWithIframe(iframe)
+    }
+    function resizeIframe(iframe) {
+        console.log('### resizeIframe 1', iframe)
+        iframe.style.height = iframe.contentWindow.document.documentElement.scrollHeight + 'px';
+    }
+    function playWithIframe(iframe) {
+        const head = iframe.contentDocument.getElementsByTagName("head")[0]
+        console.log('### head', head)
+        const base = head.getElementsByTagName("base")[0]
+        console.log('### base 1', base)
+        // todo: create if missing
+        if (base.getAttribute('href') === '/watchonly-angular/') return
+
+        base.setAttribute('href', '/watchonly-angular/')
+        console.log('### base 2', base)
+        
+        const headHtml = iframe.contentDocument.head.outerHTML
+        const bodyHtml = iframe.contentDocument.body.outerHTML
+        const html = "data:text/html;charset=utf-8," + `<!DOCTYPE html><html>${headHtml}${bodyHtml}</html>`;
+        console.log('### html', html)
+
+        iframe.src = html
+        // document.getElementById('inlineFrame').srcdoc = iframe + ''
+        // document.getElementById('inlineFrame').src = document.getElementById('inlineFrame').src
+    }
+
+    new Vue({
+        el: '#vue',
+        mixins: [windowMixin],
+        data: function () {
+            return {
+                tools: []
+            }
+        },
+        methods: {
+            resizeIframe: function(iframe) {
+                console.log('### resizeIframe', iframe)
+            }
+        },
+        created: function () {
+            const iframe = document.getElementById('inlineFrame')
+            
+            iframe.addEventListener('load', () => {
+                console.log('### addEventListener load')
+            })
+            iframe.src = '/watchonly/angular/index.html'
+            // iframe.onload="handleIframeLoad(this)"
+            
+            
+            console.log('### created iframe: 1', iframe)
+        }
+    })
+</script>
+{% endblock %}

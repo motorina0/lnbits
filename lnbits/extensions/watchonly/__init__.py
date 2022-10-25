@@ -18,7 +18,7 @@ watchonly_static_files = [
         "name": "watchonly_dashboard_static",
     },
     {
-        "path": "/watchonly-angular",
+        "path": "/watchonly/angular",
         "app": StaticFiles(directory="lnbits/data/extern/a3157ecf703142459d8f41beeaf5d5fc/angular/dist"),
         "name": "watchonly_angular_static",
     }
