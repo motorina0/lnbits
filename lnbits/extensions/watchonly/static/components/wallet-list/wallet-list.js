@@ -1,4 +1,4 @@
-async function walletList(path) {
+async function extensionList(path) {
   const template = await loadTemplateAsync(path)
   Vue.component('wallet-list', {
     name: 'wallet-list',

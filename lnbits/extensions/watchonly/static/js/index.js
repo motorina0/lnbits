@@ -2,7 +2,7 @@ const watchOnly = async () => {
   Vue.component(VueQrcode.name, VueQrcode)
 
   await walletConfig('static/components/wallet-config/wallet-config.html')
-  await walletList('static/components/wallet-list/wallet-list.html')
+  await extensionList('static/components/wallet-list/wallet-list.html')
   await addressList('static/components/address-list/address-list.html')
   await history('static/components/history/history.html')
   await utxoList('static/components/utxo-list/utxo-list.html')

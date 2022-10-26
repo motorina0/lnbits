@@ -1,0 +1,157 @@
+<div>
+  <q-card>
+    <q-card-section>
+      <div class="row items-center no-wrap q-mb-md">
+        <div class="col-4">
+          <q-btn-dropdown
+            split
+            unelevated
+            label="Add Extension"
+            color="primary"
+            @click="showAddMockExtension"
+          >
+            <q-list>
+              <q-item @click="showAddMockExtension" clickable v-close-popup>
+                <q-item-section>
+                  <q-item-label>New Online Extension</q-item-label>
+                  <q-item-label caption>Enter Github Page Link</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup>
+                <q-item-section>
+                  <q-item-label>From Zip File</q-item-label>
+                  <q-item-label caption> Upload Extension Archive</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+        </div>
+        <div class="col-4 q-pl-lg"></div>
+        <div class="col-4 q-pl-lg">
+          <q-input
+            borderless
+            dense
+            debounce="300"
+            v-model="filter"
+            placeholder="Search"
+          >
+            <template v-slot:append>
+              <q-icon name="search"></q-icon>
+            </template>
+          </q-input>
+        </div>
+      </div>
+      <q-table
+        flat
+        dense
+        :data="extensions"
+        row-key="id"
+        :columns="walletsTable.columns"
+        :pagination.sync="walletsTable.pagination"
+        :filter="filter"
+      >
+        <template v-slot:header="props">
+          <q-tr :props="props">
+            <q-th auto-width></q-th>
+            <q-th
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+              auto-width
+            >
+              {{ col.label }}
+            </q-th>
+            <q-th auto-width></q-th>
+          </q-tr>
+        </template>
+        <template v-slot:body="props">
+          <q-tr :props="props">
+            <q-td auto-width>
+              <q-btn
+                size="sm"
+                color="accent"
+                round
+                dense
+                @click="props.row.expanded= !props.row.expanded"
+                :icon="props.row.expanded? 'remove' : 'add'"
+              />
+            </q-td>
+
+            <q-td key="name" :props="props" :class="">
+              <div>{{props.row.name}}</div>
+            </q-td>
+            <q-td key="active" :props="props" :class="">
+              <div>{{props.row.active}}</div>
+            </q-td>
+            <q-td key="publicId" :props="props" :class="">
+              <div>{{props.row.publicId}}</div>
+            </q-td>
+            <q-td key="id" :props="props" :class="">
+              <div>{{props.row.id}}</div>
+            </q-td>
+          </q-tr>
+          <q-tr v-show="props.row.expanded" :props="props">
+            <q-td colspan="100%">
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-2 q-pr-lg">Manifest:</div>
+                <div class="col-7 q-pr-lg">
+                  <q-input v-model="props.row.manifestJson" filled readonly />
+                </div>
+              </div>
+              <div class="row items-center q-mt-md q-mb-lg">
+                <div class="col-2 q-pr-lg"></div>
+                <div class="col-4 q-pr-lg">
+                  <q-btn
+                    unelevated
+                    color="pink"
+                    icon="cancel"
+                    @click="deleteExtension(props.row.id)"
+                    >Delete</q-btn
+                  >
+                </div>
+                <div class="col-4"></div>
+                <div class="col-2 q-pr-lg"></div>
+              </div>
+            </q-td>
+          </q-tr>
+        </template>
+      </q-table>
+    </q-card-section>
+  </q-card>
+
+  <q-dialog v-model="formDialog.show" position="top" @hide="closeFormDialog">
+    <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
+      <q-form @submit="addMockExtension" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          v-model.trim="formDialog.data.name"
+          type="text"
+          label="Name"
+        ></q-input>
+        <q-input
+          filled
+          dense
+          v-model="formDialog.data.publicId"
+          type="text"
+          label="Public ID"
+        ></q-input>
+
+        <div class="row q-mt-lg">
+          <q-btn
+            unelevated
+            color="primary"
+            label="Add Extension"
+            :disable="formDialog.data.name == null || formDialog.data.publicId == null"
+            type="submit"
+          >
+          </q-btn>
+          <q-spinner v-if="showCreating" color="primary" size="2em"></q-spinner>
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+</div>
