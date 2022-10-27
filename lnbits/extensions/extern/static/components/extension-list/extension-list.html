@@ -26,7 +26,54 @@
             </q-list>
           </q-btn-dropdown>
         </div>
-        <div class="col-4 q-pl-lg"></div>
+        <div class="col-4 q-pl-lg">
+          <!-- http://localhost:8000/extern/api/v1/extension/upload -->
+          <!-- <form action="/extern/api/v1/extensionxxx/upload">
+            <input type="file" id="myFile" name="file">
+            <input type="submit">
+          </form> -->
+          <iframe
+            name="dummyframe"
+            id="dummyframe"
+            style="display: none"
+          ></iframe>
+          <form
+            action="/extern/api/v1/extensionxxx/upload"
+            target="dummyframe"
+            enctype="multipart/form-data"
+            method="post"
+          >
+            <input name="file" type="file" />
+            <q-btn type="submit">Upload Extension</q-btn>
+          </form>
+          <!-- <q-form
+            url="/extern/api/v1/extensionxxx/upload"
+            enctype="multipart/form-data"
+            method="post"
+          >
+            <input name="file" type="file" multiple />
+            <q-btn type="submit">Upload</q-btn>
+          </q-form>
+          <q-uploader
+            url="/extern/api/v1/extensionxxx/upload"
+            name="file"
+            :headers="[{name: 'X-Api-Key', value: adminkey}]"
+            style="max-width: 300px"
+          />
+          <q-file filled bottom-slots v-model="model" label="Label" counter>
+            <template v-slot:prepend>
+              <q-icon name="cloud_upload" @click.stop.prevent />
+            </template>
+            <template v-slot:append>
+              <q-icon name="close" @click.stop.prevent="model = null" class="cursor-pointer" />
+            </template>
+    
+            <template v-slot:hint>
+              Select Extension Archive
+            </template>
+          </q-file>
+          <q-btn @click="uploadExtension" >Upload Extension</q-btn> -->
+        </div>
         <div class="col-4 q-pl-lg">
           <q-input
             borderless

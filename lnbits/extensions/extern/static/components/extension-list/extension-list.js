@@ -8,6 +8,7 @@ async function extensionList(path) {
     data: function () {
       return {
         extensions: [],
+        model: null,
 
         formDialog: {
           show: false,
@@ -129,6 +130,42 @@ async function extensionList(path) {
       showAddMockExtension: function () {
         this.formDialog.show = true
         this.formDialog.useSerialPort = false
+      },
+
+      async onSubmit() {
+        try {
+          let formData = new FormData()
+          for (let x = 0; x < this.selected_file.length; x++) {
+            formData.append('banner_image', this.selected_file[x])
+          }
+          formData.append('height', this.height)
+          // await postService.createModel(formData).then(response => {
+          //   console.log('this.item', response)
+          //   alert(response)
+          //   // this.$router.push({
+          //   //   name: "Home",
+          //   // });
+          // })
+        } catch (error) {
+          console.log(error)
+        }
+      },
+
+      uploadExtension: async function () {
+        console.log('### this.model', this.model)
+        const file = this.model
+        const formData = new FormData()
+
+        formData.append(file.name, file)
+
+        const response = await LNbits.api.request(
+          'POST',
+          '/extern/api/v1/extensionxxx/upload',
+          this.adminkey,
+          formData
+        )
+
+        console.log('### response', response)
       }
     },
     created: async function () {
