@@ -14,11 +14,21 @@ extern_static_files = [
     }
 ]
 
+extern_ext_mount_static_files = None
+def mount_static_files(path, app, name):
+    if extern_ext_mount_static_files:
+        extern_ext_mount_static_files(path, app, name)
+
+
 extern_ext: APIRouter = APIRouter(prefix="/extern", tags=["extern"])
 
 
 def extern_renderer():
     return template_renderer(["lnbits/extensions/extern/templates"])
+
+
+def extern_extension_renderer():
+    return template_renderer(["data/extern"])
 
 
 from .views import *  # noqa
