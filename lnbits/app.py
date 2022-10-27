@@ -149,6 +149,9 @@ def register_routes(app: FastAPI) -> None:
                 for s in ext_statics:
                     app.mount(s["path"], s["app"], s["name"])
 
+            if hasattr(ext_module, f"{ext.code}_ext_mount_static_files"):
+                setattr(ext_module, "extern_ext_mount_static_files", app.mount)
+
             logger.trace(f"adding route for extension {ext_module}")
             app.include_router(ext_route)
         except Exception as e:
