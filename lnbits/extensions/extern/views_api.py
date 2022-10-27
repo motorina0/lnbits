@@ -58,6 +58,7 @@ async def api_extension_upload(
             file_object.write(ext_file.file.read())
         with zipfile.ZipFile(zip_file, "r") as zip_ref:
             zip_ref.extractall(ext_dir)
+        os.remove(zip_file)
 
         with open(os.path.join(ext_dir, "manifest.json"), "r") as manifest_file:
             data = json.load(manifest_file)
@@ -90,7 +91,9 @@ async def api_extension_delete(
         ext = await get_extension(w.wallet.user, ext_id)
         if ext:
             await delete_extension(w.wallet.user, ext_id)
-            shutil.rmtree(os.path.join("data/extern/", ext_id)) # to do: path from config
+            shutil.rmtree(
+                os.path.join("data/extern/", ext_id)
+            )  # to do: path from config
     except Exception as e:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
