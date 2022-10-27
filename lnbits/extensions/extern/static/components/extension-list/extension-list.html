@@ -34,7 +34,7 @@
           ></iframe>
           <!-- todo: handle upload failed -->
           <form
-            id="extUploadForm"
+            ref="extUploadForm"
             :action="uploadPath"
             :onsubmit="handleUpload"
             target="dummyframe"

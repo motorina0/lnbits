@@ -141,6 +141,11 @@ async function extensionList(path) {
         this.extensions = await this.getExtensions()
       }
       this.uploadPath = `/extern/api/v1/extension/?api-key=${this.adminkey}`
+
+      this.$refs.extUploadForm.addEventListener('submit', (event) => {
+        // todo: show fail message (axios upload?)
+        console.log('### event', event)
+      })
     }
   })
 }
