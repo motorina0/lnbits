@@ -63,6 +63,11 @@ async def api_extension_upload(
         with open(os.path.join(ext_dir, "manifest.json"), "r") as manifest_file:
             data = json.load(manifest_file)
 
+        shutil.copy(
+            "lnbits/extensions/extern/templates/extern/index_extern.html",
+            os.path.join(ext_dir, "index.html"),
+        )
+
         # todo: do not allow same id & path
         new_ext = Extension(
             id=ext_id,

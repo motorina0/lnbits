@@ -27,7 +27,9 @@ async def index(
 
 
 @extern_ext.get("/{public_id}/", response_class=HTMLResponse)
-async def index(request: Request, public_id: str, user: User = Depends(check_user_exists)):
+async def index(
+    request: Request, public_id: str, user: User = Depends(check_user_exists)
+):
     ext = await get_extension_by_public_id(user.id, public_id)
     if not ext:
         raise HTTPException(
@@ -36,11 +38,11 @@ async def index(request: Request, public_id: str, user: User = Depends(check_use
 
     mount_static_files(
         f"/extern/dashboard/{ext.id}/dist",
-        StaticFiles(directory=f"lnbits/data/extern/{ext.id}/dist"),
+        StaticFiles(directory=f"data/extern/{ext.id}/dist"),
         f"extern_static_{ext.id}",
     )
 
     return extern_extension_renderer().TemplateResponse(
         f"{ext.id}/index.html",
-        {"request": request, "user": user.dict()},
+        {"request": request, "user": user.dict(), "ext_id": ext.id},
     )

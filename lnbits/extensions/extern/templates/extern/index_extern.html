@@ -1,0 +1,39 @@
+{% extends "base.html" %} {% from "macros.jinja" import window_vars with context
+%} {% block page %}
+<div class="row q-col-gutter-md">
+  <div class="col-12 col-md-7 q-gutter-y-md">
+    <iframe
+      id="inlineFrame"
+      onload="resizeIframe(this)"
+      title="Inline Frame Example"
+      width="100%"
+      height="100%"
+      style="border: none"
+      :src="iframeSrc"
+    >
+    </iframe>
+  </div>
+</div>
+{% endblock %} {% block scripts %} {{ window_vars(user) }}
+<script>
+  function resizeIframe(iframe) {
+    iframe.style.height =
+      iframe.contentWindow.document.documentElement.scrollHeight + 'px'
+  }
+
+  new Vue({
+    el: '#vue',
+    mixins: [windowMixin],
+    data: function () {
+      return {
+        iframeSrc: '',
+        extensionId: '{{ext_id}}'
+      }
+    },
+    methods: {},
+    created: function () {
+      this.iframeSrc = `${this.extensionId}/dist/index.html`
+    }
+  })
+</script>
+{% endblock %}
