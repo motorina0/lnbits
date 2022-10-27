@@ -8,7 +8,6 @@ from .models import Extension
 
 
 async def create_extension(user: str, e: Extension) -> Extension:
-    ext_id = urlsafe_short_hash()
     await db.execute(
         """
         INSERT INTO extern.extensions (
@@ -21,7 +20,7 @@ async def create_extension(user: str, e: Extension) -> Extension:
         VALUES (?, ?, ?, ?, ?)
         """,
         (
-            ext_id,
+            e.id,
             user,
             e.name,
             e.public_id,
@@ -29,11 +28,17 @@ async def create_extension(user: str, e: Extension) -> Extension:
         ),
     )
 
-    return await get_extension(ext_id)
+    return await get_extension(user, e.id)
 
 
-async def get_extension(ext_id: str) -> Optional[Extension]:
-    row = await db.fetchone("SELECT * FROM extern.extensions WHERE id = ?", (ext_id,))
+async def get_extension(user: str, ext_id: str) -> Optional[Extension]:
+    row = await db.fetchone(
+        """SELECT * FROM extern.extensions WHERE "user" = ? AND id = ?""",
+        (
+            user,
+            ext_id,
+        ),
+    )
     return Extension.from_row(row) if row else None
 
 
@@ -45,15 +50,28 @@ async def get_extensions(user: str) -> List[Extension]:
     return [Extension(**row) for row in rows]
 
 
-async def update_extension(ext_id: str, **kwargs) -> Optional[Extension]:
+async def update_extension(user: str, ext_id: str, **kwargs) -> Optional[Extension]:
     q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
 
     await db.execute(
-        f"UPDATE watchonly.wallets SET {q} WHERE id = ?", (*kwargs.values(), ext_id)
+        f"""UPDATE watchonly.wallets SET {q} WHERE "user" = ? AND id = ?""",
+        (*kwargs.values(), user, ext_id),
     )
-    row = await db.fetchone("SELECT * FROM watchonly.wallets WHERE id = ?", (ext_id,))
+    row = await db.fetchone(
+        """SELECT * FROM watchonly.wallets WHERE "user" = ? AND id = ?""",
+        (
+            user,
+            ext_id,
+        ),
+    )
     return Extension.from_row(row) if row else None
 
 
-async def delete_extension(ext_id: str) -> None:
-    await db.execute("DELETE FROM extern.extensions WHERE id = ?", (ext_id,))
+async def delete_extension(user: str, ext_id: str) -> None:
+    await db.execute(
+        """DELETE FROM extern.extensions WHERE "user" = ? AND id = ?""",
+        (
+            user,
+            ext_id,
+        ),
+    )

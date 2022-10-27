@@ -1,7 +1,9 @@
+import json
 import os
+import shutil
+import zipfile
 from http import HTTPStatus
 from typing import Optional
-import zipfile
 
 from fastapi import File, Request, UploadFile
 from fastapi.params import Depends
@@ -27,7 +29,7 @@ async def api_extensions_retrieve(wallet: WalletTypeInfo = Depends(get_key_type)
 async def api_extension_retrieve(
     ext_id, wallet: WalletTypeInfo = Depends(get_key_type)
 ):
-    ext = await get_extension(ext_id)
+    ext = await get_extension(wallet.wallet.user, ext_id)
 
     if not ext:
         raise HTTPException(
@@ -38,44 +40,45 @@ async def api_extension_retrieve(
 
 
 @extern_ext.post("/api/v1/extension")
-async def api_extension_create_or_update(
-    data: CreateExtension, w: WalletTypeInfo = Depends(require_admin_key)
+async def api_extension_upload(
+    ext_file: UploadFile, w: WalletTypeInfo = Depends(require_admin_key)
 ):
-    try:
-        print("### create extension")
-        new_ext = Extension(
-            id="none", name=data.name, public_id=data.public_id, manifest=data.manifest
+    if not ext_file.filename:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail="Extension archive missing!"
         )
-        ext = await create_extension(w.wallet.user, new_ext)
-        return ext.dict()
-    except Exception as e:
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
-
-
-@extern_ext.post("/api/v1/extensionxxx/upload")
-def api_extension_upload(file: UploadFile):
-    # todo: check rights: w: WalletTypeInfo = Depends(require_admin_key)
-    print("### file", file.filename)
     try:
         ext_id = urlsafe_short_hash()
 
-        parent_dir = os.path.join('data/extern/', ext_id) # to do: path from config
-        os.makedirs(parent_dir)
-        zip_file = os.path.join(parent_dir, file.filename)
+        ext_dir = os.path.join("data/extern/", ext_id)  # to do: path from config
+        os.makedirs(ext_dir)
+        zip_file = os.path.join(ext_dir, ext_file.filename)
 
         with open(zip_file, "wb+") as file_object:
-            file_object.write(file.file.read())
-        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            zip_ref.extractall(parent_dir)
+            file_object.write(ext_file.file.read())
+        with zipfile.ZipFile(zip_file, "r") as zip_ref:
+            zip_ref.extractall(ext_dir)
 
-        os.remove(zip_file)
+        with open(os.path.join(ext_dir, "manifest.json"), "r") as manifest_file:
+            data = json.load(manifest_file)
+
+        new_ext = Extension(
+            id=ext_id,
+            name=data["name"],
+            public_id=data["id"],
+            manifest=json.dumps(data),
+        )
+        ext = await create_extension(w.wallet.user, new_ext)
+        return ext.dict()
 
     except Exception as e:
+        if ext_dir:
+            shutil.rmtree(ext_dir)
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
     finally:
-        file.file.close()
-
-    return {"message": f"Successfully uploaded {file.filename}"}
+        ext_file.file.close()
+        if manifest_file:
+            manifest_file.close()
 
 
 @extern_ext.delete("/api/v1/extension/{ext_id}")
@@ -83,7 +86,10 @@ async def api_extension_delete(
     ext_id: str, w: WalletTypeInfo = Depends(require_admin_key)
 ):
     try:
-        await delete_extension(ext_id)
+        ext = await get_extension(w.wallet.user, ext_id)
+        if ext:
+            await delete_extension(w.wallet.user, ext_id)
+            shutil.rmtree(os.path.join("data/extern/", ext_id)) # to do: path from config
     except Exception as e:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
