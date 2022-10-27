@@ -1,6 +1,7 @@
 import os
 from http import HTTPStatus
 from typing import Optional
+import zipfile
 
 from fastapi import File, Request, UploadFile
 from fastapi.params import Depends
@@ -58,15 +59,19 @@ def api_extension_upload(file: UploadFile):
     try:
         ext_id = urlsafe_short_hash()
 
-        parent_dir = os.path.join('data/extern/', ext_id)
-        os.mkdir(parent_dir)
-        file_location = os.path.join(parent_dir, file.filename)
+        parent_dir = os.path.join('data/extern/', ext_id) # to do: path from config
+        os.makedirs(parent_dir)
+        zip_file = os.path.join(parent_dir, file.filename)
 
-        with open(file_location, "wb+") as file_object:
+        with open(zip_file, "wb+") as file_object:
             file_object.write(file.file.read())
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            zip_ref.extractall(parent_dir)
+
+        os.remove(zip_file)
 
     except Exception as e:
-        return {"message": "There was an error uploading the file"}
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
     finally:
         file.file.close()
 
