@@ -42,6 +42,17 @@ async def get_extension(user: str, ext_id: str) -> Optional[Extension]:
     return Extension.from_row(row) if row else None
 
 
+async def get_extension_by_public_id(user: str, public_id: str) -> Optional[Extension]:
+    row = await db.fetchone(
+        """SELECT * FROM extern.extensions WHERE "user" = ? AND public_id = ?""",
+        (
+            user,
+            public_id,
+        ),
+    )
+    return Extension.from_row(row) if row else None
+
+
 async def get_extensions(user: str) -> List[Extension]:
     rows = await db.fetchall(
         """SELECT * FROM extern.extensions WHERE "user" = ?""",
