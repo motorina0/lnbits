@@ -15,6 +15,8 @@ extern_static_files = [
 ]
 
 extern_ext_mount_static_files = None
+
+
 def mount_static_files(path, app, name):
     if extern_ext_mount_static_files:
         extern_ext_mount_static_files(path, app, name)

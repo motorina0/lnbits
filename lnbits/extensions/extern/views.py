@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 
 from fastapi import FastAPI, Request
@@ -44,5 +45,10 @@ async def index(
 
     return extern_extension_renderer().TemplateResponse(
         f"{ext.id}/index.html",
-        {"request": request, "user": user.dict(), "ext_id": ext.id},
+        {
+            "request": request,
+            "user": user.dict(),
+            "ext_id": ext.id,
+            "manifest": json.loads(ext.manifest),
+        },
     )

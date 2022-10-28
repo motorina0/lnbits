@@ -27,7 +27,11 @@
   }
 
   function shareState(iframe) {
-    iframe.contentWindow.postMessage({a: "hello from parent!"}, "*");
+    iframe.contentWindow.postMessage({
+      ext_id: "{{ext_id}}",
+      inkey: '{{user.wallets[0].inkey if "read" in manifest["permissions"] else ""}}',
+      adminkey: '{{user.wallets[0].adminkey if "admin" in manifest["permissions"] else ""}}'
+    }, "*"); // todo: domain
     console.log('### shareState 1')
   }
 
