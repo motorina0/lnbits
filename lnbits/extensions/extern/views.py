@@ -37,7 +37,7 @@ async def index(
         )
 
     mount_static_files(
-        f"/extern/dashboard/{ext.id}/dist",
+        f"/extern/{public_id}/{ext.id}/dist",
         StaticFiles(directory=f"data/extern/{ext.id}/dist"),
         f"extern_static_{ext.id}",
     )

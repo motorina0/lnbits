@@ -61,6 +61,8 @@ async def api_extension_upload(
         os.remove(zip_file)
 
         with open(os.path.join(ext_dir, "manifest.json"), "r") as manifest_file:
+            if not manifest_file:
+                 raise Exception("Manifest file not present")
             manifest = json.load(manifest_file)
 
         same_path_ext = await get_extension_by_public_id(w.wallet.user, manifest["id"])
