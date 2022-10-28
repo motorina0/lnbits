@@ -1,5 +1,5 @@
 {
     "name": "Basic Ext",
     "id": "basic",
-    "permissions": ["read"]
+    "permissions": ["read", "admin"]
 }

@@ -3,9 +3,9 @@
 <div class="row q-col-gutter-md">
   <div class="col-12 col-md-7 q-gutter-y-md">
     <iframe
-      id="inlineFrame"
-      onload="resizeIframe(this)"
-      title="Inline Frame Example"
+      ref="extensionIframe"
+      onload="handleExtensionIframeLoad(this)"
+      title="LNbits Extension"
       width="100%"
       height="100%"
       style="border: none"
@@ -16,9 +16,42 @@
 </div>
 {% endblock %} {% block scripts %} {{ window_vars(user) }}
 <script>
+  function handleExtensionIframeLoad(iframe) {
+    resizeIframe(iframe)
+    resizeIframeOnChange(iframe)
+    shareState(iframe)
+  }
+
   function resizeIframe(iframe) {
     iframe.style.height =
       iframe.contentWindow.document.documentElement.scrollHeight + 'px'
+  }
+
+  function shareState(iframe) {
+    iframe.contentWindow.postMessage(
+      {
+        type: 'init',
+        ext_id: '{{ext_id}}',
+        inkey:
+          '{{user.wallets[0].inkey if "read" in manifest["permissions"] else ""}}',
+        adminkey:
+          '{{user.wallets[0].adminkey if "admin" in manifest["permissions"] else ""}}'
+      },
+      '*'
+    ) // todo: domain
+    console.log('### shareState 1')
+  }
+
+  function resizeIframeOnChange(iframe) {
+    const observer = new MutationObserver(() => {
+      console.log('### it mutated')
+      resizeIframe(iframe)
+    })
+    observer.observe(iframe.contentWindow.document, {
+      attributes: true,
+      childList: true,
+      subtree: true
+    })
   }
 
   new Vue({
@@ -33,6 +66,8 @@
     methods: {},
     created: function () {
       this.iframeSrc = `${this.extensionId}/dist/index.html`
+      // const iframe = this.$refs.extensionIframe
+      // console.log('### iframe', iframe)
     }
   })
 </script>

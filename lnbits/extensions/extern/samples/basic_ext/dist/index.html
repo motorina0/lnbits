@@ -12,21 +12,27 @@
     <!-- base MUST be relative -->
     <base href="">
 
-    <!-- import LNbits API -->
+    <!-- import LNbits API (absolute path) -->
     <script src="/static/vendor/axios@0.20.0/axios.min.js"></script>
     <script src="/static/js/api.js"></script>
     <script src="/watchonly/static/js/api.js"></script>
 
+    <!-- import application specific business logic (relative path) -->
+    <script src="js/app.js"></script>
+
 <body>
     <h1>Basic Extension</h1>
-    <div id="view">
+    <input id="amountInput" placeholder="amount" type="number" />
+    <input id="memoInput" placeholder="memo" type="text" />
+    <button onclick="generateInvoice()" type="button">Generate Invoice</button> <br>
+    <p id="invoiceMessage"></p>
 
-    </div>
+
+    <div id="payments"> </div>
+    <div id="accounts"> </div>
     <script>
-        console.log('### init')
-        var lnbitsApi, watchonlyApi
+
         window.addEventListener("message", (event) => {
-            console.log('### ext event', event)
             const message = event.data
             if (message.type === "init") {
                 localStorage.setItem("adminkey", message.adminkey)
@@ -35,40 +41,6 @@
             }
         }, false);
 
-        async function init() {
-            lnbitsApi = lnbitsApiJS()
-            watchonlyApi = watchonlyApiJS()
-
-            const wallet = { inkey: localStorage.getItem("inkey") }
-
-            try {
-                const paymentsResp = await lnbitsApi.getPayments(wallet)
-                printPayments(paymentsResp.data)
-
-                // watchonlyApi.hostname = hostKey.hostname
-                const accoutsResp = await watchonlyApi.getAccounts(wallet)
-                printAccounts(accoutsResp.data)
-                console.log('### accoutsResp', accoutsResp)
-
-            } catch (error) {
-                console.error(error)
-            }
-
-        }
-
-        function printPayments(payments) {
-            const view = document.getElementById("view")
-            view.innerHTML += `<hr><h3>Nunber of Payments: ${payments.length}</h3>`
-            const paymentList = payments.map(p => `<li> ${p.memo}: ${p.amount} </li>`)
-            view.innerHTML += `<ul>${paymentList}</ul>`
-        }
-
-        function printAccounts(accounts) {
-            const view = document.getElementById("view")
-            view.innerHTML += `<hr><h3>Number of Onchain Accounts: ${accounts.length}</h3>`
-            const accountList = accounts.map(a => `<li> ${a.title} (${a.type}). Used addresses: ${a.address_no + 1} </li>`)
-            view.innerHTML += `<ul>${accountList}</ul>`
-        }
     </script>
 </body>
 
