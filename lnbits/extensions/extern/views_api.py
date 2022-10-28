@@ -13,7 +13,7 @@ from lnbits.decorators import WalletTypeInfo, get_key_type, require_admin_key
 from lnbits.helpers import urlsafe_short_hash
 
 from . import extern_ext
-from .crud import create_extension, delete_extension, get_extension, get_extensions
+from .crud import create_extension, delete_extension, get_extension, get_extension_by_public_id, get_extensions
 from .models import CreateExtension, Extension
 
 
@@ -61,19 +61,24 @@ async def api_extension_upload(
         os.remove(zip_file)
 
         with open(os.path.join(ext_dir, "manifest.json"), "r") as manifest_file:
-            data = json.load(manifest_file)
+            manifest = json.load(manifest_file)
+
+        same_path_ext = await get_extension_by_public_id(w.wallet.user, manifest["id"])
+        if same_path_ext:
+            raise Exception(f"""An estension with the same path ({manifest["id"]}) already exists""")
 
         shutil.copy(
             "lnbits/extensions/extern/templates/extern/index_extern.html",
             os.path.join(ext_dir, "index.html"),
         )
 
+
         # todo: do not allow same id & path
         new_ext = Extension(
             id=ext_id,
-            name=data["name"],
-            public_id=data["id"],
-            manifest=json.dumps(data),
+            name=manifest["name"],
+            public_id=manifest["id"],
+            manifest=json.dumps(manifest),
         )
         ext = await create_extension(w.wallet.user, new_ext)
         return ext.dict()
