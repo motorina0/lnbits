@@ -18,6 +18,7 @@
 <script>
   function handleExtensionIframeLoad(iframe) {
     resizeIframe(iframe)
+    resizeIframeOnChange(iframe)
     shareState(iframe)
   }
 
@@ -28,11 +29,20 @@
 
   function shareState(iframe) {
     iframe.contentWindow.postMessage({
+      type: "init",
       ext_id: "{{ext_id}}",
       inkey: '{{user.wallets[0].inkey if "read" in manifest["permissions"] else ""}}',
       adminkey: '{{user.wallets[0].adminkey if "admin" in manifest["permissions"] else ""}}'
     }, "*"); // todo: domain
     console.log('### shareState 1')
+  }
+
+  function resizeIframeOnChange(iframe) {
+    const observer = new MutationObserver(() => {
+      console.log('### it mutated')
+      resizeIframe(iframe)
+    });
+    observer.observe(iframe.contentWindow.document, { attributes: true, childList: true, subtree: true });
   }
 
   new Vue({

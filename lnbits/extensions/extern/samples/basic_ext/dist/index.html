@@ -19,12 +19,56 @@
 
 <body>
     <h1>Basic Extension</h1>
+    <div id="view">
+
+    </div>
     <script>
         console.log('### init')
+        var lnbitsApi, watchonlyApi
         window.addEventListener("message", (event) => {
             console.log('### ext event', event)
+            const message = event.data
+            if (message.type === "init") {
+                localStorage.setItem("adminkey", message.adminkey)
+                localStorage.setItem("inkey", message.inkey)
+                init()
+            }
         }, false);
 
+        async function init() {
+            lnbitsApi = lnbitsApiJS()
+            watchonlyApi = watchonlyApiJS()
+
+            const wallet = { inkey: localStorage.getItem("inkey") }
+
+            try {
+                const paymentsResp = await lnbitsApi.getPayments(wallet)
+                printPayments(paymentsResp.data)
+
+                // watchonlyApi.hostname = hostKey.hostname
+                const accoutsResp = await watchonlyApi.getAccounts(wallet)
+                printAccounts(accoutsResp.data)
+                console.log('### accoutsResp', accoutsResp)
+
+            } catch (error) {
+                console.error(error)
+            }
+
+        }
+
+        function printPayments(payments) {
+            const view = document.getElementById("view")
+            view.innerHTML += `<hr><h3>Nunber of Payments: ${payments.length}</h3>`
+            const paymentList = payments.map(p => `<li> ${p.memo}: ${p.amount} </li>`)
+            view.innerHTML += `<ul>${paymentList}</ul>`
+        }
+
+        function printAccounts(accounts) {
+            const view = document.getElementById("view")
+            view.innerHTML += `<hr><h3>Number of Onchain Accounts: ${accounts.length}</h3>`
+            const accountList = accounts.map(a => `<li> ${a.title} (${a.type}). Used addresses: ${a.address_no + 1} </li>`)
+            view.innerHTML += `<ul>${accountList}</ul>`
+        }
     </script>
 </body>
 
