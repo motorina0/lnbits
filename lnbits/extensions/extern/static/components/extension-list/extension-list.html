@@ -8,19 +8,19 @@
             unelevated
             label="Add Extension"
             color="primary"
-            @click="showAddMockExtension"
+            @click="showFileSelectDialog"
           >
             <q-list>
-              <q-item @click="showAddMockExtension" clickable v-close-popup>
-                <q-item-section>
-                  <q-item-label>New Online Extension</q-item-label>
-                  <q-item-label caption>Enter Github Page Link</q-item-label>
-                </q-item-section>
-              </q-item>
-              <q-item clickable v-close-popup>
+              <q-item @click="showFileSelectDialog" clickable v-close-popup>
                 <q-item-section>
                   <q-item-label>From Zip File</q-item-label>
                   <q-item-label caption> Upload Extension Archive</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item disabled v-close-popup>
+                <q-item-section>
+                  <q-item-label>New Online Extension</q-item-label>
+                  <q-item-label caption>Enter URL</q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -41,8 +41,14 @@
             enctype="multipart/form-data"
             method="post"
           >
-            <input name="ext_file" type="file" />
-            <q-btn type="submit">Upload Extension</q-btn>
+            <input ref="extFileSelect" name="ext_file" type="file" hidden />
+            <q-btn
+              v-if="extensionFileName"
+              type="submit"
+              unelevated
+              color="secondary"
+              >Upload {{extensionFileName}}</q-btn
+            >
           </form>
         </div>
         <div class="col-4 q-pl-lg">

@@ -10,6 +10,7 @@ async function extensionList(path) {
         extensions: [],
         model: null,
         uploadPath: '',
+        extensionFileName: '',
 
         formDialog: {
           show: false,
@@ -22,6 +23,7 @@ async function extensionList(path) {
         filter: '',
         showCreating: false,
 
+        // todo: rename
         walletsTable: {
           columns: [
             {
@@ -134,6 +136,11 @@ async function extensionList(path) {
       showAddMockExtension: function () {
         this.formDialog.show = true
         this.formDialog.useSerialPort = false
+      },
+
+      showFileSelectDialog: function () {
+        this.$refs.extFileSelect.click()
+        this.extensionFileName = ''
       }
     },
     created: async function () {
@@ -142,10 +149,15 @@ async function extensionList(path) {
       }
       this.uploadPath = `/extern/api/v1/extension/?api-key=${this.adminkey}`
 
-      this.$refs.extUploadForm.addEventListener('submit', event => {
-        // todo: show fail message (axios upload?)
-        console.log('### event', event)
-      })
+      this.$refs.extFileSelect.onchange = v => {
+        const path = this.$refs.extFileSelect.value
+        if (!path) return
+        const pathElements = path
+          .split('/')
+          .map(p => p.split('\\'))
+          .flat()
+        this.extensionFileName = pathElements[pathElements.length - 1]
+      }
     }
   })
 }
