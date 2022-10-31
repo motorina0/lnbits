@@ -22,7 +22,7 @@ function watchonlyApiJS(op = {}) {
 
   function toFullUrl(hostname = '', url = '') {
     if (!hostname) return url
-    if (hostname === 'localhost') return `http://${hostname}${url}`
+    if (hostname.startsWith('localhost:')) return `http://${hostname}${url}`
     return `https://${hostname}${url}`
   }
 }
