@@ -44,7 +44,7 @@ async def get_extension(user: str, ext_id: str) -> Optional[Extension]:
 
 async def get_extension_by_public_id(user: str, public_id: str) -> Optional[Extension]:
     row = await db.fetchone(
-        """SELECT * FROM extern.extensions WHERE "user" = ? AND public_id = ?""",
+        """SELECT * FROM extern.extensions WHERE "user" = ? AND public_id = ? AND active""",
         (
             user,
             public_id,
