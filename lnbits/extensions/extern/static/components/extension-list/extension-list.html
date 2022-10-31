@@ -116,6 +116,7 @@
             <q-td key="permissions" :props="props" :class="">
               <q-badge
                 v-for="permission in props.row.manifest.permissions"
+                :key="permission"
                 color="orange"
                 class="q-mr-md"
               >
@@ -161,6 +162,7 @@
                 <div class="col-7 q-pr-lg">
                   <q-badge
                     v-for="permission in props.row.manifest.permissions"
+                    :key="permission"
                     color="orange"
                     class="q-mr-md"
                   >
