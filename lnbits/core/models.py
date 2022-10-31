@@ -60,6 +60,7 @@ class User(BaseModel):
     id: str
     email: Optional[str] = None
     extensions: List[str] = []
+    extern_extensions: List[str] = []  # todo: use class Extension
     wallets: List[Wallet] = []
     password: Optional[str] = None
     admin: bool = False

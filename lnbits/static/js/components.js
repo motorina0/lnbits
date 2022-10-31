@@ -107,6 +107,7 @@ Vue.component('lnbits-extension-list', {
   data: function () {
     return {
       extensions: [],
+      externExtensions: [],
       user: null
     }
   },
@@ -147,17 +148,24 @@ Vue.component('lnbits-extension-list', {
     userExtensions: function () {
       if (!this.user) return []
 
-      var path = window.location.pathname
-      var userExtensions = this.user.extensions
+      const path = window.location.pathname
+      const userExtensions = this.user.extensions
 
-      return this.extensions
+      const extensions = this.extensions
         .filter(function (obj) {
           return userExtensions.indexOf(obj.code) !== -1
         })
         .map(function (obj) {
-          obj.isActive = path.startsWith(obj.url)
+          obj.isActive = path == obj.url
           return obj
         })
+
+      const externExtensions = this.user.externExtensions
+        .map(e => ({...e, isActive: e.url === path}))
+
+      return extensions
+        .concat(externExtensions)
+        .sort((a, b) => a.name.localeCompare(b.name))
     }
   },
   created: function () {

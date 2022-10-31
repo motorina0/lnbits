@@ -73,6 +73,9 @@ window.LNbits = {
         id: data.id,
         email: data.email,
         extensions: data.extensions,
+        externExtensions: data.extern_extensions
+          ? data.extern_extensions.map(JSON.parse)
+          : '', // todo: use Extension class
         wallets: data.wallets
       }
       var mapWallet = this.wallet
