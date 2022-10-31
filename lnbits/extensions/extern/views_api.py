@@ -83,7 +83,6 @@ async def api_extension_upload(
             os.path.join(ext_dir, "index.html"),
         )
 
-        # todo: do not allow same id & path
         new_ext = Extension(
             id=ext_id,
             name=manifest["name"],
@@ -106,7 +105,7 @@ async def api_extension_upload(
         await update_user_extension(
             user_id=w.wallet.user,
             extension=ext_id,
-            active=True,
+            active=False,
             extern=True,
             meta=json.dumps(ext_meta),
         )
