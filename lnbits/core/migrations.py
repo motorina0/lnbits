@@ -188,3 +188,13 @@ async def m005_balance_check_balance_notify(db):
         );
     """
     )
+
+
+async def m006_add_extern_extensions(db):
+    """
+    Special column for webhook endpoints that can be assigned
+    to each different invoice.
+    """
+
+    await db.execute("ALTER TABLE extensions ADD COLUMN extern BOOLEAN DEFAULT false")
+    await db.execute("""ALTER TABLE extensions ADD COLUMN meta TEXT DEFAULT "" """)

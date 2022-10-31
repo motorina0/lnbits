@@ -9,6 +9,7 @@ from fastapi import File, Request, UploadFile
 from fastapi.params import Depends
 from starlette.exceptions import HTTPException
 
+from lnbits.core.crud import update_user_extension
 from lnbits.decorators import WalletTypeInfo, get_key_type, require_admin_key
 from lnbits.helpers import urlsafe_short_hash
 
@@ -90,6 +91,25 @@ async def api_extension_upload(
             manifest=json.dumps(manifest),
         )
         ext = await create_extension(w.wallet.user, new_ext)
+
+        ext_meta = {
+            "code": manifest["id"],
+            "isValid": True,
+            "name": manifest["name"],
+            "icon": manifest["icon"] if "icon" in manifest else "extension",
+            "shortDescription": manifest["description"]
+            if "description" in manifest
+            else "",
+            "url": f"""/extern/{manifest["id"]}/""",
+        }
+
+        await update_user_extension(
+            user_id=w.wallet.user,
+            extension=ext_id,
+            active=True,
+            extern=True,
+            meta=json.dumps(ext_meta),
+        )
         return ext.dict()
 
     except Exception as e:

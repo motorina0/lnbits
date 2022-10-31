@@ -44,9 +44,14 @@ async def get_user(user_id: str, conn: Optional[Connection] = None) -> Optional[
 
     if user:
         extensions = await (conn or db).fetchall(
-            """SELECT extension FROM extensions WHERE "user" = ? AND active""",
+            """SELECT extension FROM extensions WHERE "user" = ? AND active AND not extern""",
             (user_id,),
         )
+        extern_extensions = await (conn or db).fetchall(
+            """SELECT meta FROM extensions WHERE "user" = ? AND active AND extern""",
+            (user_id,),
+        )
+
         wallets = await (conn or db).fetchall(
             """
             SELECT *, COALESCE((SELECT balance FROM balances WHERE wallet = wallets.id), 0) AS balance_msat
@@ -62,6 +67,7 @@ async def get_user(user_id: str, conn: Optional[Connection] = None) -> Optional[
         id=user["id"],
         email=user["email"],
         extensions=[e[0] for e in extensions],
+        extern_extensions=[e[0] for e in extern_extensions],
         wallets=[Wallet(**w) for w in wallets],
         admin=user["id"] in [x.strip() for x in LNBITS_ADMIN_USERS]
         if LNBITS_ADMIN_USERS
@@ -70,14 +76,20 @@ async def get_user(user_id: str, conn: Optional[Connection] = None) -> Optional[
 
 
 async def update_user_extension(
-    *, user_id: str, extension: str, active: bool, conn: Optional[Connection] = None
+    *,
+    user_id: str,
+    extension: str,
+    active: bool,
+    extern=False,
+    meta="",
+    conn: Optional[Connection] = None,
 ) -> None:
     await (conn or db).execute(
         """
-        INSERT INTO extensions ("user", extension, active) VALUES (?, ?, ?)
+        INSERT INTO extensions ("user", extension, active, extern, meta) VALUES (?, ?, ?, ?, ?)
         ON CONFLICT ("user", extension) DO UPDATE SET active = ?
         """,
-        (user_id, extension, active, active),
+        (user_id, extension, active, extern, meta, active),
     )
 
 
