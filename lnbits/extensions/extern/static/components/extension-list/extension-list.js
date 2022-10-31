@@ -142,7 +142,7 @@ async function extensionList(path) {
         this.extensionFileName = ''
       },
 
-      toggleExtension: async function(extension) {
+      toggleExtension: async function (extension) {
         try {
           const payload = {
             active: !extension.active
@@ -159,6 +159,8 @@ async function extensionList(path) {
             updatedExtension.expanded = extension.expanded
             this.extensions.splice(index, 1, updatedExtension)
           }
+          // refresh extension list
+          window.location.reload()
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }

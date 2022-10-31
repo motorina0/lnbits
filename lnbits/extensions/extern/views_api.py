@@ -103,13 +103,6 @@ async def api_extension_upload(
             "url": f"""/extern/{manifest["id"]}/""",
         }
 
-        await update_user_extension(
-            user_id=w.wallet.user,
-            extension=ext_id,
-            active=False,
-            extern=True,
-            meta=json.dumps(ext_meta),
-        )
         return ext.dict()
 
     except Exception as e:
@@ -124,20 +117,30 @@ async def api_extension_upload(
 
 @extern_ext.put("/api/v1/extension/{ext_id}")
 async def api_extension_update(
-    ext_id: str,req: Request, w: WalletTypeInfo = Depends(require_admin_key)
+    ext_id: str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)
 ):
     update_data = await req.json()
-    print('### api_extension_update', update_data)
+    print("### api_extension_update", update_data)
     try:
         ext = await get_extension(w.wallet.user, ext_id)
         if not ext:
             raise Exception("Extension not found")
 
-        return await update_extension(w.wallet.user, ext_id=ext_id, **update_data)
-        
+        updated_ext = await update_extension(
+            w.wallet.user, ext_id=ext_id, **update_data
+        )
+
+        if "active" in update_data:
+            await update_user_extension(
+                user_id=w.wallet.user,
+                extension=ext_id,
+                active=update_data["active"],
+            )
+
+        return updated_ext
+
     except Exception as e:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
-
 
 
 @extern_ext.delete("/api/v1/extension/{ext_id}")
