@@ -11,6 +11,8 @@ async function extensionList(path) {
         model: null,
         uploadPath: '',
         extensionFileName: '',
+        selectedExtension: {},
+        showToggleExtension: false,
 
         formDialog: {
           show: false,
@@ -56,7 +58,7 @@ async function extensionList(path) {
     },
 
     methods: {
-      addMockExtension: async function () {
+      addExtension: async function () {
         this.showCreating = true
 
         await this.createExtension(this.formDialog.data)
@@ -132,14 +134,18 @@ async function extensionList(path) {
         }
       },
 
-      showAddMockExtension: function () {
-        this.formDialog.show = true
-        this.formDialog.useSerialPort = false
-      },
-
       showFileSelectDialog: function () {
         this.$refs.extFileSelect.click()
         this.extensionFileName = ''
+      },
+
+      showToggleExtensionDialog: function (extension) {
+        if (extension.active) {
+          this.toggleExtension(extension)
+        } else {
+          this.selectedExtension = extension
+          this.showToggleExtension = true
+        }
       },
 
       toggleExtension: async function (extension) {

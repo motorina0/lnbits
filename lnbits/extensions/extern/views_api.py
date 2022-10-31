@@ -160,9 +160,7 @@ async def api_extension_delete(
         if ext:
             await delete_extension(w.wallet.user, ext_id)
             await update_user_extension(
-                user_id=w.wallet.user,
-                extension=ext_id,
-                active=False
+                user_id=w.wallet.user, extension=ext_id, active=False
             )
             shutil.rmtree(
                 os.path.join("data/extern/", ext_id)
