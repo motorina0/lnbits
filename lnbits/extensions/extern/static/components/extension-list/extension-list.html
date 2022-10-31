@@ -69,8 +69,8 @@
         dense
         :data="extensions"
         row-key="id"
-        :columns="walletsTable.columns"
-        :pagination.sync="walletsTable.pagination"
+        :columns="extensionsTable.columns"
+        :pagination.sync="extensionsTable.pagination"
         :filter="filter"
       >
         <template v-slot:header="props">
@@ -99,26 +99,73 @@
                 :icon="props.row.expanded? 'remove' : 'add'"
               />
             </q-td>
+            <q-td key="status" :props="props" :class="">
+              <div>
+                <q-badge v-if="props.row.active" color="green" class="q-mr-md">
+                  Enabled
+                </q-badge>
+                <q-badge v-else color="gray" class="q-mr-md">
+                  Disabled
+                </q-badge>
+              </div>
+            </q-td>
 
             <q-td key="name" :props="props" :class="">
               <div>{{props.row.name}}</div>
             </q-td>
-            <q-td key="active" :props="props" :class="">
-              <div>{{props.row.active}}</div>
+            <q-td key="permissions" :props="props" :class="">
+              <q-badge
+                v-for="permission in props.row.manifest.permissions"
+                color="orange"
+                class="q-mr-md"
+              >
+                {{permission}}
+              </q-badge>
             </q-td>
+
             <q-td key="publicId" :props="props" :class="">
               <div>{{props.row.publicId}}</div>
             </q-td>
-            <q-td key="id" :props="props" :class="">
-              <div>{{props.row.id}}</div>
-            </q-td>
+            <q-td :props="props" :class=""> </q-td>
           </q-tr>
           <q-tr v-show="props.row.expanded" :props="props">
             <q-td colspan="100%">
+              <div class="row items-center q-mt-md q-mb-lg">
+                <div class="col-2 q-pr-lg"></div>
+                <div class="col-4 q-pr-lg">
+                  <q-btn
+                    unelevated
+                    color="secondary"
+                    @click="toggleExtension(props.row.id)"
+                    ><span v-if="props.row.active">Disable</span>
+                    <span v-else>Enable</span>
+                  </q-btn>
+                </div>
+                <div class="col-4"></div>
+                <div class="col-2 q-pr-lg"></div>
+              </div>
               <div class="row items-center no-wrap q-mb-md">
-                <div class="col-2 q-pr-lg">Manifest:</div>
+                <div class="col-2 q-pr-lg">ID:</div>
                 <div class="col-7 q-pr-lg">
-                  <q-input v-model="props.row.manifestJson" filled readonly />
+                  <div>{{props.row.id}}</div>
+                </div>
+              </div>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-2 q-pr-lg">Description:</div>
+                <div class="col-7 q-pr-lg">
+                  <div>{{props.row.manifest.description}}</div>
+                </div>
+              </div>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-2 q-pr-lg">Permissions:</div>
+                <div class="col-7 q-pr-lg">
+                  <q-badge
+                    v-for="permission in props.row.manifest.permissions"
+                    color="orange"
+                    class="q-mr-md"
+                  >
+                    {{permission}}
+                  </q-badge>
                 </div>
               </div>
               <div class="row items-center q-mt-md q-mb-lg">

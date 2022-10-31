@@ -160,8 +160,10 @@ Vue.component('lnbits-extension-list', {
           return obj
         })
 
-      const externExtensions = this.user.externExtensions
-        .map(e => ({...e, isActive: e.url === path}))
+      const externExtensions = this.user.externExtensions.map(e => ({
+        ...e,
+        isActive: e.url === path
+      }))
 
       return extensions
         .concat(externExtensions)

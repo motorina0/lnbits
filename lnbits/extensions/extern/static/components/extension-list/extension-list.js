@@ -23,9 +23,12 @@ async function extensionList(path) {
         filter: '',
         showCreating: false,
 
-        // todo: rename
-        walletsTable: {
+        extensionsTable: {
           columns: [
+            {
+              name: 'status',
+              align: 'left'
+            },
             {
               name: 'name',
               align: 'left',
@@ -33,17 +36,16 @@ async function extensionList(path) {
               field: 'name'
             },
             {
-              name: 'active',
+              name: 'permissions',
               align: 'left',
-              label: 'Active'
+              label: 'Permissions'
             },
             {
               name: 'publicId',
               align: 'left',
               label: 'Path',
               field: 'publicId'
-            },
-            {name: 'id', align: 'left', label: 'ID', field: 'id'}
+            }
           ],
           pagination: {
             rowsPerPage: 10
@@ -138,6 +140,10 @@ async function extensionList(path) {
       showFileSelectDialog: function () {
         this.$refs.extFileSelect.click()
         this.extensionFileName = ''
+      },
+
+      toggleExtension: function() {
+
       }
     },
     created: async function () {
