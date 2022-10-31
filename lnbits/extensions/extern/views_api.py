@@ -20,6 +20,7 @@ from .crud import (
     get_extension,
     get_extension_by_public_id,
     get_extensions,
+    update_extension,
 )
 from .models import CreateExtension, Extension
 
@@ -119,6 +120,24 @@ async def api_extension_upload(
         ext_file.file.close()
         if manifest_file:
             manifest_file.close()
+
+
+@extern_ext.put("/api/v1/extension/{ext_id}")
+async def api_extension_update(
+    ext_id: str,req: Request, w: WalletTypeInfo = Depends(require_admin_key)
+):
+    update_data = await req.json()
+    print('### api_extension_update', update_data)
+    try:
+        ext = await get_extension(w.wallet.user, ext_id)
+        if not ext:
+            raise Exception("Extension not found")
+
+        return await update_extension(w.wallet.user, ext_id=ext_id, **update_data)
+        
+    except Exception as e:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
+
 
 
 @extern_ext.delete("/api/v1/extension/{ext_id}")

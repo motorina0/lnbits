@@ -142,8 +142,26 @@ async function extensionList(path) {
         this.extensionFileName = ''
       },
 
-      toggleExtension: function() {
-
+      toggleExtension: async function(extension) {
+        try {
+          const payload = {
+            active: !extension.active
+          }
+          const response = await LNbits.api.request(
+            'PUT',
+            `/extern/api/v1/extension/${extension.id}`,
+            this.adminkey,
+            payload
+          )
+          const index = this.extensions.findIndex(e => e.id === extension.id)
+          if (index !== -1) {
+            const updatedExtension = mapExternalExtension(response.data)
+            updatedExtension.expanded = extension.expanded
+            this.extensions.splice(index, 1, updatedExtension)
+          }
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
       }
     },
     created: async function () {

@@ -65,11 +65,11 @@ async def update_extension(user: str, ext_id: str, **kwargs) -> Optional[Extensi
     q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
 
     await db.execute(
-        f"""UPDATE watchonly.wallets SET {q} WHERE "user" = ? AND id = ?""",
+        f"""UPDATE extern.extensions SET {q} WHERE "user" = ? AND id = ?""",
         (*kwargs.values(), user, ext_id),
     )
     row = await db.fetchone(
-        """SELECT * FROM watchonly.wallets WHERE "user" = ? AND id = ?""",
+        """SELECT * FROM extern.extensions WHERE "user" = ? AND id = ?""",
         (
             user,
             ext_id,
