@@ -39,12 +39,10 @@
       },
       '*'
     ) // todo: domain
-    console.log('### shareState 1')
   }
 
   function resizeIframeOnChange(iframe) {
     const observer = new MutationObserver(() => {
-      console.log('### it mutated')
       resizeIframe(iframe)
     })
     observer.observe(iframe.contentWindow.document, {
@@ -66,8 +64,6 @@
     methods: {},
     created: function () {
       this.iframeSrc = `${this.extensionId}/dist/index.html`
-      // const iframe = this.$refs.extensionIframe
-      // console.log('### iframe', iframe)
     }
   })
 </script>

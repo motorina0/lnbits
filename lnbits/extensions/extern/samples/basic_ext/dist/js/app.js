@@ -30,7 +30,6 @@ async function refreshPayments() {
     const wallet = { inkey: localStorage.getItem("inkey") }
     try {
         const paymentsResp = await lnbitsApi.getPayments(wallet)
-        console.log('### paymentsResp', paymentsResp)
         printPayments(paymentsResp.data)
     } catch (error) {
         console.error(error)

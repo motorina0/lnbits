@@ -60,9 +60,6 @@ async function extensionList(path) {
         await this.createExtension(this.formDialog.data)
         this.showCreating = false
       },
-      handleUpload: function (event) {
-        console.log('### on submit event', event)
-      },
       createExtension: async function (data) {
         try {
           const meta = {permisions: []}
