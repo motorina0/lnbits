@@ -103,6 +103,14 @@ async def api_extension_upload(
             "url": f"""/extern/{manifest["id"]}/""",
         }
 
+        await update_user_extension(
+            user_id=w.wallet.user,
+            extension=ext_id,
+            active=False,
+            extern=True,
+            meta=json.dumps(ext_meta),
+        )
+
         return ext.dict()
 
     except Exception as e:
@@ -151,6 +159,11 @@ async def api_extension_delete(
         ext = await get_extension(w.wallet.user, ext_id)
         if ext:
             await delete_extension(w.wallet.user, ext_id)
+            await update_user_extension(
+                user_id=w.wallet.user,
+                extension=ext_id,
+                active=False
+            )
             shutil.rmtree(
                 os.path.join("data/extern/", ext_id)
             )  # to do: path from config
