@@ -14,10 +14,10 @@ async function generateInvoice() {
 
     if (!adminkey) {
         invoiceMessage.innerText = 'Admin Key Required'
+        return
     }
     const wallet = { inkey: adminkey }
     try {
-        
         const invoiceResp = await lnbitsApi.createInvoice(wallet, amountInput.value, memoInput.value || 'basic ext')
         invoiceMessage.innerText = invoiceResp.data.payment_request
         await refreshPayments()
