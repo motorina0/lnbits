@@ -29,12 +29,12 @@ function handleExtensionIframeLoad(iframe) {
   }
 
   function shareState(iframe) {
-    const params = Object.fromEntries(new URLSearchParams(location.search));
     iframe.contentWindow.postMessage(
       {
         type: 'init',
         extensionId: '{{ext_id}}',
         publicData: JSON.parse(decodeURIComponent(escape(window.atob('{{public_data_base64}}')))),
+        params: Object.fromEntries(new URLSearchParams(location.search))
       },
       '*'
     ) // todo: domain
