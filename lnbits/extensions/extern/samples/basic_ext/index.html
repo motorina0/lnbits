@@ -28,19 +28,28 @@
   }
 
   function shareState(iframe) {
-    iframe.contentWindow.postMessage({
-      type: "init",
-      ext_id: "{{ext_id}}",
-      inkey: '{{user.wallets[0].inkey if "read" in manifest["permissions"] else ""}}',
-      adminkey: '{{user.wallets[0].adminkey if "admin" in manifest["permissions"] else ""}}'
-    }, "*"); // todo: domain
+    iframe.contentWindow.postMessage(
+      {
+        type: 'init',
+        extensionId: '{{ext_id}}',
+        inkey:
+          '{{user.wallets[0].inkey if "read" in manifest["permissions"] else ""}}',
+        adminkey:
+          '{{user.wallets[0].adminkey if "admin" in manifest["permissions"] else ""}}'
+      },
+      '*'
+    ) // todo: domain
   }
 
   function resizeIframeOnChange(iframe) {
     const observer = new MutationObserver(() => {
       resizeIframe(iframe)
-    });
-    observer.observe(iframe.contentWindow.document, { attributes: true, childList: true, subtree: true });
+    })
+    observer.observe(iframe.contentWindow.document, {
+      attributes: true,
+      childList: true,
+      subtree: true
+    })
   }
 
   new Vue({
