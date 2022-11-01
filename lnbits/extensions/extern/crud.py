@@ -4,7 +4,7 @@ from typing import List, Optional
 from lnbits.helpers import urlsafe_short_hash
 
 from . import db
-from .models import Extension
+from .models import CreateResource, Extension, PublicResource, Resource
 
 
 async def create_extension(user: str, e: Extension) -> Extension:
@@ -84,5 +84,73 @@ async def delete_extension(user: str, ext_id: str) -> None:
         (
             user,
             ext_id,
+        ),
+    )
+
+
+##########################RESOURCES####################
+
+
+async def create_resource(user: str, resource: CreateResource) -> Resource:
+    resource_id = urlsafe_short_hash()
+    await db.execute(
+        """
+        INSERT INTO extern.extensions (
+            id,
+            "user",
+            ext_id,,
+            data,
+            publc_data
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            resource_id,
+            user,
+            resource.ext_id,
+            resource.data,
+            resource.public_data,
+        ),
+    )
+
+    return await get_resource(user, resource_id)
+
+
+async def get_resource(user: str, resource_id: str) -> Optional[Resource]:
+    row = await db.fetchone(
+        """SELECT * FROM extern.resources WHERE "user" = ? AND id = ?""",
+        (
+            user,
+            resource_id,
+        ),
+    )
+    return Resource.from_row(row) if row else None
+
+
+async def get_public_resource_data(resource_id: str) -> Optional[PublicResource]:
+    row = await db.fetchone(
+        """SELECT id, ext_id, public_data FROM extern.resources WHERE id = ?""",
+        (resource_id,),
+    )
+    return PublicResource.from_row(row) if row else None
+
+
+async def get_resources(user: str, resource_id: str) -> List[Resource]:
+    rows = await db.fetchall(
+        """SELECT * FROM extern.resources WHERE "user" = ? AND resource_id = ?""",
+        (user, resource_id),
+    )
+    return [Resource(**row) for row in rows]
+
+
+# async def update_resource(user: str, resource_id: str, **kwargs) -> Optional[Resource]:
+
+
+async def delete_resource(user: str, resource_id: str) -> None:
+    await db.execute(
+        """DELETE FROM extern.resources WHERE "user" = ? AND id = ?""",
+        (
+            user,
+            resource_id,
         ),
     )

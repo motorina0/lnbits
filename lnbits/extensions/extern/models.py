@@ -19,3 +19,30 @@ class CreateExtension(BaseModel):
     public_id: str
     name: str
     manifest: str = "{}"
+
+
+class Resource(BaseModel):
+    id: str
+    ext_id: str
+    data: str
+    public_data: str
+
+    @classmethod
+    def from_row(cls, row) -> "Resource":
+        return cls(**dict(row))
+
+
+class PublicResource(BaseModel):
+    id: str
+    ext_id: str
+    public_data: str
+
+    @classmethod
+    def from_row(cls, row) -> "PublicResource":
+        return cls(**dict(row))
+
+
+class CreateResource(BaseModel):
+    ext_id: str
+    data: str
+    public_data: str

@@ -137,10 +137,9 @@ async function extensionList(path) {
       showFileSelectDialog: function () {
         this.$refs.extFileSelect.click()
         this.extensionFileName = ''
-      
       },
 
-      refreshExtensionsDelayed: function() {
+      refreshExtensionsDelayed: function () {
         setTimeout(async () => {
           this.extensions = await this.getExtensions()
           this.extensionFileName = ''
