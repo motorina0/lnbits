@@ -88,6 +88,10 @@ async def api_extension_upload(
             "lnbits/extensions/extern/templates/extern/index_extern.html",
             os.path.join(ext_dir, "index.html"),
         )
+        shutil.copy(
+            "lnbits/extensions/extern/templates/extern/public.html",
+            os.path.join(ext_dir, "public.html"),
+        )
 
         new_ext = Extension(
             id=ext_id,
