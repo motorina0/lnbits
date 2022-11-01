@@ -1,5 +1,6 @@
 {
     "name": "Basic Ext",
     "id": "basic",
-    "permissions": ["read", "admin"]
+    "permissions": ["read", "admin"],
+    "description": "Sample extension"
 }
