@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <meta name="viewport" content="width=device-width">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+    <title>Donations</title>
+
+    <!-- base MUST be relative -->
+    <base href="">
+
+    <!-- import LNbits API (absolute path) -->
+    <script src="/static/vendor/axios@0.20.0/axios.min.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/watchonly/static/js/api.js"></script>
+    <script src="/extern/static/js/api.js"></script>
+
+    <!-- import application specific business logic (relative path) -->
+    <script src="js/app.js"></script>
+
+<body style="background-color: transparent;">
+    <h1></h1>
+    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModal">New Donation
+        Request</button>
+    <hr>
+    <table id="resourcesTable" class="table table-condensed margin-left-md">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Address</th>
+            </tr>
+        </thead>
+        <tbody>
+
+
+        </tbody>
+    </table>
+
+    <script>
+        window.addEventListener("message", async (event) => {
+            const message = event.data
+            if (message.type === "init") {
+                console.log('### messge', message)
+                localStorage.setItem("adminkey", message.adminkey)
+                localStorage.setItem("inkey", message.inkey)
+                localStorage.setItem("extensionId", message.extensionId)
+
+                if (message.adminkey) {
+                    // admin specific actions
+                }
+                if (message.inkey) {
+                    // readonly specific actions
+                    fetchAccounts()
+                    fetchDonations()
+                }
+                // public page
+                if (!message.adminkey && !message.inkey) {
+                    console.log('### message.publicData', message.publicData)
+                }
+            }
+        }, false);
+
+    </script>
+
+    <div id="myModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Create new Onchain Donation</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="donationName">Name:</label>
+                        <input type="text" class="form-control" id="donationName">
+                    </div>
+                    <div class="form-group">
+                        <label for="donationDescription">Description:</label>
+                        <input type="text" class="form-control" id="donationDescription">
+                    </div>
+                    <div class="form-group">
+                        <label for="accounts">Select Onchain Account:</label>
+                        <select class="form-control" id="accounts"></select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-dismiss="modal"
+                        onclick="createDonation()">Create</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+</body>
+
+</html>
