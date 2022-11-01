@@ -1,55 +1,36 @@
-{% block page %}
-<div>
-    <iframe
-    ref="extensionIframe"
-    onload="handleExtensionIframeLoad(this)"
-    title="LNbits Extension"
-    width="100%"
-    height="100%"
-    style="border: none"
-    src="dist/index.html"
-  >
-  </iframe>
-  
-</div>
+{% extends "base.html" %} {% from "macros.jinja" import window_vars with context
+%} {% block page %}
 
-{% endblock %} {% block scripts %}
+<div class="row q-col-gutter-md">
+  <div class="col-12 col-md-7 q-gutter-y-md">
+    <extension-list
+      :adminkey="g.user.wallets[0].adminkey"
+      :inkey="g.user.wallets[0].inkey"
+    >
+    </extension-list>
+  </div>
+</div>
+{% endblock %} {% block scripts %} {{ window_vars(user) }}
+<script src="{{ url_for('extern_static', path='js/utils.js') }}"></script>
+<script src="{{ url_for('extern_static', path='components/extension-list/extension-list.js') }}"></script>
 
 <script>
+  const initExternalExtensions = async () => {
+    await extensionList('static/components/extension-list/extension-list.html')
 
-function handleExtensionIframeLoad(iframe) {
-    resizeIframe(iframe)
-    resizeIframeOnChange(iframe)
-    shareState(iframe)
-  }
-
-  function resizeIframe(iframe) {
-    iframe.style.height =
-      iframe.contentWindow.document.documentElement.scrollHeight + 'px'
-  }
-
-  function shareState(iframe) {
-    const params = Object.fromEntries(new URLSearchParams(location.search));
-    iframe.contentWindow.postMessage(
-      {
-        type: 'init',
-        extensionId: '{{ext_id}}',
-        publicData: JSON.parse(decodeURIComponent(escape(window.atob('{{public_data_base64}}')))),
+    new Vue({
+      el: '#vue',
+      mixins: [windowMixin],
+      data: function () {
+        return {
+          tools: []
+        }
       },
-      '*'
-    ) // todo: domain
-  }
-
-  function resizeIframeOnChange(iframe) {
-    const observer = new MutationObserver(() => {
-      resizeIframe(iframe)
-    })
-    observer.observe(iframe.contentWindow.document, {
-      attributes: true,
-      childList: true,
-      subtree: true
+      created: function () {
+        var self = this
+      }
     })
   }
-
+  initExternalExtensions()
 </script>
 {% endblock %}
