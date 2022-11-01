@@ -95,12 +95,12 @@ async def create_resource(user: str, resource: CreateResource) -> Resource:
     resource_id = urlsafe_short_hash()
     await db.execute(
         """
-        INSERT INTO extern.extensions (
+        INSERT INTO extern.resources (
             id,
             "user",
-            ext_id,,
+            ext_id,
             data,
-            publc_data
+            public_data
         )
         VALUES (?, ?, ?, ?, ?)
         """,
@@ -108,8 +108,8 @@ async def create_resource(user: str, resource: CreateResource) -> Resource:
             resource_id,
             user,
             resource.ext_id,
-            resource.data,
-            resource.public_data,
+            json.dumps(resource.data),
+            json.dumps(resource.public_data),
         ),
     )
 
@@ -135,12 +135,12 @@ async def get_public_resource_data(resource_id: str) -> Optional[PublicResource]
     return PublicResource.from_row(row) if row else None
 
 
-async def get_resources(user: str, resource_id: str) -> List[Resource]:
+async def get_resources(user: str, ext_id: str) -> List[Resource]:
     rows = await db.fetchall(
-        """SELECT * FROM extern.resources WHERE "user" = ? AND resource_id = ?""",
-        (user, resource_id),
+        """SELECT * FROM extern.resources WHERE "user" = ? AND ext_id = ?""",
+        (user, ext_id),
     )
-    return [Resource(**row) for row in rows]
+    return [Resource.from_row(row) for row in rows]
 
 
 # async def update_resource(user: str, resource_id: str, **kwargs) -> Optional[Resource]:

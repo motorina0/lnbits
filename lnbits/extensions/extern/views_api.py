@@ -63,7 +63,7 @@ async def api_extension_upload(
     try:
         ext_id = urlsafe_short_hash()
 
-        ext_dir = os.path.join("data/extern/", ext_id)  # to do: path from config
+        ext_dir = os.path.join("data/", ext_id)  # to do: path from config
         os.makedirs(ext_dir)
         zip_file = os.path.join(ext_dir, ext_file.filename)
 
@@ -176,12 +176,17 @@ async def api_extension_delete(
 
 
 ##########################RESOURCES####################
-@extern_ext.get("/api/v1/resource")
-async def api_resources_retrieve(wallet: WalletTypeInfo = Depends(get_key_type)):
+@extern_ext.get("/api/v1/resources/{ext_id}")
+async def api_resources_retrieve(
+    ext_id: str, wallet: WalletTypeInfo = Depends(get_key_type)
+):
     try:
-        return [resource.dict() for resource in await get_resources(wallet.wallet.user)]
-    except:
-        return []
+        return [
+            resource.dict()
+            for resource in await get_resources(wallet.wallet.user, ext_id)
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
 
 @extern_ext.get("/api/v1/resource/{resource_id}")

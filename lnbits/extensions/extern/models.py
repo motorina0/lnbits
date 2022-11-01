@@ -1,3 +1,6 @@
+import json
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -24,18 +27,21 @@ class CreateExtension(BaseModel):
 class Resource(BaseModel):
     id: str
     ext_id: str
-    data: str
-    public_data: str
+    data: Any
+    public_data: Any
 
     @classmethod
     def from_row(cls, row) -> "Resource":
-        return cls(**dict(row))
+        r = cls(**dict(row))
+        r.data = json.loads(r.data)
+        r.public_data = json.loads(r.public_data)
+        return r
 
 
 class PublicResource(BaseModel):
     id: str
-    ext_id: str
-    public_data: str
+    ext_id: Any
+    public_data: Any
 
     @classmethod
     def from_row(cls, row) -> "PublicResource":
@@ -44,5 +50,5 @@ class PublicResource(BaseModel):
 
 class CreateResource(BaseModel):
     ext_id: str
-    data: str
-    public_data: str
+    data: Any
+    public_data: Any
