@@ -1,3 +1,4 @@
+import base64
 import json
 from http import HTTPStatus
 
@@ -12,7 +13,7 @@ from lnbits.core.models import User
 from lnbits.decorators import check_user_exists
 
 from . import extern_ext, extern_extension_renderer, extern_renderer, mount_static_files
-from .crud import get_extension_by_public_id
+from .crud import get_extension_by_public_id, get_public_resource_data
 
 templates = Jinja2Templates(directory="templates")
 
@@ -50,5 +51,30 @@ async def index(
             "user": user.dict(),
             "ext_id": ext.id,
             "manifest": json.loads(ext.manifest),
+        },
+    )
+
+
+@extern_ext.get("/public/{ext_id}/", response_class=HTMLResponse)
+async def public_index(request: Request, ext_id: str):
+
+    # todo: check file existnece
+    if "id" in request.query_params:
+        public_data = await get_public_resource_data(request.query_params["id"])
+
+    mount_static_files(
+        f"/extern/public/{ext_id}/dist",
+        StaticFiles(directory=f"data/extern/{ext_id}/dist"),
+        f"extern_static_{ext_id}",
+    )
+
+    return extern_extension_renderer().TemplateResponse(
+        f"{ext_id}/public.html",
+        {
+            "request": request,
+            "ext_id": ext_id,
+            "public_data_base64": base64.b64encode(public_data.encode("ascii")).decode(
+                "ascii"
+            ),
         },
     )

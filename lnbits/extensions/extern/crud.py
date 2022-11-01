@@ -127,12 +127,12 @@ async def get_resource(user: str, resource_id: str) -> Optional[Resource]:
     return Resource.from_row(row) if row else None
 
 
-async def get_public_resource_data(resource_id: str) -> Optional[PublicResource]:
+async def get_public_resource_data(resource_id: str) -> Optional[str]:
     row = await db.fetchone(
-        """SELECT id, ext_id, public_data FROM extern.resources WHERE id = ?""",
+        """SELECT public_data FROM extern.resources WHERE id = ?""",
         (resource_id,),
     )
-    return PublicResource.from_row(row) if row else None
+    return row[0]
 
 
 async def get_resources(user: str, ext_id: str) -> List[Resource]:
