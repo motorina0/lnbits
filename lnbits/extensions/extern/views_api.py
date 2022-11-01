@@ -16,13 +16,18 @@ from lnbits.helpers import urlsafe_short_hash
 from . import extern_ext
 from .crud import (
     create_extension,
+    create_resource,
     delete_extension,
+    delete_resource,
     get_extension,
     get_extension_by_public_id,
     get_extensions,
+    get_public_resource_data,
+    get_resource,
+    get_resources,
     update_extension,
 )
-from .models import CreateExtension, Extension
+from .models import CreateExtension, CreateResource, Extension
 
 
 @extern_ext.get("/api/v1/extension")
@@ -128,7 +133,6 @@ async def api_extension_update(
     ext_id: str, req: Request, w: WalletTypeInfo = Depends(require_admin_key)
 ):
     update_data = await req.json()
-    print("### api_extension_update", update_data)
     try:
         ext = await get_extension(w.wallet.user, ext_id)
         if not ext:
@@ -165,6 +169,64 @@ async def api_extension_delete(
             shutil.rmtree(
                 os.path.join("data/extern/", ext_id)
             )  # to do: path from config
+    except Exception as e:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
+
+    return "", HTTPStatus.NO_CONTENT
+
+
+##########################RESOURCES####################
+@extern_ext.get("/api/v1/resource")
+async def api_resources_retrieve(wallet: WalletTypeInfo = Depends(get_key_type)):
+    try:
+        return [resource.dict() for resource in await get_resources(wallet.wallet.user)]
+    except:
+        return []
+
+
+@extern_ext.get("/api/v1/resource/{resource_id}")
+async def api_resource_retrieve(
+    resource_id, wallet: WalletTypeInfo = Depends(get_key_type)
+):
+    resource = await get_resource(wallet.wallet.user, resource_id)
+
+    if not resource:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="Resource does not exist."
+        )
+
+    return resource.dict()
+
+
+@extern_ext.get("/api/v1/resource/{resource_id}/public")
+async def api_resource_retrieve_public(resource_id: str):
+    public_resource = await get_public_resource_data(resource_id)
+
+    if not public_resource:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="Resource does not exist."
+        )
+
+    return public_resource.dict()
+
+
+@extern_ext.post("/api/v1/resource")
+async def api_wallet_create_or_update(
+    data: CreateResource, w: WalletTypeInfo = Depends(require_admin_key)
+):
+    try:
+        resource = await create_resource(w.wallet.user, data)
+        return resource
+    except Exception as e:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
+
+
+@extern_ext.delete("/api/v1/resource/{resource_id}")
+async def api_resource_delete(
+    resource_id: str, w: WalletTypeInfo = Depends(require_admin_key)
+):
+    try:
+        await delete_resource(w.wallet.user, resource_id)
     except Exception as e:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
