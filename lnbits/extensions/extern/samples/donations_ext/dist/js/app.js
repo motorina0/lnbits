@@ -12,7 +12,7 @@ async function createDonation() {
     try {
         let wallet = { inkey: localStorage.getItem("inkey") }
         const extensionId = localStorage.getItem("extensionId")
-        
+        console.log('### extensionId', extensionId)
         const addressData = await watchonlyApi.getNewAddress(wallet, accountId)
 
         const publicData = {
@@ -61,7 +61,7 @@ async function fetchDonations() {
             newRow.innerHTML = `<tr>
                 <td>${r.public_data.name}</td>
                 <td>${r.public_data.description}</td>
-                <td>${r.data.address}</td>
+                <td><a href="/extern/public/${extensionId}?id=${r.id}" target="_blank">${r.data.address}</a></td>
              </tr>`
         })
 
@@ -69,4 +69,19 @@ async function fetchDonations() {
     } catch (error) {
         console.error(error)
     }
+}
+
+async function showQrCode() {
+    const publicData = JSON.parse(localStorage.getItem("publicData"))
+    console.log('### publicData', publicData)
+    document.getElementById('publicDonationHeader').innerHTML = `<h4>${publicData.name} (${publicData.description})</h4>`
+    document.getElementById('publicDonationFooter').innerHTML = `<h4>Address: ${publicData.address}</h4>`
+    new QRCode(document.getElementById('qrcode'), {
+        text: publicData.address,
+        width: 256,
+        height: 256,
+        colorDark: '#000',
+        colorLight: '#fff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
 }

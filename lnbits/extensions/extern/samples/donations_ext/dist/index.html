@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
 
     <title>Donations</title>
 
@@ -27,22 +28,32 @@
 
 <body style="background-color: transparent;">
     <h1></h1>
-    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModal">New Donation
-        Request</button>
-    <hr>
-    <table id="resourcesTable" class="table table-condensed margin-left-md">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Address</th>
-            </tr>
-        </thead>
-        <tbody>
+    <div id="adminView">
+        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModal">New Donation
+            Request</button>
+        <hr>
+        <table id="resourcesTable" class="table table-condensed margin-left-md">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Address</th>
+                </tr>
+            </thead>
+            <tbody>
 
 
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+    <div id="publicView">
+        <h2>Please consider donating</h2>
+        <div class="panel panel-default">
+            <div id="publicDonationHeader" class="panel-heading"></div>
+            <div id="publicAddress" class="panel-body"><div id="qrcode"></div></div>
+            <div id="publicDonationFooter" class="panel-footer"></div>
+        </div>
+    </div>
 
     <script>
         window.addEventListener("message", async (event) => {
@@ -52,6 +63,7 @@
                 localStorage.setItem("adminkey", message.adminkey)
                 localStorage.setItem("inkey", message.inkey)
                 localStorage.setItem("extensionId", message.extensionId)
+                localStorage.setItem("publicData", JSON.stringify(message.publicData))
 
                 if (message.adminkey) {
                     // admin specific actions
@@ -62,8 +74,13 @@
                     fetchDonations()
                 }
                 // public page
-                if (!message.adminkey && !message.inkey) {
-                    console.log('### message.publicData', message.publicData)
+                if (message.adminkey || message.inkey) {
+                    document.getElementById('publicView').style = 'display:none'
+                    document.getElementById('adminView').style = null
+                } else {
+                    document.getElementById('publicView').style = null
+                    document.getElementById('adminView').style = 'display:none'
+                    showQrCode()
                 }
             }
         }, false);
