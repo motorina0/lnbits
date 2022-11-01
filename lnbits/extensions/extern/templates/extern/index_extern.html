@@ -31,7 +31,7 @@
     iframe.contentWindow.postMessage(
       {
         type: 'init',
-        ext_id: '{{ext_id}}',
+        extensionId: '{{ext_id}}',
         inkey:
           '{{user.wallets[0].inkey if "read" in manifest["permissions"] else ""}}',
         adminkey:
