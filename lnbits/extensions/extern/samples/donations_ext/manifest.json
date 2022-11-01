@@ -2,5 +2,6 @@
     "name": "Donations",
     "id": "donations",
     "permissions": ["read", "admin"],
-    "description": "Receive donations on lighting or onchain"
+    "icon": "volunteer_activism",
+    "description": "Receive donations onchain"
 }
