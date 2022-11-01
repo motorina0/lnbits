@@ -17,7 +17,15 @@ function watchonlyApiJS(op = {}) {
         `/watchonly/api/v1/wallet?network=${network}`,
         wallet.inkey
       )
-    }
+    },
+    getNewAddress: function (wallet, accountId) {
+      return this.request(
+        'get',
+        `/watchonly/api/v1/address/${accountId}`,
+        wallet.inkey
+      )
+    },
+
   }
 
   function toFullUrl(hostname = '', url = '') {
