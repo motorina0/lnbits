@@ -192,9 +192,10 @@ async def m005_balance_check_balance_notify(db):
 
 async def m006_add_extern_extensions(db):
     """
-    Special column for webhook endpoints that can be assigned
-    to each different invoice.
+    Add columns for external extensions:
+      - extern: True if the extensioon is external
+      - meta: json data representing the external extension config
     """
 
     await db.execute("ALTER TABLE extensions ADD COLUMN extern BOOLEAN DEFAULT false")
-    await db.execute("""ALTER TABLE extensions ADD COLUMN meta TEXT DEFAULT "" """)
+    await db.execute("ALTER TABLE extensions ADD COLUMN meta TEXT DEFAULT '{}' ")
