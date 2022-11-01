@@ -62,6 +62,7 @@ async function fetchDonations() {
                 <td>${r.public_data.name}</td>
                 <td>${r.public_data.description}</td>
                 <td><a href="/extern/public/${extensionId}?id=${r.id}" target="_blank">${r.data.address}</a></td>
+                <td><button type="button" onclick="deleteResource('${r.id}')" class="btn btn-danger">x</button></td>
              </tr>`
         })
 
@@ -73,7 +74,6 @@ async function fetchDonations() {
 
 async function showQrCode() {
     const publicData = JSON.parse(localStorage.getItem("publicData"))
-    console.log('### publicData', publicData)
     document.getElementById('publicDonationHeader').innerHTML = `<h4>${publicData.name} (${publicData.description})</h4>`
     document.getElementById('publicDonationFooter').innerHTML = `<h4>Address: ${publicData.address}</h4>`
     new QRCode(document.getElementById('qrcode'), {
@@ -84,4 +84,10 @@ async function showQrCode() {
         colorLight: '#fff',
         correctLevel: QRCode.CorrectLevel.H
     });
+}
+
+async function deleteResource(resourceId) {
+    const wallet = { adminkey: localStorage.getItem("adminkey") }
+    await externApi.deleteResource(wallet, resourceId)
+    await fetchDonations()
 }

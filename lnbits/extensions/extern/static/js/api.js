@@ -25,6 +25,13 @@ function externApiJS(op = {}) {
         `/extern/api/v1/resources/${extensionId}`,
         wallet.inkey
       )
+    },
+    deleteResource: function (wallet, resourceId) {
+      return this.request(
+        'delete',
+        `/extern/api/v1/resource/${resourceId}`,
+        wallet.adminkey
+      )
     }
   }
 
