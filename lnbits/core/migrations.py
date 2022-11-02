@@ -192,7 +192,7 @@ async def m005_balance_check_balance_notify(db):
 
 async def m006_add_extern_extensions(db):
     """
-    Add columns for external extensions:
+    Add columns for extern extensions:
       - extern: True if the extensioon is external
       - meta: json data representing the external extension config
     """
