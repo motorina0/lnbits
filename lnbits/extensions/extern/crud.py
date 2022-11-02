@@ -1,10 +1,13 @@
 import json
 from typing import List, Optional
 
+import lnbits.settings as settings
 from lnbits.helpers import urlsafe_short_hash
 
 from . import db
-from .models import CreateResource, Extension, PublicResource, Resource
+from .models import CreateResource, Extension, Resource
+
+EXT_FOLDER = f"{settings.LNBITS_DATA_FOLDER}/extern"
 
 
 async def create_extension(user: str, e: Extension) -> Extension:

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi.staticfiles import StaticFiles
 
+import lnbits.settings as settings
 from lnbits.db import Database
 from lnbits.helpers import template_renderer
 
@@ -30,7 +31,7 @@ def extern_renderer():
 
 
 def extern_extension_renderer():
-    return template_renderer(["data/extern"])
+    return template_renderer([f"{settings.LNBITS_DATA_FOLDER}/extern"])
 
 
 from .views import *  # noqa

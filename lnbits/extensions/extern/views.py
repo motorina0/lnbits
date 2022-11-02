@@ -13,7 +13,7 @@ from lnbits.core.models import User
 from lnbits.decorators import check_user_exists
 
 from . import extern_ext, extern_extension_renderer, extern_renderer, mount_static_files
-from .crud import get_extension_by_public_id, get_public_resource_data
+from .crud import EXT_FOLDER, get_extension_by_public_id, get_public_resource_data
 
 templates = Jinja2Templates(directory="templates")
 
@@ -40,7 +40,7 @@ async def index(
 
     mount_static_files(
         f"/extern/{public_id}/{ext.id}/dist",
-        StaticFiles(directory=f"data/extern/{ext.id}/dist"),
+        StaticFiles(directory=f"{EXT_FOLDER}/{ext.id}/dist"),
         f"extern_static_{ext.id}",
     )
 
@@ -64,7 +64,7 @@ async def public_index(request: Request, ext_id: str):
 
     mount_static_files(
         f"/extern/public/{ext_id}/dist",
-        StaticFiles(directory=f"data/extern/{ext_id}/dist"),
+        StaticFiles(directory=f"{EXT_FOLDER}/{ext_id}/dist"),
         f"extern_static_{ext_id}",
     )
 

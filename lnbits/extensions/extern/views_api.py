@@ -15,6 +15,7 @@ from lnbits.helpers import urlsafe_short_hash
 
 from . import extern_ext
 from .crud import (
+    EXT_FOLDER,
     create_extension,
     create_resource,
     delete_extension,
@@ -63,7 +64,7 @@ async def api_extension_upload(
     try:
         ext_id = urlsafe_short_hash()
 
-        ext_dir = os.path.join("data/extern", ext_id)  # to do: path from config
+        ext_dir = os.path.join(EXT_FOLDER, ext_id)
         os.makedirs(ext_dir)
         zip_file = os.path.join(ext_dir, ext_file.filename)
 
@@ -170,9 +171,7 @@ async def api_extension_delete(
             await update_user_extension(
                 user_id=w.wallet.user, extension=ext_id, active=False
             )
-            shutil.rmtree(
-                os.path.join("data/extern/", ext_id)
-            )  # to do: path from config
+            shutil.rmtree(os.path.join(EXT_FOLDER, ext_id))
     except Exception as e:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
