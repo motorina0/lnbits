@@ -9,6 +9,19 @@
     >
     </extension-list>
   </div>
+  <div class="col-12 col-md-5 q-gutter-y-md">
+    <q-card>
+      <q-card-section>
+        <h6 class="text-subtitle1 q-my-none">
+          {{SITE_TITLE}} Extern Extension Manager
+        </h6>
+      </q-card-section>
+      <q-card-section class="q-pa-none">
+        <q-separator></q-separator>
+        <q-list> {% include "extern/_api_docs.html" %} </q-list>
+      </q-card-section>
+    </q-card>
+  </div>
 </div>
 {% endblock %} {% block scripts %} {{ window_vars(user) }}
 <script src="{{ url_for('extern_static', path='js/utils.js') }}"></script>
