@@ -96,9 +96,8 @@ async function extensionList(path) {
                 '/extern/api/v1/extension/' + extId,
                 this.adminkey
               )
-              this.extensions = _.reject(this.extensions, function (obj) {
-                return obj.id === extId
-              })
+              // refresh extension list
+              window.location.reload()
             } catch (error) {
               this.$q.notify({
                 type: 'warning',
