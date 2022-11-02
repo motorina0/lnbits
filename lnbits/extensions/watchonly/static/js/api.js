@@ -24,8 +24,7 @@ function watchonlyApiJS(op = {}) {
         `/watchonly/api/v1/address/${accountId}`,
         wallet.inkey
       )
-    },
-
+    }
   }
 
   function toFullUrl(hostname = '', url = '') {

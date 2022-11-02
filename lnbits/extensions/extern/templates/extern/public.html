@@ -1,6 +1,6 @@
 {% block page %}
 <div>
-    <iframe
+  <iframe
     ref="extensionIframe"
     onload="handleExtensionIframeLoad(this)"
     title="LNbits Extension"
@@ -10,14 +10,12 @@
     src="dist/index.html"
   >
   </iframe>
-  
 </div>
 
 {% endblock %} {% block scripts %}
 
 <script>
-
-function handleExtensionIframeLoad(iframe) {
+  function handleExtensionIframeLoad(iframe) {
     resizeIframe(iframe)
     resizeIframeOnChange(iframe)
     shareState(iframe)
@@ -33,7 +31,9 @@ function handleExtensionIframeLoad(iframe) {
       {
         type: 'init',
         extensionId: '{{ext_id}}',
-        publicData: JSON.parse(decodeURIComponent(escape(window.atob('{{public_data_base64}}')))),
+        publicData: JSON.parse(
+          decodeURIComponent(escape(window.atob('{{public_data_base64}}')))
+        ),
         params: Object.fromEntries(new URLSearchParams(location.search))
       },
       '*'
@@ -50,6 +50,5 @@ function handleExtensionIframeLoad(iframe) {
       subtree: true
     })
   }
-
 </script>
 {% endblock %}
