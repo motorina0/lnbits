@@ -116,7 +116,9 @@ async function extensionList(path) {
             '/extern/api/v1/extension',
             this.inkey
           )
-          return data.map(mapExternalExtension)
+          return data
+            .map(mapExternalExtension)
+            .sort((a, b) => a.name.localeCompare(b.name))
         } catch (error) {
           this.$q.notify({
             type: 'warning',
@@ -160,18 +162,12 @@ async function extensionList(path) {
           const payload = {
             active: !extension.active
           }
-          const response = await LNbits.api.request(
+          await LNbits.api.request(
             'PUT',
             `/extern/api/v1/extension/${extension.id}`,
             this.adminkey,
             payload
           )
-          const index = this.extensions.findIndex(e => e.id === extension.id)
-          if (index !== -1) {
-            const updatedExtension = mapExternalExtension(response.data)
-            updatedExtension.expanded = extension.expanded
-            this.extensions.splice(index, 1, updatedExtension)
-          }
           // refresh extension list
           window.location.reload()
         } catch (error) {
