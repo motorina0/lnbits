@@ -31,10 +31,11 @@ async def lnurl_response(username: str, domain: str, request: Request):
     if now > expiration:
         return LnurlErrorResponse(reason="Address has expired.").dict()
 
+    metadata = await address.lnurlpay_metadata(domain=domain)
     resp = {
         "tag": "payRequest",
         "callback": request.url_for("lnaddress.lnurl_callback", address_id=address.id),
-        "metadata": await address.lnurlpay_metadata(domain=domain),
+        "metadata": str(metadata),
         "minSendable": 1000,
         "maxSendable": 1000000000,
     }
@@ -71,7 +72,7 @@ async def lnurl_callback(address_id, amount: int = Query(...)):
                 json={
                     "out": False,
                     "amount": int(amount_received / 1000),
-                    "unhashed_description": metadata,
+                    "unhashed_description":  metadata.encode("utf-8").hex(),
                     "description_hash": hashlib.sha256(
                         metadata.encode("utf-8")
                     ).hexdigest(),
