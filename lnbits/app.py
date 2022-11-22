@@ -120,7 +120,8 @@ def check_funding_source(app: FastAPI) -> None:
                     f"The backend for {WALLET.__class__.__name__} isn't working properly: '{error_message}'",
                     RuntimeWarning,
                 )
-            except:
+            except Exception as e:
+                logger.warning(str(e))
                 pass
             logger.info("Retrying connection to backend in 5 seconds...")
             await asyncio.sleep(5)
