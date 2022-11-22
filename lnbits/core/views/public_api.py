@@ -14,8 +14,8 @@ from .. import core_app
 from ..crud import get_standalone_payment
 from ..tasks import api_invoice_listeners
 
-
 @core_app.get("/.well-known/lnurlp/{username}")
+@core_app.get("/.well-known/lnurlp/http://{username}")
 async def lnaddress(username: str, request: Request):
     from lnbits.extensions.lnaddress.lnurl import lnurl_response
 
