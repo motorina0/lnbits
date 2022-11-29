@@ -23,7 +23,7 @@ class Extension(NamedTuple):
     icon: Optional[str] = None
     contributors: Optional[List[str]] = None
     hidden: bool = False
-    version: Optional[str] = "" #todo: better name than version
+    version: Optional[str] = ""  # todo: better name than version
 
     @property
     def module_name(self):
@@ -86,12 +86,12 @@ class ExtensionManager:
         return output
 
 
-class EnabledExtensionMiddleware:
+class InstalledExtensionMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        _, pathname, *rest= scope["path"].split("/")
+        _, pathname, *rest = scope["path"].split("/")
 
         # block path for all users if the extension is disabled
         if pathname in g().config.LNBITS_DISABLED_EXTENSIONS:
@@ -105,13 +105,14 @@ class EnabledExtensionMiddleware:
         # re-route trafic if the extension has been upgraded
         upgraded_extensions = list(
             filter(
-                lambda ext: ext.endswith(f"/{pathname}"), g().config.LNBITS_UPGRADED_EXTENSIONS)
+                lambda ext: ext.endswith(f"/{pathname}"),
+                g().config.LNBITS_UPGRADED_EXTENSIONS,
             )
+        )
         if len(upgraded_extensions) != 0:
             upgrade_path = upgraded_extensions[0]
             tail = "/".join(rest)
             scope["path"] = f"/upgrades/{upgrade_path}/{tail}"
-
 
         await self.app(scope, receive, send)
 
