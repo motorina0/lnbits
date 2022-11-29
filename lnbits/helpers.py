@@ -23,6 +23,7 @@ class Extension(NamedTuple):
     icon: Optional[str] = None
     contributors: Optional[List[str]] = None
     hidden: bool = False
+    version: Optional[str] = ""
 
 
 class ExtensionManager:
