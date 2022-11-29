@@ -23,14 +23,14 @@ class Extension(NamedTuple):
     icon: Optional[str] = None
     contributors: Optional[List[str]] = None
     hidden: bool = False
-    version: Optional[str] = ""  # todo: better name than version
+    hash: Optional[str] = ""  # todo: better name than version
 
     @property
     def module_name(self):
         return (
             f"lnbits.extensions.{self.code}"
-            if self.version == ""
-            else f"lnbits.upgrades.{self.code}-{self.version}"
+            if self.hash == ""
+            else f"lnbits.upgrades.{self.code}-{self.hash}.{self.code}"
         )
 
 
