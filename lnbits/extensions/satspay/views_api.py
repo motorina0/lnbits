@@ -13,9 +13,9 @@ from lnbits.decorators import (
     require_admin_key,
     require_invoice_key,
 )
-from lnbits.extensions.satspay import satspay_ext
 from lnbits.settings import LNBITS_ADMIN_EXTENSIONS, LNBITS_ADMIN_USERS
 
+from . import satspay_ext
 from .crud import (
     check_address_balance,
     create_charge,

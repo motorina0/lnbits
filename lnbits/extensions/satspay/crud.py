@@ -5,9 +5,9 @@ from loguru import logger
 
 from lnbits.core.services import create_invoice
 from lnbits.core.views.api import api_payment
+from lnbits.extensions.watchonly.crud import get_config, get_fresh_address
 from lnbits.helpers import urlsafe_short_hash
 
-from ..watchonly.crud import get_config, get_fresh_address
 from . import db
 from .helpers import fetch_onchain_balance
 from .models import Charges, CreateCharge, SatsPayThemes
