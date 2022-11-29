@@ -1,17 +1,18 @@
 import asyncio
 import binascii
 import hashlib
+import importlib
+import inspect
 import json
 import os
-import sys
 import shutil
+import sys
 import time
 import uuid
 import zipfile
-import importlib
-import inspect
 from http import HTTPStatus
 from io import BytesIO
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import ParseResult, parse_qs, urlencode, urlparse, urlunparse
 
@@ -27,7 +28,6 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 from starlette.responses import HTMLResponse, StreamingResponse
-from pathlib import Path
 
 from lnbits import bolt11, lnurl
 from lnbits.core.helpers import (
@@ -746,9 +746,7 @@ async def api_install_extension(
             detail="Cannot fetch installable extension list",
         )
 
-    extensions = [
-        e for e in extension_list if e.id == ext_id and e.hash == hash
-    ]
+    extensions = [e for e in extension_list if e.id == ext_id and e.hash == hash]
     if len(extensions) == 0:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -799,7 +797,13 @@ async def api_install_extension(
 
         # todo: is admin only
         # lnbits/extensions/satspay/upgrade/111/satspay/__init__.py
-        ext = Extension(code=extension.id, is_valid=True, is_admin_only=False, name=extension.name, version="111")
+        ext = Extension(
+            code=extension.id,
+            is_valid=True,
+            is_admin_only=False,
+            name=extension.name,
+            version="111",
+        )
 
         # current_versions = await get_dbversions()
         # current_version = current_versions.get(ext.code, 0)
@@ -808,6 +812,7 @@ async def api_install_extension(
         # disable by default
         await update_user_extension(user_id=USER_ID_ALL, extension=ext_id, active=False)
         g().config.LNBITS_DISABLED_EXTENSIONS += [ext_id]
+        g().config.LNBITS_UPGRADED_EXTENSIONS += [f"{ext.version}/{ext.code}"]
 
         # mount routes at the very end
         core_app_extra.register_new_ext_routes(ext)
@@ -872,8 +877,7 @@ async def api_uninstall_extension(ext_id: str, user: User = Depends(check_user_e
         # for m in modules_to_delete:
         #     module = sys.modules[m]
         #     del sys.modules[m]
-        #     del module    
-
+        #     del module
 
         # remove module from extensions
         ext_dir = os.path.join("lnbits/extensions", ext_id)
@@ -883,18 +887,19 @@ async def api_uninstall_extension(ext_id: str, user: User = Depends(check_user_e
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(ex)
         )
 
-def list_modules_for_extension(ext_id: str)-> List[str]:
+
+def list_modules_for_extension(ext_id: str) -> List[str]:
     modules_for_extension = []
     for key in sys.modules.keys():
         try:
             module = sys.modules[key]
             moduleFilePath = inspect.getfile(module).lower()
-            
+
             dir_name = str(Path(moduleFilePath).parent.absolute())
             if dir_name.endswith(f"lnbits/extensions/{ext_id}"):
-                print('## moduleFilePath', moduleFilePath)
-                modules_for_extension +=[key]
+                print("## moduleFilePath", moduleFilePath)
+                modules_for_extension += [key]
 
         except:
-            pass # built in modules throw if queried
+            pass  # built in modules throw if queried
     return modules_for_extension

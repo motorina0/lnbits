@@ -38,6 +38,8 @@ LNBITS_DISABLED_EXTENSIONS: List[str] = [
     for x in env.list("LNBITS_DISABLED_EXTENSIONS", default=[], subcast=str)
 ]
 
+LNBITS_UPGRADED_EXTENSIONS: List[str] = []
+
 LNBITS_EXTENSIONS_MANIFESTS: List[str] = [
     x.strip(" ")
     for x in env.list("LNBITS_EXTENSIONS_MANIFESTS", default=[], subcast=str)

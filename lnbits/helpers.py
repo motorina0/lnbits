@@ -23,7 +23,15 @@ class Extension(NamedTuple):
     icon: Optional[str] = None
     contributors: Optional[List[str]] = None
     hidden: bool = False
-    version: Optional[str] = ""
+    version: Optional[str] = "" #todo: better name than version
+
+    @property
+    def module_name(self):
+        return (
+            f"lnbits.extensions.{self.code}"
+            if self.version == ""
+            else f"lnbits.upgrades.{self.code}-{self.version}"
+        )
 
 
 class ExtensionManager:
@@ -83,7 +91,9 @@ class EnabledExtensionMiddleware:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        pathname = scope["path"].split("/")[1]
+        _, pathname, *rest= scope["path"].split("/")
+
+        # block path for all users if the extension is disabled
         if pathname in g().config.LNBITS_DISABLED_EXTENSIONS:
             response = JSONResponse(
                 status_code=HTTPStatus.NOT_FOUND,
@@ -91,6 +101,17 @@ class EnabledExtensionMiddleware:
             )
             await response(scope, receive, send)
             return
+
+        # re-route trafic if the extension has been upgraded
+        upgraded_extensions = list(
+            filter(
+                lambda ext: ext.endswith(f"/{pathname}"), g().config.LNBITS_UPGRADED_EXTENSIONS)
+            )
+        if len(upgraded_extensions) != 0:
+            upgrade_path = upgraded_extensions[0]
+            tail = "/".join(rest)
+            scope["path"] = f"/upgrades/{upgrade_path}/{tail}"
+
 
         await self.app(scope, receive, send)
 
