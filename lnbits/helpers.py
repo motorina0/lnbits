@@ -23,7 +23,7 @@ class Extension(NamedTuple):
     icon: Optional[str] = None
     contributors: Optional[List[str]] = None
     hidden: bool = False
-    hash: Optional[str] = ""  # todo: better name than version
+    hash: Optional[str] = ""
 
     @property
     def module_name(self):
@@ -33,6 +33,17 @@ class Extension(NamedTuple):
             else f"lnbits.upgrades.{self.code}-{self.hash}.{self.code}"
         )
 
+class InstallableExtension(NamedTuple):
+    id: str
+    name: str
+    archive: str
+    hash: str
+    short_description: Optional[str] = None
+    details: Optional[str] = None
+    icon: Optional[str] = None
+    dependencies: List[str] = []
+    is_admin_only: bool = False
+    version: Optional[int] = 0
 
 class ExtensionManager:
     def __init__(self, include_disabled_exts=False):
@@ -121,18 +132,6 @@ class InstalledExtensionMiddleware:
                 scope["path"] = f"/upgrades/{upgrade_path}/{path_type}/{tail}"
 
         await self.app(scope, receive, send)
-
-
-class InstallableExtension(NamedTuple):
-    id: str
-    name: str
-    archive: str
-    hash: str
-    short_description: Optional[str] = None
-    details: Optional[str] = None
-    icon: Optional[str] = None
-    dependencies: List[str] = []
-    is_admin_only: bool = False
 
 
 def get_valid_extensions(include_disabled_exts=False) -> List[Extension]:
