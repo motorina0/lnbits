@@ -795,19 +795,23 @@ async def api_install_extension(
         with zipfile.ZipFile(ext_zip_file, "r") as zip_ref:
             zip_ref.extractall("lnbits/extensions")
 
-        ext_upgrade_dir = os.path.join("lnbits/upgrades", f"{extension.id}-{extension.hash}")
+        ext_upgrade_dir = os.path.join(
+            "lnbits/upgrades", f"{extension.id}-{extension.hash}"
+        )
         os.makedirs("lnbits/upgrades", exist_ok=True)
         shutil.rmtree(ext_upgrade_dir, True)
         with zipfile.ZipFile(ext_zip_file, "r") as zip_ref:
             zip_ref.extractall(ext_upgrade_dir)
 
+        module_name = f"lnbits.extensions.{ext_id}"
+        module_installed = module_name in sys.modules
         # todo: is admin only
         ext = Extension(
             code=extension.id,
             is_valid=True,
             is_admin_only=False,
             name=extension.name,
-            hash=extension.hash,
+            hash=extension.hash if module_installed else "",
         )
 
         current_versions = await get_dbversions()
@@ -817,7 +821,18 @@ async def api_install_extension(
         # disable by default
         await update_user_extension(user_id=USER_ID_ALL, extension=ext_id, active=False)
         g().config.LNBITS_DISABLED_EXTENSIONS += [ext_id]
-        g().config.LNBITS_UPGRADED_EXTENSIONS += [f"{ext.hash}/{ext.code}"]
+
+        
+        if module_installed:
+            # update upgraded extensions list if module already installed
+            ext_temp_path = f"{ext.hash}/{ext.code}"
+            clean_upgraded_exts = list(
+                filter(
+                    lambda old_ext: old_ext.endswith(ext_temp_path),
+                    g().config.LNBITS_UPGRADED_EXTENSIONS,
+                )
+            )
+            g().config.LNBITS_UPGRADED_EXTENSIONS = clean_upgraded_exts + [ext_temp_path]
 
         # mount routes at the very end
         core_app_extra.register_new_ext_routes(ext)
