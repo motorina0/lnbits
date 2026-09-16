@@ -7,8 +7,24 @@ import sys
 from pathlib import Path
 
 import wasmtime
+from prepare_sidecars import main as prepare_sidecars
+from PyInstaller.depend.bindepend import get_imports
 
 os.environ["DEBUG"] = "false"
+if sys.platform == "darwin":
+    # PyInstaller can merge different OpenSSL builds into one libssl.3.dylib.
+    # cryptography must carry its own statically linked OpenSSL instead.
+    rust = importlib.util.find_spec("cryptography.hazmat.bindings._rust")
+    if rust is None or rust.origin is None:
+        raise RuntimeError("cryptography's native bindings are missing")
+    for name, _ in get_imports(rust.origin):
+        if Path(name).name.startswith(("libssl.", "libcrypto.")):
+            raise RuntimeError(
+                "macOS packaging requires cryptography with static OpenSSL. "
+                "Clear its uv cache and reinstall with OPENSSL_STATIC=1; "
+                "see .github/packaging/macos/README.md."
+            )
+    prepare_sidecars()
 
 packages = [
     "embit",
@@ -26,9 +42,9 @@ args = [
     "PyInstaller",
     "--clean",
     "--noconfirm",
-    "--onefile",
+    "--onedir" if sys.platform == "darwin" else "--onefile",
     "--name",
-    "lnbits",
+    "LNbits" if sys.platform == "darwin" else "lnbits",
     "--specpath",
     "build",
     "--hidden-import=embit",
@@ -36,6 +52,17 @@ args = [
     "--collect-data=pyinstrument",
     "--collect-data=random_username",
 ]
+if sys.platform == "darwin":
+    # Keep external executables as binaries so macOS signs them with the app.
+    sidecars = Path("build/sidecars").resolve()
+    for resource in sidecars.iterdir():
+        kind = (
+            "--add-binary"
+            if resource.name in ("node", "node.exe", "phoenixd")
+            else "--add-data"
+        )
+        destination = "sidecars/spark" if resource.is_dir() else "sidecars"
+        args += [kind, f"{resource}:{destination}"]
 # Wasmtime opens its native library by package-relative path via ctypes.
 for library in Path(wasmtime.__file__).parent.glob("*/*"):
     if library.suffix in (".so", ".dll", ".dylib"):
@@ -47,6 +74,16 @@ if sys.platform == "win32":
         "hide-early",
         f"--icon={icon}",
     ]
+if sys.platform == "darwin":
+    args += [
+        "--windowed",
+        "--osx-bundle-identifier=com.lnbits.desktop",
+        f"--icon={Path(__file__).resolve().parent / 'linux/AppDir/lnbits.png'}",
+    ]
+    if identity := os.environ.get("MACOS_CODESIGN_IDENTITY"):
+        args += ["--codesign-identity", identity]
+    if entitlements := os.environ.get("MACOS_ENTITLEMENTS_FILE"):
+        args += ["--osx-entitlements-file", entitlements]
 for package in packages:
     args += ["--collect-all", package]
 for package in ("breez_sdk", "breez_sdk_liquid"):
